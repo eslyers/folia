@@ -1,0 +1,144 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+
+export async function POST(request: Request) {
+  try {
+    const { email, password, name, role, department, position, hire_date, vacation_balance, hours_balance } = await request.json();
+
+    if (!email || !password || !name) {
+      return NextResponse.json(
+        { error: "Email, senha e nome são obrigatórios" },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: "Senha deve ter pelo menos 6 caracteres" },
+        { status: 400 }
+      );
+    }
+
+    // Use service role key for admin operations
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    // First create the user in auth.users
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: email,
+      password: password,
+      email_confirm: true,
+      user_metadata: {
+        name: name,
+        role: role || "employee",
+      },
+    });
+
+    if (authError) {
+      console.error("[Admin API] Auth error:", authError);
+      return NextResponse.json(
+        { error: "Erro ao criar usuário: " + authError.message },
+        { status: 500 }
+      );
+    }
+
+    if (!authData.user) {
+      return NextResponse.json(
+        { error: "Falha ao criar usuário" },
+        { status: 500 }
+      );
+    }
+
+    // Create profile using service role (bypasses RLS)
+    const supabase = await createClient();
+    const { error: profileError } = await supabase.from("profiles").insert({
+      id: authData.user.id,
+      name: name,
+      email: email,
+      role: role || "employee",
+      department: department || null,
+      position: position || null,
+      hire_date: hire_date || null,
+      vacation_balance: vacation_balance || 30,
+      hours_balance: hours_balance || 0,
+    });
+
+    if (profileError) {
+      console.error("[Admin API] Profile error:", profileError);
+      // Try to delete the auth user if profile creation fails
+      try {
+        await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      } catch (deleteError) {
+        console.error("[Admin API] Failed to delete auth user:", deleteError);
+      }
+      return NextResponse.json(
+        { error: "Erro ao criar perfil: " + profileError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: authData.user.id,
+        email: email,
+        name: name,
+      },
+    });
+
+  } catch (error) {
+    console.error("[Admin API] Error:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
+  }
+}
+
+// Update user
+export async function PUT(request: Request) {
+  try {
+    const { id, name, role, department, position, hire_date, vacation_balance, hours_balance } = await request.json();
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID do usuário é obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        name: name,
+        role: role,
+        department: department || null,
+        position: position || null,
+        hire_date: hire_date || null,
+        vacation_balance: vacation_balance,
+        hours_balance: hours_balance,
+      })
+      .eq("id", id);
+
+    if (error) {
+      return NextResponse.json(
+        { error: "Erro ao atualizar: " + error.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+
+  } catch (error) {
+    console.error("[Admin API] Error:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
+  }
+}

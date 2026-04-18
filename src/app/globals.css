@@ -1,0 +1,393 @@
+/* FOLIA - Global Styles v1.1
+ * Following PRD Design System specifications
+ * Version: 1.0 - 15/04/2026
+ */
+
+@import "tailwindcss";
+
+/* =====================================================
+   CSS CUSTOM PROPERTIES (Design Tokens from PRD)
+   ===================================================== */
+
+:root {
+  /* Primary Colors */
+  --color-green-olive: #5C724A;
+  --color-gold: #C7A76C;
+  --color-gold-vivid: #D4A853;
+  
+  /* Background Colors */
+  --color-cream: #F5F0E6;
+  --color-white: #FFFFFF;
+  
+  /* Text Colors */
+  --color-brown-dark: #2C2416;
+  --color-brown-medium: #6B5F4D;
+  
+  /* Status Colors */
+  --color-success: #4A7C4E;
+  --color-warning: #C4883A;
+  --color-error: #A65D4E;
+  
+  /* H7: Aliases for components using non-prefixed variables */
+  --green-olive: var(--color-green-olive);
+  --gold: var(--color-gold);
+  --gold-vivid: var(--color-gold-vivid);
+  --cream: var(--color-cream);
+  --brown-dark: var(--color-brown-dark);
+  --brown-medium: var(--color-brown-medium);
+  --success: var(--color-success);
+  --warning: var(--color-warning);
+  --error: var(--color-error);
+  --surface: var(--color-white);
+  
+  /* Semantic */
+  --background: var(--color-cream);
+  --foreground: var(--color-brown-dark);
+  --card-bg: var(--color-white);
+  --border: color-mix(in srgb, var(--color-brown-medium) 20%, transparent);
+  
+  /* Typography */
+  --font-playfair: var(--font-playfair), Georgia, 'Times New Roman', serif;
+  --font-inter: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-montserrat: var(--font-montserrat), 'Segoe UI', sans-serif;
+  
+  /* Spacing (base: 4px) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+  --shadow-xl: 0 20px 25px rgba(0,0,0,0.15);
+  
+  /* Motion */
+  --transition-micro: 200ms ease-out;
+  --transition-standard: 300ms ease-out;
+  --transition-complex: 400ms ease-out;
+}
+
+/* =====================================================
+   TAILWIND THEME CONFIGURATION
+   ===================================================== */
+
+@theme inline {
+  /* Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  
+  /* Custom Palette */
+  --color-green-olive: var(--color-green-olive);
+  --color-gold: var(--color-gold);
+  --color-gold-vivid: var(--color-gold-vivid);
+  --color-cream: var(--color-cream);
+  --color-brown-dark: var(--color-brown-dark);
+  --color-brown-medium: var(--color-brown-medium);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-error: var(--color-error);
+  --color-surface: var(--color-white);
+  
+  /* Fonts */
+  --font-playfair: var(--font-playfair);
+  --font-inter: var(--font-inter);
+  --font-montserrat: var(--font-montserrat);
+  
+  /* Border Radius */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+}
+
+/* =====================================================
+   BASE STYLES
+   ===================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-playfair);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-brown-dark);
+}
+
+/* =====================================================
+   ANIMATIONS (from PRD Motion Philosophy)
+   ===================================================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Animation Classes */
+.animate-fade-in {
+  animation: fadeIn var(--transition-standard) ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp var(--transition-standard) ease-out;
+}
+
+/* Alias for compatibility */
+.animate-slide-up {
+  animation: fadeInUp var(--transition-standard) ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--transition-standard) ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight var(--transition-standard) ease-out;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Staggered animations */
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+
+/* =====================================================
+   TRANSITIONS (PRD Motion Philosophy)
+   ===================================================== */
+
+.transition-folia {
+  transition: all var(--transition-micro);
+}
+
+.transition-folia-hover {
+  transition: all var(--transition-micro);
+}
+
+.transition-folia-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* =====================================================
+   SCROLLBAR STYLES
+   ===================================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-cream);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-brown-medium);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brown-dark);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-brown-medium) var(--color-cream);
+}
+
+/* =====================================================
+   FORM ELEMENTS
+   ===================================================== */
+
+input, textarea, select {
+  font-family: var(--font-inter);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-brown-medium);
+  opacity: 0.6;
+}
+
+/* =====================================================
+   SELECTION
+   ===================================================== */
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-brown-dark);
+}
+
+/* =====================================================
+   UTILITY CLASSES
+   ===================================================== */
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+/* H9: Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* =====================================================
+   RESPONSIVE BREAKPOINTS (from PRD)
+   ===================================================== */
+
+/* sm: 640px */
+/* md: 768px */
+/* lg: 1024px */
+/* xl: 1280px */
+
+/* =====================================================
+   COMPONENT HELPERS
+   ===================================================== */
+
+/* Card hover effect */
+.card-hover {
+  transition: all var(--transition-micro);
+}
+
+.card-hover:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* Badge pill */
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-montserrat);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+/* Status badges */
+.badge-success {
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  color: var(--color-success);
+}
+
+.badge-warning {
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  color: var(--color-warning);
+}
+
+.badge-error {
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  color: var(--color-error);
+}
+
+.badge-info {
+  background: color-mix(in srgb, var(--color-gold) 10%, transparent);
+  color: var(--color-gold);
+}

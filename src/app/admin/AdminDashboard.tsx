@@ -1,0 +1,660 @@
+"use client";
+
+import { useState, Component, ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { Check, X, Users, Calendar as CalendarIcon, Clock, AlertCircle, CheckSquare, Square } from "lucide-react";
+import { Header } from "@/components/Header";
+import { Card, Button, Modal } from "@/components/ui";
+import { createClient } from "@/lib/supabase/client";
+import { LEAVE_TYPE_LABELS, STATUS_LABELS } from "@/lib/types";
+import type { Profile, LeaveRequest } from "@/lib/types";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Calendar } from "@/components/calendar/Calendar";
+
+// M9: ErrorBoundary to prevent white screens
+class AdminErrorBoundary extends Component<{ children: ReactNode; fallback?: ReactNode }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        this.props.fallback || (
+          <div className="min-h-screen flex items-center justify-center bg-[var(--color-cream)]">
+            <div className="text-center p-8">
+              <h2 className="text-2xl font-bold text-[var(--color-brown-dark)] mb-4">
+                Ops! Algo deu errado
+              </h2>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-[var(--color-gold)] text-[var(--color-brown-dark)] rounded-lg hover:bg-[var(--color-gold-vivid)] transition-folia"
+              >
+                Recarregar página
+              </button>
+            </div>
+          </div>
+        )
+      );
+    }
+    return this.props.children;
+  }
+}
+
+interface AdminDashboardProps {
+  profile: Profile;
+  leaveRequests: LeaveRequest[];
+  profiles: Profile[];
+}
+
+export function AdminDashboard({ profile, leaveRequests, profiles }: AdminDashboardProps) {
+  const router = useRouter();
+  const supabase = createClient();
+  const [requests, setRequests] = useState(leaveRequests);
+  const [processing, setProcessing] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedRequestIds, setSelectedRequestIds] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
+  const pendingRequests = requests.filter((r) => r.status === "pending");
+  const approvedRequests = requests.filter((r) => r.status === "approved");
+
+  const handleApprove = async (requestId: string, userId: string) => {
+    setProcessing(requestId);
+    setError(null);
+
+    try {
+      // Get request details
+      const request = requests.find(r => r.id === requestId);
+      if (!request) {
+        setError("Pedido não encontrado");
+        setProcessing(null);
+        return;
+      }
+
+      // Prevent self-approval (H1)
+      if (userId === profile.id) {
+        setError("Você não pode aprovar seu próprio pedido");
+        setProcessing(null);
+        return;
+      }
+
+      // C2: Atomic update using RPC if vacation
+      // Get user's vacation_balance from local profiles array instead of request.profile (avoids RLS issues)
+      const userProfile = profiles.find((p) => p.id === userId);
+      if (request.type === "vacation") {
+        const { error: rpcError } = (supabase as any).rpc("deduct_vacation_balance", {
+          p_user_id: userId,
+          p_days: request.days_count,
+          p_expected_balance: userProfile?.vacation_balance || 0,
+        });
+
+        if (rpcError) {
+          setError("Falha ao atualizar saldo. Tente novamente.");
+          setProcessing(null);
+          return;
+        }
+      }
+
+      // Update request status
+      const { error: updateError } = await (supabase as any)
+        .from("leave_requests")
+        .update({
+          status: "approved",
+          reviewed_by: profile.id,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
+
+      if (updateError) {
+        setError(updateError.message);
+      } else {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r.id === requestId ? { ...r, status: "approved" as const } : r
+          )
+        );
+      }
+    } catch (e: any) {
+      setError(e.message || "Erro ao aprovar pedido");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleReject = (requestId: string) => {
+    setRejectingRequestId(requestId);
+    setRejectionReason("");
+    setError(null);
+  };
+
+  const confirmReject = async () => {
+    if (!rejectingRequestId) return;
+    setProcessing(rejectingRequestId);
+    setError(null);
+
+    try {
+      const { error: updateError } = await (supabase as any)
+        .from("leave_requests")
+        .update({
+          status: "rejected",
+          rejection_reason: rejectionReason.trim() || null,
+          reviewed_by: profile.id,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", rejectingRequestId);
+
+      if (updateError) {
+        setError(updateError.message);
+      } else {
+        // Send rejection email notification
+        const request = requests.find((r) => r.id === rejectingRequestId);
+        const userProfile = profiles.find((p) => p.id === request?.user_id);
+        if (request && userProfile) {
+          try {
+            await fetch("/api/send-notifications", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify([{
+                user_id: userProfile.id,
+                user_name: userProfile.name,
+                user_email: userProfile.email,
+                type: "approval_rejected",
+                title: `❌ Pedido de ${LEAVE_TYPE_LABELS[request.type]} Rejeitado`,
+                message: `Seu pedido de ${LEAVE_TYPE_LABELS[request.type]} foi rejeitado.`,
+                leave_start: request.start_date,
+                leave_end: request.end_date,
+                notes: rejectionReason.trim() || "Motivo não informado",
+                rejection_reason: rejectionReason.trim() || null,
+              }]),
+            });
+          } catch (emailErr) {
+            console.error("[Admin] Failed to send rejection email:", emailErr);
+          }
+        }
+
+        setRequests((prev) =>
+          prev.map((r) =>
+            r.id === rejectingRequestId ? { ...r, status: "rejected" as const, rejection_reason: rejectionReason.trim() || null } : r
+          )
+        );
+        setRejectingRequestId(null);
+        setRejectionReason("");
+      }
+    } catch (e: any) {
+      setError(e.message || "Erro ao rejeitar pedido");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const getUserName = (userId: string) => {
+    const user = profiles.find((p) => p.id === userId);
+    return user?.name || "Usuário";
+  };
+
+  const toggleSelect = (requestId: string) => {
+    setSelectedRequestIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(requestId)) {
+        next.delete(requestId);
+      } else {
+        next.add(requestId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedRequestIds.size === pendingRequests.length) {
+      setSelectedRequestIds(new Set());
+    } else {
+      setSelectedRequestIds(new Set(pendingRequests.map((r) => r.id)));
+    }
+  };
+
+  const bulkApprove = async () => {
+    if (selectedRequestIds.size === 0) return;
+    setBulkProcessing(true);
+    setError(null);
+
+    let approved = 0;
+    let failed = 0;
+
+    for (const requestId of selectedRequestIds) {
+      const request = requests.find((r) => r.id === requestId);
+      if (!request) { failed++; continue; }
+
+      // Prevent self-approval
+      if (request.user_id === profile.id) { failed++; continue; }
+
+      const userProfile = profiles.find((p) => p.id === request.user_id);
+
+      try {
+        if (request.type === "vacation") {
+          await (supabase as any).rpc("deduct_vacation_balance", {
+            p_user_id: request.user_id,
+            p_days: request.days_count,
+            p_expected_balance: userProfile?.vacation_balance || 0,
+          });
+        }
+
+        const { error } = await (supabase as any)
+          .from("leave_requests")
+          .update({
+            status: "approved",
+            reviewed_by: profile.id,
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq("id", requestId);
+
+        if (!error) approved++;
+        else failed++;
+      } catch {
+        failed++;
+      }
+    }
+
+    if (approved > 0) {
+      setRequests((prev) =>
+        prev.map((r) =>
+          selectedRequestIds.has(r.id) ? { ...r, status: "approved" as const } : r
+        )
+      );
+    }
+
+    setSelectedRequestIds(new Set());
+    setBulkProcessing(false);
+    if (failed > 0) setError(`${approved} aprovado(s), ${failed} falha(s)`);
+  };
+
+  const bulkReject = () => {
+    // If only one selected, use the single modal
+    if (selectedRequestIds.size === 1) {
+      const [firstId] = selectedRequestIds;
+      setRejectingRequestId(firstId);
+      setRejectionReason("");
+      setSelectedRequestIds(new Set());
+    }
+  };
+
+  return (
+    <AdminErrorBoundary>
+    <div className="min-h-screen bg-[var(--background)]">
+      <Header profile={profile} pendingCount={pendingRequests.length} />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Error message */}
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Welcome */}
+        <div className="mb-8 animate-slide-up flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
+              Painel Administrativo
+            </h1>
+            <p className="text-[var(--color-brown-medium)] mt-1">
+              Gerencie pedidos de folga da sua equipe
+            </p>
+          </div>
+          <a
+            href="/admin/notifications"
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-[var(--color-gold)] to-[var(--color-gold-vivid)] px-6 py-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-gold)] to-[var(--color-gold-vivid)] opacity-90 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex items-center gap-3 text-[var(--color-brown-dark)]">
+              <span className="text-2xl group-hover:animate-bounce">🔔</span>
+              <span className="font-bold text-lg group-hover:translate-x-1 transition-transform">Notificações</span>
+            </div>
+          </a>
+          <a
+            href="/admin/audit"
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-[var(--color-brown)] to-[var(--color-brown-dark)] px-6 py-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-brown)] to-[var(--color-brown-dark)] opacity-90 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex items-center gap-3 text-white">
+              <span className="text-2xl group-hover:animate-bounce">📋</span>
+              <span className="font-bold text-lg group-hover:translate-x-1 transition-transform">Histórico</span>
+            </div>
+          </a>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="p-5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-amber-50">
+                <Clock className="h-6 w-6 text-[var(--color-warning)]" />
+              </div>
+              <div>
+                <p className="text-sm text-[var(--color-brown-medium)]">Pendentes</p>
+                <p className="text-2xl font-bold text-[var(--color-brown-dark)]">{pendingRequests.length}</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-green-50">
+                <Check className="h-6 w-6 text-[var(--color-success)]" />
+              </div>
+              <div>
+                <p className="text-sm text-[var(--color-brown-medium)]">Aprovados</p>
+                <p className="text-2xl font-bold text-[var(--color-brown-dark)]">{approvedRequests.length}</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-blue-50">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-[var(--color-brown-medium)]">Funcionários</p>
+                <p className="text-2xl font-bold text-[var(--color-brown-dark)]">{profiles.length}</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-purple-50">
+                <CalendarIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm text-[var(--color-brown-medium)]">Total Pedidos</p>
+                <p className="text-2xl font-bold text-[var(--color-brown-dark)]">{requests.length}</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Pending Requests */}
+          <div className="lg:col-span-2">
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-[var(--color-brown-dark)] flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-[var(--color-warning)]" />
+                  Pedidos Pendentes
+                  {pendingRequests.length > 0 && (
+                    <span className="inline-flex items-center rounded-full border border-transparent bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5">{pendingRequests.length}</span>
+                  )}
+                </h2>
+                {pendingRequests.length > 0 && (
+                  <button
+                    onClick={toggleSelectAll}
+                    className="flex items-center gap-1.5 text-sm text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)] transition-folia"
+                  >
+                    {selectedRequestIds.size === pendingRequests.length ? (
+                      <><CheckSquare className="h-4 w-4 text-[var(--color-gold)]" /> Desmarcar todos</>
+                    ) : (
+                      <><Square className="h-4 w-4" /> Selecionar todos</>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Bulk Action Bar */}
+              {selectedRequestIds.size > 0 && (
+                <div className="mb-4 p-3 rounded-xl bg-[var(--color-cream)] border border-[var(--color-gold)] flex items-center justify-between gap-3 animate-slide-up">
+                  <span className="text-sm font-medium text-[var(--color-brown-dark)]">
+                    {selectedRequestIds.size} selecionado{selectedRequestIds.size > 1 ? "s" : ""}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      loading={bulkProcessing}
+                      onClick={bulkApprove}
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Aprovar ({selectedRequestIds.size})
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={bulkReject}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Rejeitar ({selectedRequestIds.size})
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {pendingRequests.length === 0 ? (
+                <div className="text-center py-12 text-[var(--color-brown-medium)]">
+                  <CalendarIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Nenhum pedido pendente</p>
+                  <p className="text-sm mt-1">Todos os pedidos foram processados</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className={`p-4 rounded-xl border transition-folia flex items-start gap-3 ${selectedRequestIds.has(request.id) ? "border-[var(--color-gold)] bg-[var(--color-cream)]" : "border-[var(--border)] hover:border-[var(--color-gold)]"}`}
+                    >
+                      {/* Checkbox */}
+                      <button
+                        onClick={() => toggleSelect(request.id)}
+                        className="mt-0.5 flex-shrink-0 text-[var(--color-brown-medium)] hover:text-[var(--color-gold)] transition-folia"
+                      >
+                        {selectedRequestIds.has(request.id) ? (
+                          <CheckSquare className="h-5 w-5 text-[var(--color-gold)]" />
+                        ) : (
+                          <Square className="h-5 w-5" />
+                        )}
+                      </button>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="font-medium text-[var(--color-brown-dark)]">
+                              {getUserName(request.user_id)}
+                            </p>
+                            <span className="inline-flex items-center rounded-full border border-transparent bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5">{LEAVE_TYPE_LABELS[request.type]}</span>
+                          </div>
+                          <div className="text-right text-sm text-[var(--color-brown-medium)]">
+                            <p>{format(new Date(request.start_date), "dd/MM/yyyy", { locale: ptBR })}</p>
+                            <p>→ {format(new Date(request.end_date), "dd/MM/yyyy", { locale: ptBR })}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-[var(--color-brown-medium)]">
+                            {request.days_count} dia{request.days_count > 1 ? "s" : ""}
+                            {request.notes && (
+                              <span className="ml-2 text-xs">• &quot;{request.notes}&quot;</span>
+                            )}
+                          </span>
+
+                          <div className="flex gap-2">
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              loading={processing === request.id}
+                              onClick={() => handleReject(request.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              loading={processing === request.id}
+                              onClick={() => handleApprove(request.id, request.user_id)}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* Approved Requests */}
+          <div>
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold text-[var(--color-brown-dark)] mb-4 flex items-center gap-2">
+                <Check className="h-5 w-5 text-[var(--color-success)]" />
+                Aprovados Recentes
+              </h2>
+
+              {approvedRequests.length === 0 ? (
+                <div className="text-center py-8 text-[var(--color-brown-medium)]">
+                  <p className="text-sm">Nenhum pedido aprovado ainda</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {approvedRequests.slice(0, 10).map((request) => (
+                    <div
+                      key={request.id}
+                      className="p-3 rounded-lg bg-[var(--color-cream)]"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-[var(--color-brown-dark)] text-sm">
+                          {getUserName(request.user_id)}
+                        </p>
+                        <span className="inline-flex items-center rounded-full border border-transparent bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5">Aprovado</span>
+                      </div>
+                      <p className="text-xs text-[var(--color-brown-medium)]">
+                        {format(new Date(request.start_date), "dd/MM")} - {format(new Date(request.end_date), "dd/MM")}
+                        • {request.days_count} dias
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+        </div>
+
+        {/* Team Overview */}
+        <Card className="p-6 mt-8">
+          <h2 className="text-xl font-semibold text-[var(--color-brown-dark)] mb-4">
+            Visão Geral da Equipe
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-[var(--border)]">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Funcionário</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Férias</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Banco de Horas</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profiles.map((p) => {
+                  const userRequests = requests.filter(r => r.user_id === p.id);
+                  const approvedCount = userRequests.filter(r => r.status === "approved").length;
+                  return (
+                    <tr key={p.id} className="border-b border-[var(--border)] hover:bg-[var(--color-cream)]">
+                      <td className="py-3 px-4">
+                        <div>
+                          <p className="font-medium text-[var(--color-brown-dark)]">{p.name}</p>
+                          <p className="text-xs text-[var(--color-brown-medium)]">{p.email}</p>
+                        </div>
+                      </td>
+                      <td className="text-center py-3 px-4">
+                        <span className="text-lg font-semibold text-[var(--color-gold)]">
+                          {p.vacation_balance}
+                        </span>
+                        <span className="text-xs text-[var(--color-brown-medium)]"> dias</span>
+                      </td>
+                      <td className="text-center py-3 px-4">
+                        <span className="text-lg font-semibold text-[var(--color-green-olive)]">
+                          {p.hours_balance}
+                        </span>
+                        <span className="text-xs text-[var(--color-brown-medium)]"> hrs</span>
+                      </td>
+                      <td className="text-center py-3 px-4">
+                        <span className={`inline-flex items-center rounded-full border border-transparent text-xs font-semibold px-2.5 py-0.5 ${p.role === "admin" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-800"}`}>
+                          {p.role === "admin" ? "Admin" : "Funcionário"}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* Calendar */}
+        <Card className="p-6 mt-8">
+          <h2 className="text-xl font-semibold text-[var(--color-brown-dark)] mb-4 flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5 text-[var(--color-gold)]" />
+            Calendário de Férias
+          </h2>
+          <Calendar leaveRequests={requests} profiles={profiles} />
+        </Card>
+      </main>
+
+      {/* Rejection Reason Modal */}
+      <Modal
+        isOpen={rejectingRequestId !== null}
+        onClose={() => { setRejectingRequestId(null); setRejectionReason(""); }}
+        title="Motivo da Rejeição"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--color-brown-medium)]">
+            Informe o motivo da rejeição. O funcionário será notificado por email.
+          </p>
+          <div>
+            <label
+              htmlFor="rejection-reason"
+              className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1"
+            >
+              Motivo <span className="text-[var(--color-error)]">*</span>
+            </label>
+            <textarea
+              id="rejection-reason"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Ex: Férias reprogramadas para maio. Por favor, refaça o pedido no novo período."
+              className="w-full px-3 py-2 rounded-lg border border-[var(--border)] text-[var(--color-brown-dark)] placeholder-[var(--color-brown-medium)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--color-error)] focus:border-transparent resize-none"
+              rows={4}
+              autoFocus
+            />
+          </div>
+          {error && (
+            <p className="text-sm text-[var(--color-error)]">{error}</p>
+          )}
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="ghost"
+              className="flex-1"
+              onClick={() => { setRejectingRequestId(null); setRejectionReason(""); }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              className="flex-1"
+              loading={processing !== null}
+              onClick={confirmReject}
+            >
+              Rejeitar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+    </AdminErrorBoundary>
+  );
+}
