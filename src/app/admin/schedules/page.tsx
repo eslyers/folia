@@ -7,6 +7,7 @@ import { Plus, Clock, Edit2, Trash2, Users, Save, X, Loader2, Check } from "luci
 import { Card, Button, Input, Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
+import { isTenantAdmin } from "@/lib/auth";
 
 interface WorkSchedule {
   id: string;
@@ -91,7 +92,7 @@ export default function SchedulesPage() {
         .single();
 
       const adminProfile = currentProfile as any;
-      if (!adminProfile || adminProfile.role !== "admin") {
+      if (!adminProfile || !isTenantAdmin(adminProfile.role)) {
         setTimeout(() => router.push("/dashboard"), 1500);
         return;
       }

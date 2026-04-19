@@ -49,7 +49,7 @@ const schemaData = {
 const FEATURES = [
   {
     icon: Calendar,
-    title: "Gestão de Férias Inteligente",
+    title: "Gestão de Férias",
     description:
       "Solicite, aprove e acompanhe férias com poucos cliques. Saldo atualizado automaticamente.",
   },
@@ -459,7 +459,7 @@ export default function LandingClient() {
             {[
               { icon: "📊", title: "Planilhas desatualizadas", desc: "Férias expirando sem ninguém perceber, saldos inconsistentes entre abas." },
               { icon: "⏰", title: "Ponto manual com erros", desc: "Colaboradores batendo cartão errado, Horas extras calculadas na mão, falhas constantes." },
-              { icon: "🏖️", title: "Férias sem controle", desc: "堆叠 de pedidos pendentes, gestores sem visibilidade do time, conflitos de escala." },
+              { icon: "🏖️", title: "Férias sem controle", desc: "Pilha de pedidos pendentes, gestores sem visibilidade do time, conflitos de escala." },
             ].map((p) => (
               <div key={p.title} className="bg-[var(--color-cream)] rounded-2xl p-6 text-center">
                 <div className="text-5xl mb-4">{p.icon}</div>

@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Header } from "@/components/Header";
 import { Card, Button } from "@/components/ui";
 import {
   Clock,
@@ -369,7 +368,6 @@ export default function PointPageClient() {
 
   return (
     <div className="min-h-screen bg-[var(--color-cream)]">
-      <Header profile={profile!} />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Big Clock Card */}

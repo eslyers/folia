@@ -194,16 +194,15 @@ export default function LogsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-cream)]">
-      {/* Header */}
-      <div className="bg-white border-b border-[var(--border)] px-6 py-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="min-h-screen bg-[var(--background)]">
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-8 animate-fade-in-up">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)] flex items-center gap-2">
-              <Scroll className="h-6 w-6" />
-              Logs de Sistema
+            <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)] flex items-center gap-2">
+              📜 Logs de Sistema
             </h1>
-            <p className="text-sm text-[var(--color-brown-medium)] mt-1">
+            <p className="text-[var(--color-brown-medium)] mt-1">
               {totalCount.toLocaleString("pt-BR")} registros — últimos 500 eventos
             </p>
           </div>
@@ -218,9 +217,7 @@ export default function LogsPage() {
             </Button>
           </div>
         </div>
-      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Filters */}
         <Card className="p-4 mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">

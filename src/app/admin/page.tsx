@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AdminDashboard } from "./AdminDashboard";
+import { isTenantAdmin } from "@/lib/auth";
 
 export default function AdminPage() {
   return <AdminContent />;
@@ -33,7 +34,7 @@ function AdminContent() {
         .eq("id", user.id)
         .single();
 
-      if (!profileData || (profileData as any).role !== "admin") {
+      if (!profileData || !isTenantAdmin((profileData as any).role)) {
         router.push("/dashboard");
         return;
       }

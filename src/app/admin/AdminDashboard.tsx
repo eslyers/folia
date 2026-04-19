@@ -296,8 +296,8 @@ export function AdminDashboard({ profile, leaveRequests, profiles }: AdminDashbo
         <div className="mb-8 animate-slide-up">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
-                Painel Administrativo
+              <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)] flex items-center gap-2">
+                🏠 Visão Geral
               </h1>
               <p className="text-[var(--color-brown-medium)] mt-1">
                 Gerencie pedidos de folga da sua equipe

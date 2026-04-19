@@ -16,7 +16,7 @@
   --color-gold-vivid: #D4A853;
   
   /* Background Colors */
-  --color-cream: #F5F0E6;
+  --color-cream: #F5F0E8;
   --color-white: #FFFFFF;
   
   /* Text Colors */
@@ -390,4 +390,80 @@ html {
 .badge-info {
   background: color-mix(in srgb, var(--color-gold) 10%, transparent);
   color: var(--color-gold);
+}
+
+/* =====================================================
+   DARK THEME SUPPORT
+   ===================================================== */
+
+[data-theme="dark"] {
+  /* Dark surfaces - override the JS-set colors for components */
+  --color-surface: #1E1E1E;
+  --card-bg: #1E1E1E;
+  --color-white: #1E1E1E;
+  --color-cream: #121212;
+  --background: #121212;
+  
+  /* Dark text colors */
+  --foreground: #F5F5F5;
+  --color-brown-dark: #F5F5F5;
+  --color-brown-medium: #A0A0A0;
+  
+  /* Dark borders */
+  --border: #333333;
+  
+  /* Dark shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
+  --shadow-xl: 0 20px 25px rgba(0,0,0,0.6);
+}
+
+/* Apply dark theme when data-theme=dark or when using dark color scheme */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-surface: #1E1E1E;
+    --card-bg: #1E1E1E;
+    --color-white: #1E1E1E;
+    --color-cream: #121212;
+    --background: #121212;
+    --foreground: #F5F5F5;
+    --color-brown-dark: #F5F5F5;
+    --color-brown-medium: #A0A0A0;
+    --border: #333333;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
+    --shadow-xl: 0 20px 25px rgba(0,0,0,0.6);
+  }
+}
+
+/* Dark theme component overrides */
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-cream,
+[data-theme="dark"] [class*="bg-"][class*="cream"],
+[data-theme="dark"] [class*="bg-"][class*="white"] {
+  background-color: var(--color-surface) !important;
+}
+
+[data-theme="dark"] .border,
+[data-theme="dark"] [class*="border-"] {
+  border-color: var(--border) !important;
+}
+
+/* Dark scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #1E1E1E;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #444444;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #555555;
+}
+
+[data-theme="dark"] * {
+  scrollbar-color: #444444 #1E1E1E;
 }

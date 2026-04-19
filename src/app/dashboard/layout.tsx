@@ -6,9 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import type { Profile } from "@/lib/types";
-import { isTenantAdmin } from "@/lib/auth";
 
-export default function AdminLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -34,8 +33,8 @@ export default function AdminLayout({
         .eq("id", user.id)
         .single() as { data: Profile | null };
 
-      if (!profileData || !isTenantAdmin(profileData.role)) {
-        router.push("/dashboard");
+      if (!profileData) {
+        router.push("/login");
         return;
       }
 

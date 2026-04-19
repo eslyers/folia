@@ -256,23 +256,21 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-cream)]">
-      {/* Header */}
-      <div className="bg-white border-b border-[var(--border)] px-6 py-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="min-h-screen bg-[var(--background)]">
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8 animate-fade-in-up">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)] flex items-center gap-2">
-              <DollarSign className="h-6 w-6" />
-              Gestão Financeira
+            <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)] flex items-center gap-2">
+              💰 Gestão Financeira
             </h1>
-            <p className="text-sm text-[var(--color-brown-medium)] mt-1">
+            <p className="text-[var(--color-brown-medium)] mt-1">
               Visão geral de receitas, planos e inadimplência
             </p>
           </div>
         </div>
-      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Messages */}
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm flex items-center gap-2">

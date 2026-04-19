@@ -8,6 +8,7 @@ import { ptBR } from "date-fns/locale";
 
 import { Card } from "@/components/ui";
 import { Search, Download, FileText, User, Settings, Calendar, Clock } from "lucide-react";
+import { isTenantAdmin } from "@/lib/auth";
 
 interface AuditLog {
   id: string;
@@ -69,7 +70,7 @@ export default function AuditPageContent() {
         .eq("id", user.id)
         .single() as { data: ProfileData | null };
 
-      if (!profileData || profileData.role !== "admin") {
+      if (!profileData || !isTenantAdmin(profileData.role)) {
         router.push("/dashboard");
         return;
       }

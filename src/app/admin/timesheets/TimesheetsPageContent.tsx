@@ -8,6 +8,7 @@ import { Card, Button } from "@/components/ui";
 import { Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
+import { isTenantAdmin } from "@/lib/auth";
 import { format, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -87,7 +88,7 @@ export default function TimesheetsPageContent() {
         .single();
 
       const adminProfile = currentProfile as any;
-      if (!adminProfile || adminProfile.role !== "admin") {
+      if (!adminProfile || !isTenantAdmin(adminProfile.role)) {
         setTimeout(() => router.push("/dashboard"), 1500);
         return;
       }

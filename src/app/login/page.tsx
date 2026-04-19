@@ -54,7 +54,10 @@ export default function LoginPage() {
       }
 
       // Full page redirect
-      window.location.href = (profile as any)?.role === "admin" ? "/admin" : "/dashboard";
+      // Redirect based on role
+      const userRole = (profile as any)?.role;
+      const isAdmin = userRole === 'master_admin' || userRole === 'tenant_admin';
+      window.location.href = isAdmin ? "/admin" : "/dashboard";
     }
   };
 
@@ -116,8 +119,8 @@ export default function LoginPage() {
               className={clsx(
                 "flex-1 py-2 rounded-md text-sm font-medium transition-all duration-200",
                 mode === "login"
-                  ? "bg-white text-[var(--brown-dark)] shadow-sm"
-                  : "text-[var(--brown-medium)] hover:text-[var(--brown-dark)]"
+                  ? "bg-[var(--color-surface)] text-[var(--color-brown-dark)] shadow-sm"
+                  : "text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)]"
               )}
             >
               Entrar
@@ -128,8 +131,8 @@ export default function LoginPage() {
               className={clsx(
                 "flex-1 py-2 rounded-md text-sm font-medium transition-all duration-200",
                 mode === "signup"
-                  ? "bg-white text-[var(--brown-dark)] shadow-sm"
-                  : "text-[var(--brown-medium)] hover:text-[var(--brown-dark)]"
+                  ? "bg-[var(--color-surface)] text-[var(--color-brown-dark)] shadow-sm"
+                  : "text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)]"
               )}
             >
               Criar conta

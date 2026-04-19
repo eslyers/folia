@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar as CalendarIcon, Users } from "lucide-react";
-import { Header } from "@/components/Header";
 import { Card } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { LEAVE_TYPE_LABELS } from "@/lib/types";
@@ -147,9 +146,8 @@ export default function TeamPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-        <Header profile={profile} />
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8 animate-fade-in-up">
             <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
