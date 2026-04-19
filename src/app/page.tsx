@@ -12,8 +12,13 @@ export default async function Home() {
       .eq("id", user.id)
       .single();
 
-    redirect(profile?.role === "admin" ? "/admin" : "/dashboard");
+    if (profile?.role === "master_admin" || profile?.role === "tenant_admin") {
+      redirect("/admin");
+    } else {
+      redirect("/dashboard");
+    }
   }
 
-  redirect("/login");
+  // Not logged in → landing page
+  redirect("/landing");
 }
