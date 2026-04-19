@@ -295,15 +295,18 @@ export function AdminDashboard({ profile, leaveRequests, profiles }: AdminDashbo
         )}
 
         {/* Welcome */}
-        <div className="mb-8 animate-slide-up flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
-              Painel Administrativo
-            </h1>
-            <p className="text-[var(--color-brown-medium)] mt-1">
-              Gerencie pedidos de folga da sua equipe
-            </p>
+        <div className="mb-8 animate-slide-up">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
+                Painel Administrativo
+              </h1>
+              <p className="text-[var(--color-brown-medium)] mt-1">
+                Gerencie pedidos de folga da sua equipe
+              </p>
+            </div>
           </div>
+          <div className="flex flex-wrap gap-3">
           <a
             href="/admin/notifications"
             className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-[var(--color-gold)] to-[var(--color-gold-vivid)] px-6 py-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
@@ -324,6 +327,47 @@ export function AdminDashboard({ profile, leaveRequests, profiles }: AdminDashbo
               <span className="font-bold text-lg group-hover:translate-x-1 transition-transform">Histórico</span>
             </div>
           </a>
+          <a
+            href="/admin/saas"
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500 to-purple-700 px-6 py-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-purple-700 opacity-90 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex items-center gap-3 text-white">
+              <span className="text-2xl group-hover:animate-bounce">🏢</span>
+              <span className="font-bold text-lg group-hover:translate-x-1 transition-transform">SaaS</span>
+            </div>
+          </a>
+          <a
+            href="/admin/schedules"
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 px-6 py-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-700 opacity-90 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex items-center gap-3 text-white">
+              <span className="text-2xl group-hover:animate-bounce">⏰</span>
+              <span className="font-bold text-lg group-hover:translate-x-1 transition-transform">Escalas</span>
+            </div>
+          </a>
+          <a
+            href="/admin/timesheets"
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-green-500 to-green-700 px-6 py-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-green-700 opacity-90 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex items-center gap-3 text-white">
+              <span className="text-2xl group-hover:animate-bounce">📊</span>
+              <span className="font-bold text-lg group-hover:translate-x-1 transition-transform">Fechamento</span>
+            </div>
+          </a>
+          <a
+            href="/admin/team/point"
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-orange-500 to-orange-700 px-6 py-3 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-700 opacity-90 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex items-center gap-3 text-white">
+              <span className="text-2xl group-hover:animate-bounce">🕐</span>
+              <span className="font-bold text-lg group-hover:translate-x-1 transition-transform">Ponto</span>
+            </div>
+          </a>
+          </div>
         </div>
 
         {/* Stats */}

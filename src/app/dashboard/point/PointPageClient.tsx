@@ -377,10 +377,10 @@ export default function PointPageClient() {
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-gold)]/5 via-transparent to-transparent pointer-events-none" />
           <div className="relative text-center py-8">
             {/* Live Time */}
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <Clock className="w-8 h-8 text-[var(--color-gold)]" />
+            <div className="flex items-center justify-center gap-2 mb-4 sm:mb-6">
+              <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-[var(--color-gold)]" />
               <span
-                className="text-6xl font-bold text-[var(--color-brown-dark)] font-mono tracking-wider"
+                className="text-4xl sm:text-5xl md:text-6xl font-bold text-[var(--color-brown-dark)] font-mono tracking-wider"
                 style={{ fontFamily: "var(--font-playfair)" }}
               >
                 {timeString}
@@ -409,7 +409,7 @@ export default function PointPageClient() {
 
             {/* Today's Timestamps */}
             {todayEntry && (
-              <div className="grid grid-cols-4 gap-4 mb-8 max-w-md mx-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8 max-w-md mx-auto">
                 <div className="text-center">
                   <p className="text-xs text-[var(--color-brown-medium)] uppercase tracking-wide mb-1">
                     Entrada
@@ -467,7 +467,7 @@ export default function PointPageClient() {
             </h2>
           </div>
           <div className="p-6">
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4">
               {weekEntries.map((day) => (
                 <div
                   key={day.date}
