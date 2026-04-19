@@ -4,7 +4,7 @@ import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
 export async function POST(request: Request) {
   try {
-    const { email, password, name, role, department, position, hire_date, vacation_balance, hours_balance } = await request.json();
+    const { email, password, name, role, department, position, hire_date, vacation_balance, hours_balance, manager_id, schedule_id } = await request.json();
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -64,6 +64,8 @@ export async function POST(request: Request) {
       hire_date: hire_date || null,
       vacation_balance: vacation_balance || 30,
       hours_balance: hours_balance || 0,
+      manager_id: manager_id || null,
+      schedule_id: schedule_id || null,
     });
 
     if (profileError) {
@@ -101,7 +103,8 @@ export async function POST(request: Request) {
 // Update user
 export async function PUT(request: Request) {
   try {
-    const { id, name, role, department, position, hire_date, vacation_balance, hours_balance } = await request.json();
+    const { id, name, role, department, position, hire_date, vacation_balance, hours_balance, manager_id, schedule_id } = await request.json();
+
 
     if (!id) {
       return NextResponse.json(
@@ -110,7 +113,9 @@ export async function PUT(request: Request) {
       );
     }
 
+
     const supabase = await createClient();
+
 
     const { error } = await supabase
       .from("profiles")
@@ -122,6 +127,8 @@ export async function PUT(request: Request) {
         hire_date: hire_date || null,
         vacation_balance: vacation_balance,
         hours_balance: hours_balance,
+        manager_id: manager_id || null,
+        schedule_id: schedule_id || null,
       })
       .eq("id", id);
 

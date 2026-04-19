@@ -43,16 +43,31 @@
 - **Status:** 🔴 Não iniciado
 
 ### ✅ 6. Banco de Horas Automático
-- [ ] Cadastro de horas extras pelo employee
-- [ ] Cálculo automático para dias de folga
-- [ ] Histórico de entradas/saídas
-- **Status:** 🔴 Não iniciado
+- [x] Cadastro de horas extras pelo employee
+- [x] Cálculo automático para dias de folga
+- [x] Histórico de entradas/saídas
+- **Status:** ✅ Concluído (Developer) — 18/04/2026
 
 ### ✅ 7. Histórico de Alterações
-- [ ] Criar tabela `audit_log`
-- [ ] Registrar: criação/edição de pedidos, mudanças de saldo
-- [ ] UI admin: visualizar histórico
-- **Status:** 🔴 Não iniciado
+- [x] Criar tabela `audit_log`
+- [x] Registrar: criação/edição de pedidos, mudanças de saldo
+- [x] UI admin: visualizar histórico
+- **Status:** ✅ Concluído (Developer) — 18/04/2026
+
+---
+
+### ✅ 13. Controle de Ponto (Time Tracking)
+- [x] Migration 009: `time_entries` (clock_in, clock_out, lunch_start/end, total_hours, overtime_hours)
+- [x] Migration 010: `monthly_timesheets` (fechamento mensal, overtime_pending_approval, approved_overtime_hours)
+- [x] Migration 011: `work_schedules` (name, daily_hours, monday..sunday bool, tolerance_minutes) + `manager_id`/`schedule_id` em profiles
+- [x] RPCs: `calculate_overtime`, `get_user_overtime_summary`, `get_team_timesheets`, `upsert_monthly_timesheet`
+- [x] UI Employee: /dashboard/point (batida de ponto, relógio ao vivo, semana, saldo extras)
+- [x] UI Gestor: /admin/timesheets (aprovação horas extras da equipe por mês)
+- [x] UI Admin: /admin/team/point (visão global, tabela, CSV export)
+- [x] APIs existentes: entries, overtime, team, timesheets, schedules (front-end + API já implementados)
+- [x] Regras: cálculo de horas extras baseado em schedule daily_hours, aprovação por dia ou bulk
+- [x] Seed schedules: 8h Padrão CLT, 6h Reduzido, Horário Flexível
+- **Status:** ✅ Concluído (Developer) — 18/04/2026
 
 ---
 
@@ -65,9 +80,13 @@
 - **Status:** ✅ Concluído
 
 ### ✅ 9. Integração Slack/Teams
-- [ ] Webhook para notificações
+- [x] Webhook para notificações (Slack + Teams)
+- [x] Tabela webhook_configs com suporte a múltiplos eventos
+- [x] API de webhook (GET/POST/DELETE) em /api/webhooks
+- [x] Teste de webhook em /api/webhooks/test
+- [x] Notificações automáticas ao criar/aprovar/rejeitar/cancelar pedidos
 - [ ] Slash commands (/folga, /saldo)
-- **Status:** 🔴 Não iniciado
+- **Status:** ✅ Concluído (Developer) — 18/04/2026
 
 ### ✅ 10. OAuth Google/GitHub
 - [ ] Configurar OAuth providers no Supabase
@@ -80,9 +99,15 @@
 - **Status:** 🔴 Não iniciado
 
 ### ✅ 12. Multi-empresa
-- [ ] Estrutura multi-tenant
-- [ ] Cada empresa com policies separadas
-- **Status:** 🔴 Não iniciado
+- [x] Tabela tenants com slug, domain, settings
+- [x] Tenant default (UUID fixo 00000000-...) para compatibilidade
+- [x] tenant_id em todas as tabelas (profiles, leave_requests, policies, hour_entries, audit_log, notifications)
+- [x] Migrations: 006_add_tenants.sql, 007_add_tenant_id.sql, 008_add_webhook_configs.sql
+- [x] RLS policies atualizadas para isolamento por tenant
+- [x] Dashboard Admin SaaS em /admin/saas/page.tsx
+- [x] Funções helper: get_user_tenant, is_tenant_admin, is_tenant_active
+- [x] Onboarding: trigger handle_new_user já atribui tenant_id automaticamente
+- **Status:** ✅ Concluído (Developer) — 18/04/2026
 
 ---
 
@@ -91,3 +116,6 @@
 | Data | Mudança |
 |------|---------|
 | 17/04/2026 | Criado backlog |
+| 18/04/2026 | Slack/Teams webhooks (TASK #9) concluído |
+| 18/04/2026 | Multi-tenant SaaS (TASK #12) concluído |
+| 18/04/2026 | Controle de Ponto (TASK #13) concluído |

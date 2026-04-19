@@ -30,6 +30,9 @@ export interface Profile {
   phone?: string | null;
   emergency_contact?: string | null;
   hire_date?: string | null;
+  tenant_id?: string;
+  manager_id?: string | null;
+  schedule_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -47,6 +50,7 @@ export interface LeaveRequest {
   rejection_reason?: string | null;
   reviewed_by?: string | null;
   reviewed_at?: string | null;
+  tenant_id?: string;
   created_at: string;
   updated_at: string;
   profile?: Profile;
@@ -61,6 +65,7 @@ export interface Policy {
   max_consecutive_days: number;
   min_days_notice: number;
   is_active: boolean;
+  tenant_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -126,6 +131,129 @@ export interface NotificationEmail {
   to: string;
   subject: string;
   html: string;
+}
+
+// =====================================================
+// TENANT TYPES (Multi-tenant SaaS)
+// =====================================================
+
+export interface Tenant {
+  id: string;
+  name: string;
+  domain: string | null;
+  slug: string;
+  settings: Record<string, any>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenantStats {
+  employee_count: number;
+  pending_requests: number;
+  approved_requests: number;
+  total_requests: number;
+}
+
+export interface WebhookConfig {
+  id: string;
+  tenant_id: string;
+  name: string;
+  channel: "slack" | "teams";
+  webhook_url: string;
+  events: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// =====================================================
+// TIME TRACKING TYPES
+// =====================================================
+
+export interface TimeEntry {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  date: string;
+  clock_in: string | null;
+  clock_out: string | null;
+  lunch_start: string | null;
+  lunch_end: string | null;
+  total_hours: number;
+  overtime_hours: number;
+  status: "open" | "closed" | "approved";
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkSchedule {
+  id: string;
+  tenant_id: string;
+  name: string;
+  daily_hours: number;
+  monday: boolean;
+  tuesday: boolean;
+  wednesday: boolean;
+  thursday: boolean;
+  friday: boolean;
+  saturday: boolean;
+  sunday: boolean;
+  tolerance_minutes: number;
+  start_work: string;
+  end_work: string;
+  lunch_duration_minutes: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MonthlyTimesheet {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  month: string;
+  total_worked_hours: number;
+  total_overtime_hours: number;
+  approved_overtime_hours: number;
+  overtime_pending_approval: number;
+  status: "open" | "pending_approval" | "approved" | "rejected";
+  approved_by?: string | null;
+  approved_at?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OvertimeSummary {
+  total_overtime_hours: number;
+  pending_hours: number;
+  approved_hours: number;
+  total_worked_hours: number;
+  expected_monthly_hours: number;
+  working_days_in_month: number;
+  daily_hours: number;
+  formatted: {
+    total: string;
+    pending: string;
+    approved: string;
+    expected: string;
+  };
+}
+
+export interface TeamTimesheetMember {
+  user_id: string;
+  user_name: string;
+  department: string | null;
+  schedule_name: string;
+  daily_hours: number;
+  total_worked_hours: number;
+  total_overtime_hours: number;
+  approved_overtime_hours: number;
+  overtime_pending_approval: number;
+  expected_monthly_hours: number;
+  status: "open" | "approved" | "rejected";
 }
 
 // =====================================================

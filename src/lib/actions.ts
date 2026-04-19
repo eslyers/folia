@@ -6,6 +6,121 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { LeaveType } from "@/lib/types";
 
+// =====================================================
+// WEBHOOK HELPERS
+// =====================================================
+
+async function sendWebhookNotification(
+  tenantId: string,
+  event: string,
+  payload: Record<string, any>
+) {
+  try {
+    // Get active webhooks for this tenant and event
+    const supabase = await createClient();
+    const { data: webhooks } = await supabase
+      .from("webhook_configs")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .eq("is_active", true);
+
+    if (!webhooks || webhooks.length === 0) return;
+
+    for (const webhook of webhooks) {
+      if (!webhook.events.includes(event)) continue;
+
+      // Format message based on channel
+      let message: any;
+      if (webhook.channel === "slack") {
+        const msgs: Record<string, string> = {
+          leave_request_created: `🎉 *Novo Pedido de Férias*\n👤 *${payload.user_name}*\n📅 De ${payload.start_date} até ${payload.end_date}\n📝 ${payload.days_count} dias`,
+          leave_request_approved: `✅ *Pedido Aprovado*\n👤 *${payload.user_name}*\n📅 De ${payload.start_date} até ${payload.end_date}\n✅ Aprovado por ${payload.approver_name}`,
+          leave_request_rejected: `❌ *Pedido Rejeitado*\n👤 *${payload.user_name}*\n📅 De ${payload.start_date} até ${payload.end_date}\n📝 Motivo: ${payload.rejection_reason || "Não informado"}`,
+          leave_request_cancelled: `ℹ️ *Pedido Cancelado*\n👤 *${payload.user_name}*\n📅 De ${payload.start_date} até ${payload.end_date}`,
+        };
+        message = { text: msgs[event] || `📢 FOLIA: ${event}` };
+      } else {
+        const cards: Record<string, any> = {
+          leave_request_created: {
+            type: "message",
+            attachments: [{
+              contentType: "application/vnd.microsoft.card.adaptive",
+              content: {
+                type: "AdaptiveCard",
+                body: [
+                  { type: "TextBlock", size: "Large", weight: "Bolder", text: "🎉 Novo Pedido de Férias" },
+                  { type: "FactSet", facts: [
+                    { title: "Funcionário", value: payload.user_name },
+                    { title: "Período", value: `${payload.start_date} até ${payload.end_date}` },
+                    { title: "Dias", value: String(payload.days_count) },
+                  ]},
+                ],
+              },
+            }],
+          },
+          leave_request_approved: {
+            type: "message",
+            attachments: [{
+              contentType: "application/vnd.microsoft.card.adaptive",
+              content: {
+                type: "AdaptiveCard",
+                body: [
+                  { type: "TextBlock", size: "Large", weight: "Bolder", text: "✅ Pedido Aprovado" },
+                  { type: "FactSet", facts: [
+                    { title: "Funcionário", value: payload.user_name },
+                    { title: "Aprovado por", value: payload.approver_name },
+                  ]},
+                ],
+              },
+            }],
+          },
+          leave_request_rejected: {
+            type: "message",
+            attachments: [{
+              contentType: "application/vnd.microsoft.card.adaptive",
+              content: {
+                type: "AdaptiveCard",
+                body: [
+                  { type: "TextBlock", size: "Large", weight: "Bolder", text: "❌ Pedido Rejeitado" },
+                  { type: "FactSet", facts: [
+                    { title: "Funcionário", value: payload.user_name },
+                    { title: "Motivo", value: payload.rejection_reason || "Não informado" },
+                  ]},
+                ],
+              },
+            }],
+          },
+          leave_request_cancelled: {
+            type: "message",
+            attachments: [{
+              contentType: "application/vnd.microsoft.card.adaptive",
+              content: {
+                type: "AdaptiveCard",
+                body: [
+                  { type: "TextBlock", size: "Large", weight: "Bolder", text: "ℹ️ Pedido Cancelado" },
+                  { type: "FactSet", facts: [
+                    { title: "Funcionário", value: payload.user_name },
+                  ]},
+                ],
+              },
+            }],
+          },
+        };
+        message = cards[event] || { type: "message", text: `📢 FOLIA: ${event}` };
+      }
+
+      // Send webhook (fire and forget)
+      fetch(webhook.webhook_url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(message),
+      }).catch(err => console.error("[Webhook] Failed to send:", err));
+    }
+  } catch (err) {
+    console.error("[Webhook] Error:", err);
+  }
+}
+
 // H4: Zod validation schemas
 export const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -184,13 +299,15 @@ export async function createLeaveRequest(formData: FormData) {
   }
 
   // Check balance for vacation
+  let userProfile: any = null;
   if (type === "vacation") {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("vacation_balance")
+      .select("vacation_balance, tenant_id, name")
       .eq("id", user.id)
       .single();
 
+    userProfile = profile;
     if (profile && profile.vacation_balance < days_count) {
       return { error: `Saldo de férias insuficiente. Você tem ${profile.vacation_balance} dias.` };
     }
@@ -217,6 +334,25 @@ export async function createLeaveRequest(formData: FormData) {
     p_old_value: null,
     p_new_value: JSON.stringify({ type, start_date, end_date, days_count }),
   });
+
+  // Send webhook notification for new leave request
+  if (!userProfile) {
+    const { data: up } = await supabase
+      .from("profiles")
+      .select("tenant_id, name")
+      .eq("id", user.id)
+      .single();
+    userProfile = up;
+  }
+  if (userProfile?.tenant_id) {
+    sendWebhookNotification(userProfile.tenant_id, "leave_request_created", {
+      user_name: userProfile.name || "Funcionário",
+      start_date,
+      end_date,
+      days_count,
+      type,
+    });
+  }
 
   revalidatePath("/dashboard");
   return { success: true };
@@ -261,7 +397,7 @@ export async function approveLeaveRequest(requestId: string) {
   // Check admin
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, tenant_id, name")
     .eq("id", user.id)
     .single();
 
@@ -272,7 +408,7 @@ export async function approveLeaveRequest(requestId: string) {
   // Get request details
   const { data: request } = await supabase
     .from("leave_requests")
-    .select("*, profile:profiles(vacation_balance, hours_balance)")
+    .select("*, profile:profiles(vacation_balance, hours_balance, tenant_id, name)")
     .eq("id", requestId)
     .single();
 
@@ -322,6 +458,18 @@ export async function approveLeaveRequest(requestId: string) {
     p_new_value: JSON.stringify({ status: "approved", ...newBalance }),
   });
 
+  // Send webhook notification
+  const requestTenantId = request.profile?.tenant_id || profile?.tenant_id;
+  if (requestTenantId) {
+    sendWebhookNotification(requestTenantId, "leave_request_approved", {
+      user_name: request.profile?.name || "Funcionário",
+      start_date: request.start_date,
+      end_date: request.end_date,
+      days_count: request.days_count,
+      approver_name: profile?.name || "Admin",
+    });
+  }
+
   revalidatePath("/dashboard");
   revalidatePath("/admin");
   return { success: true };
@@ -334,20 +482,20 @@ export async function rejectLeaveRequest(requestId: string, rejectionReason?: st
   if (!user) return { error: "Not authenticated" };
 
   // Check admin
-  const { data: profile } = await supabase
+  const { data: adminProfile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, tenant_id, name")
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "admin") {
+  if (adminProfile?.role !== "admin") {
     return { error: "Apenas admins podem rejeitar pedidos" };
   }
 
   // Get request details for audit
   const { data: request } = await supabase
     .from("leave_requests")
-    .select("*")
+    .select("*, profile:profiles(tenant_id, name)")
     .eq("id", requestId)
     .single();
 
@@ -376,6 +524,18 @@ export async function rejectLeaveRequest(requestId: string, rejectionReason?: st
     p_new_value: JSON.stringify({ status: "rejected", rejection_reason: rejectionReason }),
   });
 
+  // Send webhook notification
+  const requestTenantId = request.profile?.tenant_id || adminProfile?.tenant_id;
+  if (requestTenantId) {
+    sendWebhookNotification(requestTenantId, "leave_request_rejected", {
+      user_name: request.profile?.name || "Funcionário",
+      start_date: request.start_date,
+      end_date: request.end_date,
+      days_count: request.days_count,
+      rejection_reason: rejectionReason,
+    });
+  }
+
   revalidatePath("/dashboard");
   revalidatePath("/admin");
   return { success: true };
@@ -387,10 +547,10 @@ export async function cancelLeaveRequest(requestId: string) {
 
   if (!user) return { error: "Not authenticated" };
 
-  // Get current request for audit
+  // Get current request for audit (include profile for tenant_id)
   const { data: request } = await supabase
     .from("leave_requests")
-    .select("*")
+    .select("*, profile:profiles(tenant_id, name)")
     .eq("id", requestId)
     .single();
 
@@ -412,6 +572,17 @@ export async function cancelLeaveRequest(requestId: string) {
       p_old_value: JSON.stringify({ status: request.status }),
       p_new_value: JSON.stringify({ status: "cancelled" }),
     });
+
+    // Send webhook notification
+    const requestTenantId = request.profile?.tenant_id;
+    if (requestTenantId) {
+      sendWebhookNotification(requestTenantId, "leave_request_cancelled", {
+        user_name: request.profile?.name || "Funcionário",
+        start_date: request.start_date,
+        end_date: request.end_date,
+        days_count: request.days_count,
+      });
+    }
   }
 
   revalidatePath("/dashboard");

@@ -9,6 +9,7 @@ import {
   Settings,
   Home,
   ChevronRight,
+  Clock,
 } from "lucide-react";
 import { clsx } from "clsx";
 import type { Profile } from "@/lib/types";
@@ -33,6 +34,21 @@ const navItems = [
     label: "Equipe",
     href: "/admin#team",
     icon: Users,
+  },
+  {
+    label: "Fechamento",
+    href: "/admin/timesheets",
+    icon: BarChart3,
+  },
+  {
+    label: "Ponto Equipe",
+    href: "/admin/team/point",
+    icon: Clock,
+  },
+  {
+    label: "Escalas",
+    href: "/admin/schedules",
+    icon: CalendarCheck,
   },
   {
     label: "Relatórios",

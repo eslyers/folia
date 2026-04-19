@@ -49,29 +49,27 @@ export async function GET(request: Request) {
     // Header row
     const csvRows: string[] = [];
     
-    // CSV header
-    csvRows.push("Nome,Email,Departamento,Cargo,Dias de Férias,Saldo Horas,Hire Date");
+    // Task #8: CSV with nome, email, vacation_balance, hours_balance, total_leave_requests
+    csvRows.push("Nome,Email,Dias de Ferias,Saldo Horas,Total Pedidos");
 
-    // For each profile, calculate leave history
+    // For each profile, calculate total leave requests
     for (const p of profiles) {
       const empRequests = leaveRequests.filter((r) => r.user_id === p.id);
+      const totalRequests = empRequests.length;
       
-      // Format: name, email, dept, position, vacation_balance, hours_balance, hire_date
       const row = [
         escapeCsv(p.name),
         escapeCsv(p.email),
-        escapeCsv(p.department || ""),
-        escapeCsv(p.position || ""),
         p.vacation_balance,
         p.hours_balance,
-        p.hire_date || "",
+        totalRequests,
       ];
       csvRows.push(row.join(","));
     }
 
     // Add separator and leave request history section
     csvRows.push(""); // blank line
-    csvRows.push("# Histórico de Pedidos de Férias");
+    csvRows.push("# Historico de Pedidos de Ferias");
     csvRows.push("Employee,Type,Start Date,End Date,Days,Status,Rejection Reason,Created");
 
     for (const lr of leaveRequests) {

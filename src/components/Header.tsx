@@ -59,14 +59,38 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
                     </span>
                   </Link>
                   <Link
-                    href="/admin"
+                    href="/admin/timesheets"
                     className="px-4 py-2 text-sm font-medium text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]/50 rounded-lg transition-all duration-200 group"
                   >
                     <span className="relative inline-flex items-center">
                       <span className="absolute -inset-0.5 bg-[var(--color-gold)]/20 rounded-lg group-hover:bg-[var(--color-gold)]/30 blur-sm" />
                       <span className="relative inline-flex items-center">
                         <span className="h-4 w-4 mr-2 text-[var(--color-brown-medium)] group-hover:text-[var(--color-brown-dark)]">📊</span>
-                        Dashboard Admin
+                        Fechamento
+                      </span>
+                    </span>
+                  </Link>
+                  <Link
+                    href="/admin/team/point"
+                    className="px-4 py-2 text-sm font-medium text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]/50 rounded-lg transition-all duration-200 group"
+                  >
+                    <span className="relative inline-flex items-center">
+                      <span className="absolute -inset-0.5 bg-[var(--color-green-olive)]/20 rounded-lg group-hover:bg-[var(--color-green-olive)]/30 blur-sm" />
+                      <span className="relative inline-flex items-center">
+                        <span className="h-4 w-4 mr-2 text-[var(--color-brown-medium)] group-hover:text-[var(--color-brown-dark)]">⏰</span>
+                        Ponto
+                      </span>
+                    </span>
+                  </Link>
+                  <Link
+                    href="/admin/schedules"
+                    className="px-4 py-2 text-sm font-medium text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]/50 rounded-lg transition-all duration-200 group"
+                  >
+                    <span className="relative inline-flex items-center">
+                      <span className="absolute -inset-0.5 bg-[var(--color-purple)]/20 rounded-lg group-hover:bg-[var(--color-purple)]/30 blur-sm" />
+                      <span className="relative inline-flex items-center">
+                        <span className="h-4 w-4 mr-2 text-[var(--color-brown-medium)] group-hover:text-[var(--color-brown-dark)]">🗓️</span>
+                        Escalas
                       </span>
                     </span>
                   </Link>
@@ -81,6 +105,18 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
                   <span className="relative inline-flex items-center">
                     <span className="h-4 w-4 mr-2 text-[var(--color-brown-medium)] group-hover:text-[var(--color-brown-dark)]">📋</span>
                     Meus Pedidos
+                  </span>
+                </span>
+              </Link>
+              <Link
+                href="/dashboard/point"
+                className="px-4 py-2 text-sm font-medium text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]/50 rounded-lg transition-all duration-200 group"
+              >
+                <span className="relative inline-flex items-center">
+                  <span className="absolute -inset-0.5 bg-[var(--color-green-olive)]/20 rounded-lg group-hover:bg-[var(--color-green-olive)]/30 blur-sm" />
+                  <span className="relative inline-flex items-center">
+                    <span className="h-4 w-4 mr-2 text-[var(--color-brown-medium)] group-hover:text-[var(--color-brown-dark)]">⏰</span>
+                    Ponto
                   </span>
                 </span>
               </Link>
@@ -218,7 +254,18 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
                     Calendário da Equipe
                   </span>
                 </Link>
-                
+
+                <Link
+                  href="/dashboard/point"
+                  className="px-4 py-3 text-sm font-medium text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]/50 rounded-lg transition-all duration-200 group relative overflow-hidden"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-[var(--color-green-olive)]/10 to-[var(--color-green-olive)]/5 group-hover:[from-[var(--color-green-olive)]/20] group-hover:[to-[var(--color-green-olive)]/10] transition-all duration-200" />
+                  <span className="relative inline-flex items-center gap-2">
+                    <span className="w-4 h-4">⏰</span>
+                    Meu Ponto
+                  </span>
+                </Link>
+
                 {profile.role === "admin" && (
                   <>
                     <Link
@@ -231,12 +278,45 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
                         Funcionários
                       </span>
                     </Link>
-                    
+
+                    <Link
+                      href="/admin/timesheets"
+                      className="px-4 py-3 text-sm font-medium text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]/50 rounded-lg transition-all duration-200 group relative overflow-hidden"
+                    >
+                      <span className="absolute inset-0 bg-gradient-to-r from-[var(--color-gold)]/10 to-[var(--color-gold)]/5 group-hover:[from-[var(--color-gold)]/20] group-hover:[to-[var(--color-gold)]/10] transition-all duration-200" />
+                      <span className="relative inline-flex items-center gap-2">
+                        <span className="w-4 h-4">📊</span>
+                        Fechamento Mensal
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/admin/team/point"
+                      className="px-4 py-3 text-sm font-medium text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]/50 rounded-lg transition-all duration-200 group relative overflow-hidden"
+                    >
+                      <span className="absolute inset-0 bg-gradient-to-r from-[var(--color-green-olive)]/10 to-[var(--color-green-olive)]/5 group-hover:[from-[var(--color-green-olive)]/20] group-hover:[to-[var(--color-green-olive)]/10] transition-all duration-200" />
+                      <span className="relative inline-flex items-center gap-2">
+                        <span className="w-4 h-4">⏰</span>
+                        Ponto Equipe
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/admin/schedules"
+                      className="px-4 py-3 text-sm font-medium text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]/50 rounded-lg transition-all duration-200 group relative overflow-hidden"
+                    >
+                      <span className="absolute inset-0 bg-gradient-to-r from-[var(--color-purple)]/10 to-[var(--color-purple)]/5 group-hover:[from-[var(--color-purple)]/20] group-hover:[to-[var(--color-purple)]/10] transition-all duration-200" />
+                      <span className="relative inline-flex items-center gap-2">
+                        <span className="w-4 h-4">🗓️</span>
+                        Escalas
+                      </span>
+                    </Link>
+
                     <Link
                       href="/admin"
                       className="px-4 py-3 text-sm font-medium text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]/50 rounded-lg transition-all duration-200 group relative overflow-hidden"
                     >
-                      <span className="absolute inset-0 bg-gradient-to-r from-[var(--color-gold)]/10 to-[var(--color-gold)]/5 group-hover:[from-[var(--color-gold)]/20] group-hover:[to-[var(--color-gold)]/10] transition-all duration-200" />
+                      <span className="absolute inset-0 bg-gradient-to-r from-[var(--color-blue)]/10 to-[var(--color-blue)]/5 group-hover:[from-[var(--color-blue)]/20] group-hover:[to-[var(--color-blue)]/10] transition-all duration-200" />
                       <span className="relative inline-flex items-center gap-2">
                         <span className="w-4 h-4">📊</span>
                         Dashboard Admin

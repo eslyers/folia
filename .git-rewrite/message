@@ -1,6 +1,0 @@
-feat: complete MVP - audit log page + update BACKLOG.md phase 2
-
-- Add /admin/audit page with audit_log UI
-- Add audit button to AdminDashboard
-- Update BACKLOG.md with Phase 2 tasks
-- Create MC tasks for Slack, OAuth, Mobile, Multi-empresa
