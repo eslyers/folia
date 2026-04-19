@@ -1,106 +1,157 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
+  Home,
+  Building2,
   Users,
   CalendarCheck,
-  BarChart3,
-  Settings,
-  Home,
-  ChevronRight,
   Clock,
-  Building2,
+  BarChart3,
+  ScrollText,
   Webhook,
+  Scroll,
+  DollarSign,
+  Settings,
+  LogOut,
+  FileText,
+  UserCog,
+  LayoutDashboard,
+  UsersRound,
 } from "lucide-react";
 import { clsx } from "clsx";
+import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
+import { isMasterAdmin, isTenantAdmin, isGestor } from "@/lib/auth";
 
 interface SidebarProps {
   profile: Profile;
 }
 
-const navItems = [
-  {
-    label: "Visão Geral",
-    href: "/admin",
-    icon: Home,
-    exact: true,
-  },
-  {
-    label: "Empresas (SaaS)",
-    href: "/admin/saas",
-    icon: Building2,
-  },
-  {
-    label: "Funcionários",
-    href: "/admin/employees",
-    icon: Users,
-  },
-  {
-    label: "Escalas",
-    href: "/admin/schedules",
-    icon: CalendarCheck,
-  },
-  {
-    label: "Ponto",
-    href: "/admin/team/point",
-    icon: Clock,
-  },
-  {
-    label: "Fechamento Mensal",
-    href: "/admin/timesheets",
-    icon: BarChart3,
-  },
-  {
-    label: "Histórico",
-    href: "/admin/audit",
-    icon: BarChart3,
-  },
-  {
-    label: "Webhooks",
-    href: "/admin/saas#webhooks",
-    icon: Webhook,
-  },
-  {
-    label: "Configurações",
-    href: "/admin/settings",
-    icon: Settings,
-  },
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  exact?: boolean;
+}
+
+const MASTER_ADMIN_ITEMS: NavItem[] = [
+  { label: "Visão Geral", href: "/admin", icon: Home, exact: true },
+  { label: "Empresas SaaS", href: "/admin/saas", icon: Building2 },
+  { label: "Funcionários Global", href: "/admin/employees", icon: Users },
+  { label: "Escalas", href: "/admin/schedules", icon: CalendarCheck },
+  { label: "Ponto Equipe", href: "/admin/team/point", icon: Clock },
+  { label: "Fechamento", href: "/admin/timesheets", icon: BarChart3 },
+  { label: "Histórico/Audit", href: "/admin/audit", icon: ScrollText },
+  { label: "Webhooks", href: "/admin/saas#webhooks", icon: Webhook },
+  { label: "Logs Sistema", href: "/admin/logs", icon: Scroll },
+  { label: "Gestão Financeira", href: "/admin/finance", icon: DollarSign },
+  { label: "Configurações", href: "/admin/settings", icon: Settings },
 ];
+
+const TENANT_ADMIN_ITEMS: NavItem[] = [
+  { label: "Visão Geral", href: "/admin", icon: Home, exact: true },
+  { label: "Minha Empresa", href: "/admin/employees", icon: Users },
+  { label: "Escalas", href: "/admin/schedules", icon: CalendarCheck },
+  { label: "Ponto", href: "/admin/team/point", icon: Clock },
+  { label: "Fechamento", href: "/admin/timesheets", icon: BarChart3 },
+  { label: "Meus Pedidos", href: "/admin/my-requests", icon: FileText },
+  { label: "Configurações", href: "/admin/settings", icon: Settings },
+];
+
+const GESTOR_ITEMS: NavItem[] = [
+  { label: "Meu Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
+  { label: "Ponto", href: "/dashboard/point", icon: Clock },
+  { label: "Meus Pedidos", href: "/admin/my-requests", icon: FileText },
+  { label: "Minha Equipe", href: "/admin/team", icon: UsersRound },
+];
+
+const FUNCIONARIO_ITEMS: NavItem[] = [
+  { label: "Meu Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
+  { label: "Ponto", href: "/dashboard/point", icon: Clock },
+  { label: "Meus Pedidos", href: "/admin/my-requests", icon: FileText },
+];
+
+function getNavItems(role: string): NavItem[] {
+  switch (role) {
+    case "master_admin":
+      return MASTER_ADMIN_ITEMS;
+    case "tenant_admin":
+      return TENANT_ADMIN_ITEMS;
+    case "gestor":
+      return GESTOR_ITEMS;
+    case "funcionario":
+      return FUNCIONARIO_ITEMS;
+    default:
+      return FUNCIONARIO_ITEMS;
+  }
+}
+
+const ROLE_BADGE_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
+  master_admin: { bg: "bg-purple-100", text: "text-purple-800", label: "Master Admin" },
+  tenant_admin: { bg: "bg-blue-100", text: "text-blue-800", label: "Admin" },
+  gestor: { bg: "bg-green-100", text: "text-green-800", label: "Gestor" },
+  funcionario: { bg: "bg-gray-100", text: "text-gray-600", label: "Funcionário" },
+};
+
+function getRoleBadge(role: string) {
+  const config = ROLE_BADGE_CONFIG[role] ?? ROLE_BADGE_CONFIG.funcionario;
+  return (
+    <span className={clsx("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold", config.bg, config.text)}>
+      {config.label}
+    </span>
+  );
+}
 
 export function Sidebar({ profile }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+  const role = profile.role;
+  const navItems = getNavItems(role);
+  const badge = ROLE_BADGE_CONFIG[role] ?? ROLE_BADGE_CONFIG.funcionario;
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href;
-    return pathname.startsWith(href.split("#")[0]);
+    const base = href.split("#")[0];
+    return base !== "/" ? pathname.startsWith(base) : pathname === "/";
   };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
+  // Determine if we're in admin section
+  const isAdminSection = pathname.startsWith("/admin");
 
   return (
     <aside className="w-64 min-h-screen bg-[var(--color-surface)] border-r border-[var(--border)] flex flex-col">
       {/* Logo */}
-      <div className="p-6 border-b border-[var(--border)]">
+      <div className="p-5 border-b border-[var(--border)]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--color-green-olive)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-[var(--color-green-olive)] flex items-center justify-center flex-shrink-0">
             <span className="text-white font-bold text-lg">F</span>
           </div>
-          <span className="text-xl font-semibold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
-            FOLIA
-          </span>
+          <div>
+            <span className="text-xl font-semibold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
+              FOLIA
+            </span>
+            <p className="text-xs text-[var(--color-brown-medium)] mt-0.5">
+              {isAdminSection ? "Painel Administrativo" : "Meu Espaço"}
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-[var(--color-brown-medium)] mt-2">
-          Painel Administrativo
-        </p>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
           const active = isActive(item.href, item.exact);
           return (
             <Link
-              key={item.href}
+              key={item.href + item.label}
               href={item.href}
               className={clsx(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-folia",
@@ -111,18 +162,22 @@ export function Sidebar({ profile }: SidebarProps) {
             >
               <item.icon className="h-5 w-5 flex-shrink-0" />
               <span className="flex-1">{item.label}</span>
-              {active && (
-                <ChevronRight className="h-4 w-4 opacity-50" />
-              )}
             </Link>
           );
         })}
       </nav>
 
-      {/* User info */}
-      <div className="p-4 border-t border-[var(--border)]">
+      {/* User info + logout */}
+      <div className="p-4 border-t border-[var(--border)] space-y-3">
+        {/* Role badge */}
+        <div className="px-3 py-2 rounded-lg bg-[var(--color-cream)]">
+          <p className="text-xs text-[var(--color-brown-medium)] mb-1.5">Acesso</p>
+          {getRoleBadge(role)}
+        </div>
+
+        {/* User */}
         <div className="flex items-center gap-3 px-3 py-2">
-          <div className="w-8 h-8 rounded-full bg-[var(--color-gold)]/20 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full bg-[var(--color-gold)]/20 flex items-center justify-center flex-shrink-0">
             <span className="text-xs font-semibold text-[var(--color-gold)]">
               {profile.name?.charAt(0).toUpperCase() ?? "A"}
             </span>
@@ -131,11 +186,27 @@ export function Sidebar({ profile }: SidebarProps) {
             <p className="text-sm font-medium text-[var(--color-brown-dark)] truncate">
               {profile.name}
             </p>
-            <p className="text-xs text-[var(--color-brown-medium)] truncate">
-              {profile.role === "admin" ? "Administrador" : "Funcionário"}
-            </p>
+            <p className="text-xs text-[var(--color-brown-medium)] truncate">{profile.email}</p>
           </div>
         </div>
+
+        {/* Tenant badge */}
+        {profile.tenant_id && role !== "master_admin" && (
+          <div className="px-3">
+            <span className="text-xs text-[var(--color-brown-medium)] bg-[var(--color-cream)] px-2 py-1 rounded-md">
+              🏢 {profile.tenant_id === "00000000-0000-0000-0000-000000000000" ? "Default" : profile.tenant_id.slice(0, 8)}
+            </span>
+          </div>
+        )}
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--color-error)] hover:bg-red-50 transition-colors"
+        >
+          <LogOut className="h-5 w-5" />
+          <span>Sair</span>
+        </button>
       </div>
     </aside>
   );

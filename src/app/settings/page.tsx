@@ -7,6 +7,7 @@ import { Header } from "@/components/Header";
 import { Card, Button, Input } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
+import { getRoleLabel } from "@/lib/auth";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -338,7 +339,7 @@ export default function SettingsPage() {
                   Tipo de Acesso
                 </label>
                 <p className="text-[var(--color-brown-dark)] bg-[var(--color-cream)] px-4 py-2.5 rounded-lg capitalize">
-                  {profile.role === "admin" ? "Administrador" : "Funcionário"}
+                  {getRoleLabel(profile.role)}
                 </p>
               </div>
 

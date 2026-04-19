@@ -5,7 +5,14 @@
 // ENUMS
 // =====================================================
 
-export type UserRole = "admin" | "employee";
+// =====================================================
+// ENUMS
+// =====================================================
+
+// New RBAC roles: master_admin > tenant_admin > gestor > funcionario
+export type UserRole = "master_admin" | "tenant_admin" | "gestor" | "funcionario";
+export type LegacyRole = "admin" | "employee";
+export type AnyRole = UserRole | LegacyRole;
 
 export type LeaveType = "vacation" | "day_off" | "hours" | "sick" | "other";
 
@@ -33,6 +40,7 @@ export interface Profile {
   tenant_id?: string;
   manager_id?: string | null;
   schedule_id?: string | null;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -254,6 +262,42 @@ export interface TeamTimesheetMember {
   overtime_pending_approval: number;
   expected_monthly_hours: number;
   status: "open" | "approved" | "rejected";
+}
+
+export const ROLE_LABELS: Record<UserRole, string> = {
+  master_admin: "Master Admin",
+  tenant_admin: "Admin Empresa",
+  gestor: "Gestor",
+  funcionario: "Funcionário",
+};
+
+export function getRoleLabel(role: string): string {
+  return ROLE_LABELS[role as UserRole] || role;
+}
+
+// Helper type guards
+export function isMasterAdmin(role: string): boolean {
+  return role === "master_admin";
+}
+
+export function isTenantAdmin(role: string): boolean {
+  return role === "master_admin" || role === "tenant_admin";
+}
+
+export function isGestor(role: string): boolean {
+  return role === "gestor";
+}
+
+export function isFuncionario(role: string): boolean {
+  return role === "funcionario";
+}
+
+export function canManageTeam(role: string): boolean {
+  return isTenantAdmin(role) || role === "gestor";
+}
+
+export function canAccessSaaS(role: string): boolean {
+  return role === "master_admin";
 }
 
 // =====================================================

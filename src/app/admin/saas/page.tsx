@@ -9,6 +9,7 @@ import {
   TrendingUp, TrendingDown, Activity, Clock, DollarSign, UserPlus, AlertTriangle,
   ArrowUpRight, ArrowDownRight, Globe, Settings, BarChart3, Calendar
 } from "lucide-react";
+import { isMasterAdmin } from "@/lib/auth";
 
 interface Tenant {
   id: string;
@@ -103,7 +104,7 @@ export default function SaasAdminPage() {
       .eq("id", user.id)
       .single() as { data: any };
 
-    if (!profileData || profileData.role !== "admin") {
+    if (!profileData || !isMasterAdmin(profileData.role)) {
       router.push("/dashboard");
       return;
     }

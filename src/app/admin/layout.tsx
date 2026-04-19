@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/layout/Sidebar";
 import type { Profile } from "@/lib/types";
+import { isTenantAdmin } from "@/lib/auth";
 
 export default function AdminLayout({
   children,
@@ -32,7 +33,7 @@ export default function AdminLayout({
         .eq("id", user.id)
         .single() as { data: Profile | null };
 
-      if (!profileData || profileData.role !== "admin") {
+      if (!profileData || !isTenantAdmin(profileData.role)) {
         router.push("/dashboard");
         return;
       }

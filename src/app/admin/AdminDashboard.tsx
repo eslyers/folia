@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { LEAVE_TYPE_LABELS, STATUS_LABELS } from "@/lib/types";
 import type { Profile, LeaveRequest } from "@/lib/types";
 import { format } from "date-fns";
+import { getRoleLabel } from "@/lib/auth";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/calendar/Calendar";
 
@@ -561,8 +562,8 @@ export function AdminDashboard({ profile, leaveRequests, profiles }: AdminDashbo
                         <span className="text-xs text-[var(--color-brown-medium)]"> hrs</span>
                       </td>
                       <td className="text-center py-3 px-4">
-                        <span className={`inline-flex items-center rounded-full border border-transparent text-xs font-semibold px-2.5 py-0.5 ${p.role === "admin" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-800"}`}>
-                          {p.role === "admin" ? "Admin" : "Funcionário"}
+                        <span className={`inline-flex items-center rounded-full border border-transparent text-xs font-semibold px-2.5 py-0.5 ${p.role === "master_admin" ? "bg-purple-100 text-purple-800" : p.role === "tenant_admin" ? "bg-blue-100 text-blue-800" : p.role === "gestor" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
+                          {getRoleLabel(p.role)}
                         </span>
                       </td>
                     </tr>

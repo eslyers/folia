@@ -7,6 +7,7 @@ import { User, LogOut, Menu, X, Bell, Settings } from "lucide-react";
 import { Button } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
+import { isTenantAdmin, isMasterAdmin, isGestor, getRoleLabel } from "@/lib/auth";
 
 interface HeaderProps {
   profile: Profile;
@@ -44,7 +45,7 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
           {/* Premium Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             <div className="flex items-center gap-1">
-              {profile.role === "admin" && (
+              {isTenantAdmin(profile.role) && (
                 <>
                   <Link
                     href="/admin/employees"
@@ -97,7 +98,7 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
                 </>
               )}
               <Link
-                href={profile.role === "admin" ? "/admin/my-requests" : "/dashboard"}
+                href={isTenantAdmin(profile.role) ? "/admin/my-requests" : "/dashboard"}
                 className="px-4 py-2 text-sm font-medium text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]/50 rounded-lg transition-all duration-200 group"
               >
                 <span className="relative inline-flex items-center">
@@ -138,7 +139,7 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
           {/* Premium Right Side */}
           <div className="flex items-center gap-3">
             {/* Premium Notification */}
-            {profile.role === "admin" && pendingCount > 0 && (
+            {isTenantAdmin(profile.role) && pendingCount > 0 && (
               <div className="relative">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-error)]/20 to-[var(--color-error)]/10 rounded-full blur-sm animate-pulse" />
@@ -165,7 +166,9 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
               )}
               <div>
                 <span className="text-sm font-medium text-[var(--color-brown-dark)]">{profile.name}</span>
-                <span className="text-xs text-[var(--color-brown-medium)]">{profile.role === "admin" ? "Admin" : "Funcionário"}</span>
+                <span className="text-xs font-medium text-[var(--color-gold)] bg-[var(--color-gold)]/20 px-2 py-0.5 rounded-full mt-1 inline-block">
+                      {getRoleLabel(profile.role)}
+                    </span>
               </div>
             </div>
 
@@ -226,7 +229,7 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
                     <div className="text-sm font-semibold text-[var(--color-brown-dark)]">{profile.name}</div>
                     <div className="text-xs text-[var(--color-brown-medium)]">{profile.email}</div>
                     <div className="text-xs font-medium text-[var(--color-gold)] bg-[var(--color-gold)]/20 px-2 py-0.5 rounded-full mt-1 inline-block">
-                      {profile.role === "admin" ? "Admin" : "Funcionário"}
+                      {getRoleLabel(profile.role)}
                     </div>
                   </div>
                 </div>
@@ -234,7 +237,7 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
               
               <div className="flex flex-col gap-1">
                 <Link
-                  href={profile.role === "admin" ? "/admin/my-requests" : "/dashboard"}
+                  href={isTenantAdmin(profile.role) ? "/admin/my-requests" : "/dashboard"}
                   className="px-4 py-3 text-sm font-medium text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]/50 rounded-lg transition-all duration-200 group relative overflow-hidden"
                 >
                   <span className="absolute inset-0 bg-gradient-to-r from-[var(--color-blue)]/10 to-[var(--color-blue)]/5 group-hover:[from-[var(--color-blue)]/20] group-hover:[to-[var(--color-blue)]/10] transition-all duration-200" />
@@ -266,7 +269,7 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
                   </span>
                 </Link>
 
-                {profile.role === "admin" && (
+                {isTenantAdmin(profile.role) && (
                   <>
                     <Link
                       href="/admin/employees"

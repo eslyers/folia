@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Users, Edit2, Trash2, Calendar, Save, X, Loader2, Clock, Download } from "lucide-react";
+import { Plus, Users, Edit2, Trash2, Calendar, Save, Loader2, Clock, Download } from "lucide-react";
 
 import { Card, Button, Input } from "@/components/ui";
 import { Modal } from "@/components/ui";
@@ -10,13 +10,14 @@ import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { format, differenceInYears, differenceInMonths, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { isTenantAdmin, isMasterAdmin, getRoleLabel } from "@/lib/auth";
 
 interface EmployeeForm {
   id?: string;
   name: string;
   email: string;
   password?: string;
-  role: "admin" | "employee";
+  role: "tenant_admin" | "gestor" | "funcionario";
   department: string;
   position: string;
   hire_date: string;
@@ -24,6 +25,7 @@ interface EmployeeForm {
   hours_balance: number;
   manager_id: string;
   schedule_id: string;
+  tenant_id?: string;
 }
 
 export default function EmployeesPage() {
@@ -32,6 +34,8 @@ export default function EmployeesPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [employees, setEmployees] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<any[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [currentTenantName, setCurrentTenantName] = useState<string>("");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<EmployeeForm | null>(null);
@@ -55,7 +59,7 @@ export default function EmployeesPage() {
         .single();
 
       const adminProfile = currentProfile as any;
-      if (!adminProfile || adminProfile.role !== "admin") {
+      if (!adminProfile || !isTenantAdmin(adminProfile.role)) {
         setTimeout(() => router.push("/dashboard"), 1500);
         return;
       }
@@ -64,10 +68,25 @@ export default function EmployeesPage() {
 
       const { data: allEmployees } = await supabase
         .from("profiles")
-        .select("*, manager:profiles!manager_id(id, name), schedule:work_schedules(id, name)")
+        .select("*, manager:profiles!manager_id(id, name), schedule:work_schedules(id, name), tenant:tenants(id, name)")
         .order("name");
 
       setEmployees(allEmployees || []);
+
+      const { data: tenantData } = await supabase
+        .from("tenants")
+        .select("name")
+        .eq("id", adminProfile.tenant_id)
+        .single() as { data: { name: string } | null };
+      setCurrentTenantName(tenantData?.name || "");
+
+      if (isMasterAdmin(adminProfile.role)) {
+        const { data: allTenants } = await supabase
+          .from("tenants")
+          .select("id, name")
+          .order("name");
+        setTenants(allTenants || []);
+      }
 
       const { data: schedulesData } = await supabase
         .from("work_schedules")
@@ -93,7 +112,7 @@ export default function EmployeesPage() {
       name: "",
       email: "",
       password: "",
-      role: "employee",
+      role: "funcionario",
       department: "",
       position: "",
       hire_date: format(new Date(), "yyyy-MM-dd"),
@@ -101,6 +120,7 @@ export default function EmployeesPage() {
       hours_balance: 0,
       manager_id: "",
       schedule_id: "",
+      tenant_id: profile?.tenant_id || "",
     });
     setModalOpen(true);
   };
@@ -110,7 +130,7 @@ export default function EmployeesPage() {
       id: emp.id,
       name: emp.name || "",
       email: emp.email || "",
-      role: emp.role || "employee",
+      role: emp.role || "funcionario",
       department: emp.department || "",
       position: emp.position || "",
       hire_date: emp.hire_date || format(new Date(), "yyyy-MM-dd"),
@@ -118,6 +138,7 @@ export default function EmployeesPage() {
       hours_balance: emp.hours_balance ?? 0,
       manager_id: emp.manager_id || "",
       schedule_id: emp.schedule_id || "",
+      tenant_id: emp.tenant_id || "",
     });
     setModalOpen(true);
   };
@@ -180,6 +201,7 @@ export default function EmployeesPage() {
             hours_balance: editingEmployee.hours_balance,
             manager_id: editingEmployee.manager_id || null,
             schedule_id: editingEmployee.schedule_id || null,
+            tenant_id: editingEmployee.tenant_id || null,
           }),
         });
 
@@ -242,6 +264,19 @@ export default function EmployeesPage() {
     return { label: `${balance} dias`, color: "text-green-600", variant: "success" as const };
   };
 
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case "master_admin":
+        return "bg-purple-100 text-purple-800";
+      case "tenant_admin":
+        return "bg-blue-100 text-blue-800";
+      case "gestor":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--color-cream)" }}>
@@ -263,7 +298,6 @@ export default function EmployeesPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -273,7 +307,7 @@ export default function EmployeesPage() {
               Funcionários 👥
             </h1>
             <p className="text-[var(--color-brown-medium)] mt-1">
-              Cadastro e gestão de equipe
+              {currentTenantName ? `${currentTenantName} — ` : ""}Cadastro e gestão de equipe
             </p>
           </div>
           <div className="flex gap-3">
@@ -370,8 +404,16 @@ export default function EmployeesPage() {
                       <tr key={emp.id} className="border-b border-[var(--border)] hover:bg-[var(--color-cream)]">
                         <td className="py-3 px-4">
                           <div>
-                            <p className="font-medium text-[var(--color-brown-dark)]">{emp.name}</p>
+                            <p className="font-medium text-[var(--color-brown-dark)] flex items-center gap-1.5">
+                              {emp.name}
+                              <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ${getRoleBadgeColor(emp.role)}`}>
+                                {emp.role === "master_admin" ? "Master" : emp.role === "tenant_admin" ? "Admin" : emp.role === "gestor" ? "Gestor" : "Func."}
+                              </span>
+                            </p>
                             <p className="text-xs text-[var(--color-brown-medium)]">{emp.email}</p>
+                            {emp.tenant?.name && (
+                              <p className="text-xs text-blue-600 mt-0.5">🏢 {emp.tenant.name}</p>
+                            )}
                           </div>
                         </td>
                         <td className="py-3 px-4">
@@ -565,13 +607,33 @@ export default function EmployeesPage() {
               </label>
               <select
                 value={editingEmployee.role}
-                onChange={(e) => setEditingEmployee({ ...editingEmployee, role: e.target.value as "admin" | "employee" })}
+                onChange={(e) => setEditingEmployee({ ...editingEmployee, role: e.target.value as any })}
                 className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)]"
               >
-                <option value="employee">Funcionário</option>
-                <option value="admin">Administrador</option>
+                <option value="funcionario">Funcionário</option>
+                <option value="gestor">Gestor</option>
+                <option value="tenant_admin">Admin Empresa</option>
               </select>
             </div>
+
+            {/* Tenant selector for master_admin */}
+            {tenants.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1.5">
+                  Empresa
+                </label>
+                <select
+                  value={editingEmployee.tenant_id || ""}
+                  onChange={(e) => setEditingEmployee({ ...editingEmployee, tenant_id: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)]"
+                >
+                  <option value="">Selecione...</option>
+                  {tenants.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="flex gap-3 pt-4">
               <Button
