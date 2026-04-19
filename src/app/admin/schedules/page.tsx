@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Clock, Edit2, Trash2, Users, Save, X, Loader2, Check } from "lucide-react";
-import { Header } from "@/components/Header";
+
 import { Card, Button, Input, Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
@@ -288,7 +288,7 @@ export default function SchedulesPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <Header profile={profile!} />
+      
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}

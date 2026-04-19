@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Save, Settings, AlertTriangle, Info, Loader2, Shield } from "lucide-react";
-import { Header } from "@/components/Header";
+
 import { Card, Button, Input } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Policy } from "@/lib/types";
@@ -173,7 +173,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <Header profile={profile!} />
+      
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}

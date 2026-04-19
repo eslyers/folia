@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Users, Edit2, Trash2, Calendar, Save, X, Loader2, Clock, Download } from "lucide-react";
-import { Header } from "@/components/Header";
+
 import { Card, Button, Input } from "@/components/ui";
 import { Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
@@ -263,7 +263,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <Header profile={profile!} />
+      
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Header } from "@/components/Header";
+
 import { Card } from "@/components/ui";
 import { Search, Download, FileText, User, Settings, Calendar, Clock } from "lucide-react";
 
@@ -160,7 +160,7 @@ export default function AuditPageContent() {
 
   return (
     <div className="min-h-screen bg-[var(--cream)]">
-      <Header profile={profile} />
+      
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 animate-fade-in-up">

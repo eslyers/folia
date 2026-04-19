@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Loader2, AlertCircle, Eye, Calendar } from "lucide-react";
-import { Header } from "@/components/Header";
+
 import { Card, Button } from "@/components/ui";
 import { Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
@@ -232,7 +232,7 @@ export default function TimesheetsPageContent() {
       `}</style>
 
       <div className="min-h-screen bg-[var(--color-cream)]">
-        <Header profile={profile} />
+        
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui";
-import { Header } from "@/components/Header";
+
 import { Play, Mail, CheckCircle, XCircle, AlertCircle, Bell, Send, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
@@ -320,7 +320,6 @@ export default function NotificationsPage() {
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     <div className="min-h-screen bg-[var(--background)]">
-      {profile && <Header profile={profile} />}
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}

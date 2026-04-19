@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Calendar as CalendarIcon, Clock, Palette, Check, X } from "lucide-react";
-import { Header } from "@/components/Header";
+
 import { Card, Button } from "@/components/ui";
 import { Calendar } from "@/components/calendar/Calendar";
 import { LeaveRequestModal } from "@/components/LeaveRequestModal";
@@ -123,7 +123,7 @@ export default function AdminMyRequestsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-        <Header profile={profile} />
+        
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Welcome */}
