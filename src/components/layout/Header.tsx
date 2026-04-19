@@ -22,6 +22,7 @@ const THEMES = [
     id: "default",
     name: "Padrão",
     colors: ["#2C2416", "#C7A76C", "#F5F0E8", "#F5F0E8"],
+    surface: "#FFFFFF",
     border: "#D4CFC7",
     secondary: "#6B5F4D",
     description: "Tema original marrom/dourado"
@@ -30,14 +31,17 @@ const THEMES = [
     id: "dark",
     name: "Dark",
     colors: ["#F5F5F5", "#D4A853", "#121212", "#121212"],
-    border: "#333333",
+    surface: "#1A1A1A",
+    border: "#2D2D2D",
     secondary: "#A0A0A0",
+    card: "#1E1E1E",
     description: "Modo escuro premium"
   },
   {
     id: "blue",
     name: "Azul",
     colors: ["#1E3A5F", "#3B82F6", "#EFF6FF", "#F8FAFC"],
+    surface: "#FFFFFF",
     border: "#CBD5E1",
     secondary: "#475569",
     description: "Azul corporativo premium"
@@ -46,6 +50,7 @@ const THEMES = [
     id: "green",
     name: "Verde",
     colors: ["#14532D", "#22C55E", "#F0FDF4", "#F5FDF5"],
+    surface: "#FFFFFF",
     border: "#BBF7D0",
     secondary: "#166534",
     description: "Verde orgânico premium"
@@ -54,6 +59,7 @@ const THEMES = [
     id: "purple",
     name: "Roxo",
     colors: ["#3B0764", "#9333EA", "#FAF5FF", "#FAFAFA"],
+    surface: "#FFFFFF",
     border: "#E9D5FF",
     secondary: "#6B21A8",
     description: "Roxo royal elegante"
@@ -93,6 +99,8 @@ export function Header({ profile }: HeaderProps) {
     root.style.setProperty("--background", theme.colors[3]);
     if (theme.border) root.style.setProperty("--border", theme.border);
     if (theme.secondary) root.style.setProperty("--color-brown-medium", theme.secondary);
+    if (theme.surface) root.style.setProperty("--color-surface", theme.surface);
+    if ((theme as any).card) root.style.setProperty("--color-card", (theme as any).card);
     
     // Set data-theme attribute for CSS dark theme support
     if (themeId === "dark") {

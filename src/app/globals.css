@@ -393,56 +393,47 @@ html {
 }
 
 /* =====================================================
-   DARK THEME SUPPORT
+   DARK THEME SUPPORT (Premium)
    ===================================================== */
 
 [data-theme="dark"] {
-  /* Dark surfaces - override the JS-set colors for components */
-  --color-surface: #1E1E1E;
-  --card-bg: #1E1E1E;
-  --color-white: #1E1E1E;
+  /* Core surfaces - elegante e sofisticado */
+  --color-surface: #1A1A1A;
+  --color-card: #242424;
+  --card-bg: #242424;
+  --color-white: #1A1A1A;
   --color-cream: #121212;
   --background: #121212;
   
-  /* Dark text colors */
+  /* Text - alto contraste para legibilidade */
   --foreground: #F5F5F5;
   --color-brown-dark: #F5F5F5;
-  --color-brown-medium: #A0A0A0;
+  --color-brown-medium: #9E9E9E;
   
-  /* Dark borders */
-  --border: #333333;
+  /* Gold accent - vibrante no dark */
+  --color-gold: #D4A853;
+  --color-gold-vivid: #E5B864;
   
-  /* Dark shadows */
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
-  --shadow-xl: 0 20px 25px rgba(0,0,0,0.6);
+  /* Borders - sutis mas visíveis */
+  --border: #2D2D2D;
+  --border-hover: #3D3D3D;
+  
+  /* Shadows - profundidade */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.5);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.6);
+  --shadow-xl: 0 20px 25px rgba(0,0,0,0.7);
 }
 
-/* Apply dark theme when data-theme=dark or when using dark color scheme */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --color-surface: #1E1E1E;
-    --card-bg: #1E1E1E;
-    --color-white: #1E1E1E;
-    --color-cream: #121212;
-    --background: #121212;
-    --foreground: #F5F5F5;
-    --color-brown-dark: #F5F5F5;
-    --color-brown-medium: #A0A0A0;
-    --border: #333333;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-    --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
-    --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
-    --shadow-xl: 0 20px 25px rgba(0,0,0,0.6);
-  }
-}
-
-/* Dark theme component overrides */
-[data-theme="dark"] .bg-white,
+/* Dark theme - components */
+[data-theme="dark"] body,
 [data-theme="dark"] .bg-cream,
-[data-theme="dark"] [class*="bg-"][class*="cream"],
-[data-theme="dark"] [class*="bg-"][class*="white"] {
+[data-theme="dark"] [class*="bg-cream"] {
+  background-color: var(--background) !important;
+}
+
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] [class*="bg-white"] {
   background-color: var(--color-surface) !important;
 }
 
@@ -451,19 +442,115 @@ html {
   border-color: var(--border) !important;
 }
 
-/* Dark scrollbar */
+[data-theme="dark"] .text-\[\var\(--color-brown-dark\)\] {
+  color: var(--foreground) !important;
+}
+
+[data-theme="dark"] .text-\[\var\(--color-brown-medium\)\] {
+  color: var(--color-brown-medium) !important;
+}
+
+/* Dark scrollbar - elegante */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
 [data-theme="dark"] ::-webkit-scrollbar-track {
-  background: #1E1E1E;
+  background: #1A1A1A;
+  border-radius: 4px;
 }
 
 [data-theme="dark"] ::-webkit-scrollbar-thumb {
-  background: #444444;
+  background: #3D3D3D;
+  border-radius: 4px;
 }
 
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-  background: #555555;
+  background: #4D4D4D;
 }
 
 [data-theme="dark"] * {
-  scrollbar-color: #444444 #1E1E1E;
+  scrollbar-width: thin;
+  scrollbar-color: #3D3D3D #1A1A1A;
+}
+
+/* Dark theme - cards and elevated surfaces */
+[data-theme="dark"] .rounded-xl,
+[data-theme="dark"] .rounded-2xl,
+[data-theme="dark"] .rounded-lg {
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Dark theme - inputs */
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--color-surface) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--color-brown-medium) !important;
+  opacity: 0.6;
+}
+
+/* =====================================================
+   DARK THEME - FORÇAR SURFACES BRANCAS A ESCURECER
+   ===================================================== */
+
+/* Cards, modais, dropdowns */
+[data-theme="dark"] [class*="rounded-xl"],
+[data-theme="dark"] [class*="rounded-2xl"],
+[data-theme="dark"] [class*="rounded-lg"] {
+  background-color: var(--color-card) !important;
+}
+
+/* Badges e pills */
+[data-theme="dark"] [class*="rounded-full"][class*="bg-white"],
+[data-theme="dark"] [class*="rounded-full"][class*="px-2"],
+[data-theme="dark"] [class*="rounded-full"][class*="px-3"] {
+  background-color: var(--color-surface) !important;
+}
+
+/* Shadow overrides */
+[data-theme="dark"] [class*="shadow-sm"] {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4) !important;
+}
+
+[data-theme="dark"] [class*="shadow-md"] {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.5) !important;
+}
+
+[data-theme="dark"] [class*="shadow-lg"] {
+  box-shadow: 0 10px 15px rgba(0,0,0,0.6) !important;
+}
+
+[data-theme="dark"] [class*="shadow-xl"] {
+  box-shadow: 0 20px 25px rgba(0,0,0,0.7) !important;
+}
+
+/* Backdrop blur com surface escura */
+[data-theme="dark"] [class*="backdrop-blur"] {
+  background-color: rgba(26, 26, 26, 0.95) !important;
+}
+
+/* Tables */
+[data-theme="dark"] table,
+[data-theme="dark"] tbody,
+[data-theme="dark"] tr,
+[data-theme="dark"] th,
+[data-theme="dark"] td {
+  background-color: transparent !important;
+  border-color: var(--border) !important;
+}
+
+[data-theme="dark"] thead tr {
+  background-color: var(--color-card) !important;
+}
+
+[data-theme="dark"] tbody tr:hover {
+  background-color: var(--color-surface) !important;
 }
