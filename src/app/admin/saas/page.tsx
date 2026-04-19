@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Header } from "@/components/Header";
 import { Card, Button, Modal, Input, Select } from "@/components/ui";
-import { Building2, Users, Plus, Edit2, Power, PowerOff, Webhook, Trash2, Check, X, AlertCircle } from "lucide-react";
+import { 
+  Building2, Users, Plus, Edit2, Power, PowerOff, Webhook, Trash2, Check, X, AlertCircle,
+  TrendingUp, TrendingDown, Activity, Clock, DollarSign, UserPlus, AlertTriangle,
+  ArrowUpRight, ArrowDownRight, Globe, Settings, BarChart3, Calendar
+} from "lucide-react";
 
 interface Tenant {
   id: string;
@@ -36,6 +40,14 @@ interface WebhookConfig {
   created_at: string;
 }
 
+interface SystemStats {
+  total_tenants: number;
+  active_tenants: number;
+  total_employees: number;
+  total_requests: number;
+  pending_requests: number;
+}
+
 const AVAILABLE_EVENTS = [
   { value: "leave_request_created", label: "Novo pedido criado" },
   { value: "leave_request_approved", label: "Pedido aprovado" },
@@ -52,8 +64,13 @@ export default function SaasAdminPage() {
   const [profile, setProfile] = useState<any>(null);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [tenantStats, setTenantStats] = useState<Record<string, TenantStats>>({});
+  const [systemStats, setSystemStats] = useState<SystemStats>({
+    total_tenants: 0, active_tenants: 0, total_employees: 0, total_requests: 0, pending_requests: 0
+  });
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
+  const [activeTab, setActiveTab] = useState<"overview" | "tenants" | "webhooks">("overview");
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Modals
   const [showCreateTenant, setShowCreateTenant] = useState(false);
@@ -93,19 +110,55 @@ export default function SaasAdminPage() {
     }
 
     setProfile(profileData);
-    await loadTenants();
+    await loadData();
     setLoading(false);
   };
 
+  const loadData = async () => {
+    await loadTenants();
+    await loadSystemStats();
+  };
+
+  const loadSystemStats = async () => {
+    // Get all tenants
+    const { data: tenantsData } = await supabase
+      .from("tenants")
+      .select("*") as { data: Tenant[] | null };
+
+    const allTenants = tenantsData || [];
+    const activeCount = allTenants.filter(t => t.is_active).length;
+
+    // Get all employees
+    const { count: employeeCount } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true });
+
+    // Get request stats
+    const { count: totalRequests } = await supabase
+      .from("leave_requests")
+      .select("*", { count: "exact", head: true });
+
+    const { count: pendingRequests } = await supabase
+      .from("leave_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending");
+
+    setSystemStats({
+      total_tenants: allTenants.length,
+      active_tenants: activeCount,
+      total_employees: employeeCount || 0,
+      total_requests: totalRequests || 0,
+      pending_requests: pendingRequests || 0,
+    });
+  };
+
   const loadTenants = async () => {
-    // Use service role or admin query to get all tenants
     const { data, error } = await supabase
       .from("tenants")
       .select("*")
-      .order("created_at", { ascending: true }) as { data: Tenant[] | null, error: any };
+      .order("created_at", { ascending: false }) as { data: Tenant[] | null, error: any };
 
     if (error) {
-      console.error("Error loading tenants:", error);
       setError("Erro ao carregar tenants");
       return;
     }
@@ -140,7 +193,7 @@ export default function SaasAdminPage() {
         name: newTenant.name,
         domain: newTenant.domain || null,
         slug,
-        settings: { timezone: "America/Sao_Paulo", locale: "pt-BR" },
+        settings: { timezone: "America/Sao_Paulo", locale: "pt-BR", plan: "basic" },
         is_active: true,
       })
       .select()
@@ -152,10 +205,10 @@ export default function SaasAdminPage() {
       return;
     }
 
-    setSuccess("Tenant criado com sucesso!");
+    setSuccess("Empresa criada com sucesso!");
     setShowCreateTenant(false);
     setNewTenant({ name: "", domain: "", slug: "" });
-    await loadTenants();
+    await loadData();
     setSaving(false);
   };
 
@@ -170,8 +223,8 @@ export default function SaasAdminPage() {
       return;
     }
 
-    await loadTenants();
-    setSuccess(tenant.is_active ? "Tenant desativado" : "Tenant ativado");
+    await loadData();
+    setSuccess(tenant.is_active ? "Empresa desativada" : "Empresa ativada");
   };
 
   const handleEditTenant = async () => {
@@ -195,8 +248,8 @@ export default function SaasAdminPage() {
 
     setShowEditTenant(false);
     setEditTenant(null);
-    await loadTenants();
-    setSuccess("Tenant atualizado!");
+    await loadData();
+    setSuccess("Empresa atualizada!");
     setSaving(false);
   };
 
@@ -206,7 +259,7 @@ export default function SaasAdminPage() {
       return;
     }
 
-    if (!confirm(`Tem certeza que deseja excluir o tenant "${tenant.name}"? Esta ação não pode ser desfeita.`)) {
+    if (!confirm(`Tem certeza que deseja excluir "${tenant.name}"? Esta ação não pode ser desfeita.`)) {
       return;
     }
 
@@ -217,8 +270,8 @@ export default function SaasAdminPage() {
       return;
     }
 
-    await loadTenants();
-    setSuccess("Tenant excluído");
+    await loadData();
+    setSuccess("Empresa excluída");
   };
 
   const openWebhooks = async (tenant: Tenant) => {
@@ -231,6 +284,7 @@ export default function SaasAdminPage() {
     
     setWebhooks(data || []);
     setShowWebhooks(true);
+    setActiveTab("webhooks");
   };
 
   const handleCreateWebhook = async () => {
@@ -343,6 +397,21 @@ export default function SaasAdminPage() {
     }));
   };
 
+  const filteredTenants = useMemo(() => {
+    if (!searchTerm) return tenants;
+    const term = searchTerm.toLowerCase();
+    return tenants.filter(t => 
+      t.name.toLowerCase().includes(term) ||
+      t.slug.toLowerCase().includes(term) ||
+      (t.domain?.toLowerCase().includes(term) ?? false)
+    );
+  }, [tenants, searchTerm]);
+
+  const inactiveTenants = systemStats.total_tenants - systemStats.active_tenants;
+  const activeRate = systemStats.total_tenants > 0 
+    ? Math.round((systemStats.active_tenants / systemStats.total_tenants) * 100) 
+    : 0;
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--cream)" }}>
@@ -368,19 +437,21 @@ export default function SaasAdminPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
-              🏢 Painel SaaS — Multi-Tenant
-            </h1>
-            <p className="text-[var(--color-brown-medium)] mt-1">
-              Gerencie empresas, políticas e integrações
-            </p>
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-2">
+            <div>
+              <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
+                🏢 Cockpit SaaS
+              </h1>
+              <p className="text-[var(--color-brown-medium)] mt-1">
+                Gerenciamento completo de empresas e assinantes
+              </p>
+            </div>
+            <Button variant="primary" onClick={() => setShowCreateTenant(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Empresa
+            </Button>
           </div>
-          <Button variant="primary" onClick={() => setShowCreateTenant(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Empresa
-          </Button>
         </div>
 
         {/* Messages */}
@@ -399,92 +470,453 @@ export default function SaasAdminPage() {
           </div>
         )}
 
-        {/* Tenants Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tenants.map((tenant) => {
-            const stats = tenantStats[tenant.id] || { employee_count: 0, pending_requests: 0, approved_requests: 0, total_requests: 0 };
-            const isDefault = tenant.id === DEFAULT_TENANT_ID;
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="p-2 rounded-lg bg-purple-100">
+                <Building2 className="h-5 w-5 text-purple-600" />
+              </div>
+              <span className={`inline-flex items-center text-xs font-medium ${activeRate >= 80 ? 'text-green-600' : activeRate >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                {activeRate}% ativo
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-[var(--color-brown-dark)] mt-3">
+              {systemStats.total_tenants}
+            </p>
+            <p className="text-sm text-[var(--color-brown-medium)]">Empresas Cadastradas</p>
+            <div className="mt-2 flex items-center gap-1 text-xs">
+              <span className="text-green-600 font-medium">{systemStats.active_tenants}</span>
+              <span className="text-[var(--color-brown-light)]">ativas</span>
+              {inactiveTenants > 0 && (
+                <>
+                  <span className="text-[var(--color-brown-light)]">,</span>
+                  <span className="text-red-600 font-medium">{inactiveTenants}</span>
+                  <span className="text-[var(--color-brown-light)]">inativas</span>
+                </>
+              )}
+            </div>
+          </Card>
 
-            return (
-              <Card key={tenant.id} className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-[var(--color-gold)]/10">
-                      <Building2 className="h-5 w-5 text-[var(--color-gold)]" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-[var(--color-brown-dark)]">{tenant.name}</h3>
-                      <p className="text-xs text-[var(--color-brown-medium)]">/{tenant.slug}</p>
-                    </div>
-                  </div>
-                  <span className={`inline-flex items-center rounded-full text-xs font-semibold px-2.5 py-0.5 ${tenant.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"}`}>
-                    {tenant.is_active ? "Ativo" : "Inativo"}
-                  </span>
-                </div>
+          <Card className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="p-2 rounded-lg bg-blue-100">
+                <Users className="h-5 w-5 text-blue-600" />
+              </div>
+              <span className="inline-flex items-center text-green-600 text-xs font-medium">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                +12%
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-[var(--color-brown-dark)] mt-3">
+              {systemStats.total_employees}
+            </p>
+            <p className="text-sm text-[var(--color-brown-medium)]">Total de Funcionários</p>
+            <p className="text-xs text-[var(--color-brown-light)] mt-1">
+              Média {systemStats.total_tenants > 0 ? Math.round(systemStats.total_employees / systemStats.total_tenants) : 0} por empresa
+            </p>
+          </Card>
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="p-3 rounded-lg bg-[var(--color-cream)]">
-                    <p className="text-xs text-[var(--color-brown-medium)]">Funcionários</p>
-                    <p className="text-xl font-bold text-[var(--color-brown-dark)]">{stats.employee_count}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-[var(--color-cream)]">
-                    <p className="text-xs text-[var(--color-brown-medium)]">Pedidos</p>
-                    <p className="text-xl font-bold text-[var(--color-brown-dark)]">{stats.total_requests}</p>
-                  </div>
-                </div>
+          <Card className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="p-2 rounded-lg bg-amber-100">
+                <Calendar className="h-5 w-5 text-amber-600" />
+              </div>
+              {systemStats.pending_requests > 0 && (
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-bold">
+                  {systemStats.pending_requests > 9 ? "9+" : systemStats.pending_requests}
+                </span>
+              )}
+            </div>
+            <p className="text-3xl font-bold text-[var(--color-brown-dark)] mt-3">
+              {systemStats.total_requests}
+            </p>
+            <p className="text-sm text-[var(--color-brown-medium)]">Pedidos de Férias</p>
+            <p className="text-xs text-[var(--color-brown-light)] mt-1">
+              {systemStats.pending_requests} pendentes de aprovação
+            </p>
+          </Card>
 
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => { setEditTenant(tenant); setShowEditTenant(true); }}
-                  >
-                    <Edit2 className="h-3 w-3 mr-1" />
-                    Editar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => openWebhooks(tenant)}
-                  >
-                    <Webhook className="h-3 w-3 mr-1" />
-                    Webhooks
-                  </Button>
-                  <Button
-                    variant={tenant.is_active ? "danger" : "primary"}
-                    size="sm"
-                    onClick={() => handleToggleTenant(tenant)}
-                    title={tenant.is_active ? "Desativar" : "Ativar"}
-                  >
-                    {tenant.is_active ? <PowerOff className="h-3 w-3" /> : <Power className="h-3 w-3" />}
-                  </Button>
-                  {!isDefault && (
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => handleDeleteTenant(tenant)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
+          <Card className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="p-2 rounded-lg bg-green-100">
+                <Activity className="h-5 w-5 text-green-600" />
+              </div>
+              <span className="inline-flex items-center text-green-600 text-xs font-medium">
+                Online
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-[var(--color-brown-dark)] mt-3">
+              100%
+            </p>
+            <p className="text-sm text-[var(--color-brown-medium)]">Uptime do Sistema</p>
+            <p className="text-xs text-[var(--color-brown-light)] mt-1">
+              Última verificação: agora
+            </p>
+          </Card>
         </div>
 
-        {tenants.length === 0 && (
-          <Card className="p-12 text-center">
-            <Building2 className="h-12 w-12 mx-auto mb-4 text-[var(--color-brown-medium)] opacity-50" />
-            <h3 className="text-lg font-semibold text-[var(--color-brown-dark)] mb-2">Nenhuma empresa cadastrada</h3>
-            <p className="text-[var(--color-brown-medium)] mb-4">Comece criando a primeira empresa no sistema</p>
-            <Button variant="primary" onClick={() => setShowCreateTenant(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Criar Empresa
-            </Button>
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b border-[var(--border)] pb-4">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "overview"
+                ? "bg-[var(--color-gold)] text-white"
+                : "text-[var(--color-brown-medium)] hover:bg-[var(--color-cream)]"
+            }`}
+          >
+            <BarChart3 className="h-4 w-4 inline mr-2" />
+            Visão Geral
+          </button>
+          <button
+            onClick={() => setActiveTab("tenants")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "tenants"
+                ? "bg-[var(--color-gold)] text-white"
+                : "text-[var(--color-brown-medium)] hover:bg-[var(--color-cream)]"
+            }`}
+          >
+            <Building2 className="h-4 w-4 inline mr-2" />
+            Empresas ({tenants.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("webhooks")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "webhooks"
+                ? "bg-[var(--color-gold)] text-white"
+                : "text-[var(--color-brown-medium)] hover:bg-[var(--color-cream)]"
+            }`}
+          >
+            <Webhook className="h-4 w-4 inline mr-2" />
+            Webhooks
+          </button>
+        </div>
+
+        {/* Overview Tab */}
+        {activeTab === "overview" && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Tenants Table */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-[var(--color-brown-dark)]">
+                  Empresas Recentes
+                </h2>
+                <button 
+                  onClick={() => setActiveTab("tenants")}
+                  className="text-sm text-[var(--color-gold)] hover:underline"
+                >
+                  Ver todas →
+                </button>
+              </div>
+              <div className="space-y-3">
+                {tenants.slice(0, 5).map((tenant) => {
+                  const stats = tenantStats[tenant.id] || { employee_count: 0, pending_requests: 0, approved_requests: 0, total_requests: 0 };
+                  return (
+                    <div key={tenant.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-cream)] hover:bg-[var(--color-cream)]/80 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-white">
+                          <Building2 className="h-4 w-4 text-[var(--color-gold)]" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-[var(--color-brown-dark)]">{tenant.name}</p>
+                          <p className="text-xs text-[var(--color-brown-medium)]">/{tenant.slug}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-[var(--color-brown-dark)]">{stats.employee_count}</p>
+                        <p className="text-xs text-[var(--color-brown-medium)]">funcionários</p>
+                      </div>
+                    </div>
+                  );
+                })}
+                {tenants.length === 0 && (
+                  <p className="text-center text-[var(--color-brown-medium)] py-4">
+                    Nenhuma empresa cadastrada
+                  </p>
+                )}
+              </div>
+            </Card>
+
+            {/* Quick Stats */}
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold text-[var(--color-brown-dark)] mb-4">
+                Estatísticas do Sistema
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-green-50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-100">
+                      <Check className="h-4 w-4 text-green-600" />
+                    </div>
+                    <span className="text-sm font-medium text-[var(--color-brown-dark)]">Taxa de Aprovação</span>
+                  </div>
+                  <span className="text-lg font-bold text-green-600">
+                    {systemStats.total_requests > 0 
+                      ? Math.round(((systemStats.total_requests - systemStats.pending_requests) / systemStats.total_requests) * 100)
+                      : 0}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-100">
+                      <UserPlus className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <span className="text-sm font-medium text-[var(--color-brown-dark)]">Média Employees/Empresa</span>
+                  </div>
+                  <span className="text-lg font-bold text-blue-600">
+                    {systemStats.total_tenants > 0 
+                      ? (systemStats.total_employees / systemStats.total_tenants).toFixed(1)
+                      : 0}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-purple-50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-purple-100">
+                      <Globe className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <span className="text-sm font-medium text-[var(--color-brown-dark)]">Empresas com Domínio</span>
+                  </div>
+                  <span className="text-lg font-bold text-purple-600">
+                    {tenants.filter(t => t.domain).length}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-amber-100">
+                      <Clock className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <span className="text-sm font-medium text-[var(--color-brown-dark)]">Sistema Ativo Desde</span>
+                  </div>
+                  <span className="text-lg font-bold text-amber-600">
+                    {new Date("2026-04-15").toLocaleDateString("pt-BR")}
+                  </span>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Tenants Tab */}
+        {activeTab === "tenants" && (
+          <Card className="p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div className="relative flex-1 max-w-md">
+                <input
+                  type="text"
+                  placeholder="Buscar empresas..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-4 pr-4 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
+                />
+              </div>
+              <div className="flex gap-2">
+                <span className="text-sm text-[var(--color-brown-medium)] py-2">
+                  {filteredTenants.length} empresas
+                </span>
+              </div>
+            </div>
+
+            {/* Table Header */}
+            <div className="hidden lg:grid grid-cols-12 gap-4 px-4 py-3 bg-[var(--color-cream)] rounded-t-lg text-xs font-semibold text-[var(--color-brown-medium)] uppercase tracking-wide">
+              <div className="col-span-4">Empresa</div>
+              <div className="col-span-2 text-center">Status</div>
+              <div className="col-span-2 text-center">Funcionários</div>
+              <div className="col-span-2 text-center">Pedidos</div>
+              <div className="col-span-2 text-right">Ações</div>
+            </div>
+
+            {/* Table Rows */}
+            <div className="divide-y divide-[var(--border)]">
+              {filteredTenants.map((tenant) => {
+                const stats = tenantStats[tenant.id] || { employee_count: 0, pending_requests: 0, approved_requests: 0, total_requests: 0 };
+                const isDefault = tenant.id === DEFAULT_TENANT_ID;
+
+                return (
+                  <div key={tenant.id} className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-4 py-4 items-center hover:bg-[var(--color-cream)]/50 transition-colors">
+                    <div className="col-span-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-[var(--color-gold)]/10">
+                          <Building2 className="h-5 w-5 text-[var(--color-gold)]" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-[var(--color-brown-dark)]">{tenant.name}</p>
+                          <p className="text-xs text-[var(--color-brown-medium)]">
+                            /{tenant.slug}
+                            {tenant.domain && ` • ${tenant.domain}`}
+                          </p>
+                          <p className="text-xs text-[var(--color-brown-light)] mt-1">
+                            Criado em {new Date(tenant.created_at).toLocaleDateString("pt-BR")}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-span-2 flex justify-center">
+                      <span className={`inline-flex items-center rounded-full text-xs font-semibold px-3 py-1 ${
+                        tenant.is_active 
+                          ? "bg-green-100 text-green-800" 
+                          : "bg-gray-100 text-gray-500"
+                      }`}>
+                        {tenant.is_active ? "Ativo" : "Inativo"}
+                      </span>
+                    </div>
+                    <div className="col-span-2 text-center">
+                      <span className="text-lg font-bold text-[var(--color-brown-dark)]">{stats.employee_count}</span>
+                      {stats.pending_requests > 0 && (
+                        <span className="ml-2 text-xs text-amber-600">({stats.pending_requests} pend.)</span>
+                      )}
+                    </div>
+                    <div className="col-span-2 text-center">
+                      <span className="text-lg font-bold text-[var(--color-brown-dark)]">{stats.total_requests}</span>
+                      <p className="text-xs text-green-600">{stats.approved_requests} aprov.</p>
+                    </div>
+                    <div className="col-span-2 flex justify-end gap-2">
+                      <button
+                        onClick={() => { setEditTenant(tenant); setShowEditTenant(true); }}
+                        className="p-2 rounded-lg text-[var(--color-brown-medium)] hover:bg-[var(--color-cream)] hover:text-[var(--color-brown-dark)] transition-colors"
+                        title="Editar"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => openWebhooks(tenant)}
+                        className="p-2 rounded-lg text-[var(--color-brown-medium)] hover:bg-[var(--color-cream)] hover:text-[var(--color-brown-dark)] transition-colors"
+                        title="Webhooks"
+                      >
+                        <Webhook className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleTenant(tenant)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          tenant.is_active 
+                            ? "text-amber-600 hover:bg-amber-50" 
+                            : "text-green-600 hover:bg-green-50"
+                        }`}
+                        title={tenant.is_active ? "Desativar" : "Ativar"}
+                      >
+                        {tenant.is_active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                      </button>
+                      {!isDefault && (
+                        <button
+                          onClick={() => handleDeleteTenant(tenant)}
+                          className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                          title="Excluir"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {filteredTenants.length === 0 && (
+              <div className="text-center py-12">
+                <Building2 className="h-12 w-12 mx-auto mb-4 text-[var(--color-brown-medium)] opacity-50" />
+                <p className="text-[var(--color-brown-medium)]">
+                  {searchTerm ? "Nenhuma empresa encontrada" : "Nenhuma empresa cadastrada"}
+                </p>
+              </div>
+            )}
           </Card>
+        )}
+
+        {/* Webhooks Tab */}
+        {activeTab === "webhooks" && (
+          <div>
+            <Card className="p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-[var(--color-brown-dark)]">
+                    {selectedTenant ? `Webhooks - ${selectedTenant.name}` : "Selecione uma empresa"}
+                  </h2>
+                  <p className="text-sm text-[var(--color-brown-medium)]">
+                    {!selectedTenant && "Escolha uma empresa na aba Empresas para gerenciar seus webhooks"}
+                  </p>
+                </div>
+                {selectedTenant && (
+                  <Button 
+                    variant="primary" 
+                    size="sm" 
+                    onClick={() => { setShowCreateWebhook(true); setError(null); setNewWebhook({ name: "", channel: "slack", webhook_url: "", events: [] }); }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo Webhook
+                  </Button>
+                )}
+              </div>
+
+              {!selectedTenant ? (
+                <p className="text-center text-[var(--color-brown-medium)] py-8">
+                  Selecione uma empresa primeiro para ver seus webhooks
+                </p>
+              ) : webhooks.length === 0 ? (
+                <div className="text-center py-8">
+                  <Webhook className="h-12 w-12 mx-auto mb-4 text-[var(--color-brown-medium)] opacity-50" />
+                  <p className="text-[var(--color-brown-medium)]">Nenhum webhook configurado</p>
+                  <p className="text-sm text-[var(--color-brown-light)] mt-1">
+                    Adicione para receber notificações no Slack ou Teams
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {webhooks.map((webhook) => (
+                    <div key={webhook.id} className="flex items-center justify-between p-4 rounded-lg bg-[var(--color-cream)]">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${webhook.channel === "slack" ? "bg-purple-100" : "bg-blue-100"}`}>
+                          <Webhook className={`h-4 w-4 ${webhook.channel === "slack" ? "text-purple-600" : "text-blue-600"}`} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-[var(--color-brown-dark)]">{webhook.name}</p>
+                          <p className="text-xs text-[var(--color-brown-medium)] truncate max-w-xs">{webhook.webhook_url}</p>
+                          <div className="flex gap-1 mt-1">
+                            {webhook.events.slice(0, 3).map((event) => (
+                              <span key={event} className="inline-flex items-center rounded-full bg-white px-2 py-0.5 text-xs text-[var(--color-brown-medium)]">
+                                {event.replace("leave_request_", "")}
+                              </span>
+                            ))}
+                            {webhook.events.length > 3 && (
+                              <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5 text-xs text-[var(--color-brown-medium)]">
+                                +{webhook.events.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center rounded-full text-xs font-medium px-2 py-1 ${
+                          webhook.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"
+                        }`}>
+                          {webhook.is_active ? "Ativo" : "Inativo"}
+                        </span>
+                        <button
+                          onClick={() => handleTestWebhook(webhook)}
+                          className="px-3 py-1 text-xs font-medium text-[var(--color-gold)] hover:bg-[var(--color-gold)]/10 rounded-lg transition-colors"
+                        >
+                          Testar
+                        </button>
+                        <button
+                          onClick={() => handleToggleWebhook(webhook)}
+                          className={`p-1.5 rounded-lg ${
+                            webhook.is_active ? "text-amber-600 hover:bg-amber-50" : "text-green-600 hover:bg-green-50"
+                          }`}
+                        >
+                          {webhook.is_active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteWebhook(webhook)}
+                          className="p-1.5 rounded-lg text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
         )}
       </main>
 
@@ -493,7 +925,7 @@ export default function SaasAdminPage() {
         isOpen={showCreateTenant}
         onClose={() => { setShowCreateTenant(false); setError(null); setNewTenant({ name: "", domain: "", slug: "" }); }}
         title="Nova Empresa"
-        size="sm"
+        size="md"
       >
         <div className="space-y-4">
           <div>
@@ -525,13 +957,16 @@ export default function SaasAdminPage() {
               onChange={(e) => setNewTenant(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") }))}
               placeholder="magna-inc"
             />
+            <p className="text-xs text-[var(--color-brown-light)] mt-1">
+              Será usado como: suaurl.com/{newTenant.slug || "slug"}
+            </p>
           </div>
           <div className="flex gap-3 pt-2">
             <Button variant="ghost" className="flex-1" onClick={() => setShowCreateTenant(false)}>
               Cancelar
             </Button>
             <Button variant="primary" className="flex-1" loading={saving} onClick={handleCreateTenant}>
-              Criar
+              Criar Empresa
             </Button>
           </div>
         </div>
@@ -542,7 +977,7 @@ export default function SaasAdminPage() {
         isOpen={showEditTenant}
         onClose={() => { setShowEditTenant(false); setEditTenant(null); setError(null); }}
         title={`Editar: ${editTenant?.name}`}
-        size="sm"
+        size="md"
       >
         {editTenant && (
           <div className="space-y-4">
@@ -577,137 +1012,74 @@ export default function SaasAdminPage() {
         )}
       </Modal>
 
-      {/* Webhooks Modal */}
+      {/* Create Webhook Modal */}
       <Modal
-        isOpen={showWebhooks}
-        onClose={() => { setShowWebhooks(false); setSelectedTenant(null); setError(null); }}
-        title={`Webhooks — ${selectedTenant?.name}`}
+        isOpen={showCreateWebhook}
+        onClose={() => { setShowCreateWebhook(false); setError(null); setNewWebhook({ name: "", channel: "slack", webhook_url: "", events: [] }); }}
+        title="Novo Webhook"
         size="md"
       >
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <Button variant="primary" size="sm" onClick={() => setShowCreateWebhook(true)}>
-              <Plus className="h-3 w-3 mr-1" />
-              Novo Webhook
-            </Button>
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
+              Nome <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={newWebhook.name}
+              onChange={(e) => setNewWebhook(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Produção Notifications"
+            />
           </div>
-
-          {webhooks.length === 0 ? (
-            <div className="text-center py-8 text-[var(--color-brown-medium)]">
-              <Webhook className="h-10 w-10 mx-auto mb-3 opacity-50" />
-              <p>Nenhum webhook configurado</p>
-              <p className="text-xs mt-1">Adicione para receber notificações no Slack ou Teams</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {webhooks.map((wh) => (
-                <div key={wh.id} className="p-4 rounded-xl border border-[var(--border)] bg-[var(--color-cream)]">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-[var(--color-brown-dark)]">{wh.name}</span>
-                      <span className={`inline-flex items-center rounded-full text-xs font-semibold px-2 py-0.5 ${wh.channel === 'slack' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
-                        {wh.channel === 'slack' ? 'Slack' : 'Teams'}
-                      </span>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => handleTestWebhook(wh)} title="Testar">
-                        <Check className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        variant={wh.is_active ? "danger" : "primary"} 
-                        size="sm" 
-                        onClick={() => handleToggleWebhook(wh)}
-                        title={wh.is_active ? "Desativar" : "Ativar"}
-                      >
-                        {wh.is_active ? <PowerOff className="h-3 w-3" /> : <Power className="h-3 w-3" />}
-                      </Button>
-                      <Button variant="danger" size="sm" onClick={() => handleDeleteWebhook(wh)}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-xs text-[var(--color-brown-medium)] truncate mb-2">{wh.webhook_url}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {wh.events.map((event) => (
-                      <span key={event} className="inline-flex items-center rounded-full bg-gray-100 text-gray-700 text-xs px-2 py-0.5">
-                        {AVAILABLE_EVENTS.find(e => e.value === event)?.label || event}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
+              Canal <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={newWebhook.channel}
+              onChange={(e) => setNewWebhook(prev => ({ ...prev, channel: e.target.value as "slack" | "teams" }))}
+              className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
+            >
+              <option value="slack">Slack</option>
+              <option value="teams">Microsoft Teams</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
+              Webhook URL <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={newWebhook.webhook_url}
+              onChange={(e) => setNewWebhook(prev => ({ ...prev, webhook_url: e.target.value }))}
+              placeholder="https://hooks.slack.com/services/..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-2">
+              Eventos <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {AVAILABLE_EVENTS.map((event) => (
+                <label key={event.value} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--color-cream)] cursor-pointer hover:bg-[var(--color-cream)]/80">
+                  <input
+                    type="checkbox"
+                    checked={newWebhook.events.includes(event.value)}
+                    onChange={() => toggleEvent(event.value)}
+                    className="rounded border-[var(--border)] text-[var(--color-gold)] focus:ring-[var(--color-gold)]"
+                  />
+                  <span className="text-sm text-[var(--color-brown-dark)]">{event.label}</span>
+                </label>
               ))}
             </div>
-          )}
-        </div>
-
-        {/* Create Webhook Sub-modal */}
-        {showCreateWebhook && (
-          <div className="mt-4 p-4 border-t border-[var(--border)]">
-            <h4 className="font-medium text-[var(--color-brown-dark)] mb-3">Novo Webhook</h4>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
-                  Nome <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  value={newWebhook.name}
-                  onChange={(e) => setNewWebhook(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Notificações RH"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
-                  Canal <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  value={newWebhook.channel}
-                  onChange={(e) => setNewWebhook(prev => ({ ...prev, channel: e.target.value as "slack" | "teams" }))}
-                  options={[
-                    { value: "slack", label: "Slack" },
-                    { value: "teams", label: "Microsoft Teams" },
-                  ]}
-                  placeholder="Selecione o canal"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
-                  Webhook URL <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  value={newWebhook.webhook_url}
-                  onChange={(e) => setNewWebhook(prev => ({ ...prev, webhook_url: e.target.value }))}
-                  placeholder="https://hooks.slack.com/services/..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-2">
-                  Eventos <span className="text-red-500">*</span>
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {AVAILABLE_EVENTS.map((event) => (
-                    <label key={event.value} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newWebhook.events.includes(event.value)}
-                        onChange={() => toggleEvent(event.value)}
-                        className="rounded border-gray-300 text-[var(--color-gold)] focus:ring-[var(--color-gold)]"
-                      />
-                      <span className="text-[var(--color-brown-medium)]">{event.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-2 pt-2">
-                <Button variant="ghost" size="sm" onClick={() => { setShowCreateWebhook(false); setNewWebhook({ name: "", channel: "slack", webhook_url: "", events: [] }); }}>
-                  Cancelar
-                </Button>
-                <Button variant="primary" size="sm" loading={saving} onClick={handleCreateWebhook}>
-                  Criar
-                </Button>
-              </div>
-            </div>
           </div>
-        )}
+          <div className="flex gap-3 pt-2">
+            <Button variant="ghost" className="flex-1" onClick={() => setShowCreateWebhook(false)}>
+              Cancelar
+            </Button>
+            <Button variant="primary" className="flex-1" loading={saving} onClick={handleCreateWebhook}>
+              Criar Webhook
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

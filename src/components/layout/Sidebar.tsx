@@ -10,6 +10,8 @@ import {
   Home,
   ChevronRight,
   Clock,
+  Building2,
+  Webhook,
 } from "lucide-react";
 import { clsx } from "clsx";
 import type { Profile } from "@/lib/types";
@@ -26,24 +28,14 @@ const navItems = [
     exact: true,
   },
   {
-    label: "Pedidos",
-    href: "/admin#requests",
-    icon: CalendarCheck,
+    label: "Empresas (SaaS)",
+    href: "/admin/saas",
+    icon: Building2,
   },
   {
-    label: "Equipe",
-    href: "/admin#team",
+    label: "Funcionários",
+    href: "/admin/employees",
     icon: Users,
-  },
-  {
-    label: "Fechamento",
-    href: "/admin/timesheets",
-    icon: BarChart3,
-  },
-  {
-    label: "Ponto Equipe",
-    href: "/admin/team/point",
-    icon: Clock,
   },
   {
     label: "Escalas",
@@ -51,9 +43,24 @@ const navItems = [
     icon: CalendarCheck,
   },
   {
-    label: "Relatórios",
-    href: "/admin#reports",
+    label: "Ponto",
+    href: "/admin/team/point",
+    icon: Clock,
+  },
+  {
+    label: "Fechamento Mensal",
+    href: "/admin/timesheets",
     icon: BarChart3,
+  },
+  {
+    label: "Histórico",
+    href: "/admin/audit",
+    icon: BarChart3,
+  },
+  {
+    label: "Webhooks",
+    href: "/admin/saas#webhooks",
+    icon: Webhook,
   },
   {
     label: "Configurações",
