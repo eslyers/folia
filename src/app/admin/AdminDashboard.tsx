@@ -3,7 +3,6 @@
 import { useState, Component, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X, Users, Calendar as CalendarIcon, Clock, AlertCircle, CheckSquare, Square } from "lucide-react";
-import { Header } from "@/components/Header";
 import { Card, Button, Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { LEAVE_TYPE_LABELS, STATUS_LABELS } from "@/lib/types";
@@ -284,8 +283,6 @@ export function AdminDashboard({ profile, leaveRequests, profiles }: AdminDashbo
   return (
     <AdminErrorBoundary>
     <div className="min-h-screen bg-[var(--background)]">
-      <Header profile={profile} pendingCount={pendingRequests.length} />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error message */}
         {error && (

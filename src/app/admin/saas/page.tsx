@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Header } from "@/components/Header";
 import { Card, Button, Modal, Input, Select } from "@/components/ui";
 import { 
   Building2, Users, Plus, Edit2, Power, PowerOff, Webhook, Trash2, Check, X, AlertCircle,
@@ -433,8 +432,6 @@ export default function SaasAdminPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <Header profile={profile} pendingCount={0} />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
