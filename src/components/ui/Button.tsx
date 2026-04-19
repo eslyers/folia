@@ -5,7 +5,7 @@ import { clsx } from "clsx";
 import { Loader2 } from "lucide-react";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "outline";
   size?: "sm" | "md" | "lg";
   loading?: boolean;
 }
@@ -19,6 +19,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       secondary: "border-2 border-[var(--color-green-olive)] text-[var(--color-green-olive)] hover:bg-[var(--color-green-olive)] hover:text-white focus:ring-[var(--color-green-olive)]",
       ghost: "text-[var(--color-brown-medium)] hover:bg-[var(--color-cream)] hover:text-[var(--color-brown-dark)] focus:ring-[var(--color-brown-medium)]",
       danger: "bg-[var(--color-error)] text-white hover:bg-red-700 hover:shadow-lg focus:ring-[var(--color-error)]",
+      outline: "border-2 border-[var(--color-brown-medium)] text-[var(--color-brown-medium)] hover:bg-[var(--color-brown-medium)] hover:text-white focus:ring-[var(--color-brown-medium)]",
     };
 
     const sizes = {
