@@ -212,17 +212,12 @@ export function Header({ profile, onMenuClick }: HeaderProps) {
           </span>
         </div>
         <div className="lg:hidden flex items-center">
-          <div className="w-20 h-20 flex items-center justify-center flex-shrink-0 rounded-xl bg-gradient-to-br from-[var(--color-gold)]/20 to-[var(--color-gold)]/5 p-1">
-            <img
-              src="/folia-logo.jpg"
-              alt="FOLIA"
-              className="w-full h-full object-contain rounded-lg"
-              draggable={false}
-            />
-          </div>
-          <span className="ml-3 text-2xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
-            FOLIA
-          </span>
+          <img
+            src="/folia-logo.jpg"
+            alt="FOLIA"
+            className="h-12 w-auto object-contain"
+            draggable={false}
+          />
         </div>
       </div>
 
