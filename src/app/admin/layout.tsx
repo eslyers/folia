@@ -72,11 +72,24 @@ export default function AdminLayout({
     );
   }
 
+  // Toggle function that always works
+  const handleMenuToggle = () => {
+    setMobileMenuOpen(prev => !prev);
+  };
+
   return (
     <div className="flex min-h-screen bg-[var(--background)]">
-      <Sidebar profile={profile} mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
+      <Sidebar 
+        profile={profile} 
+        mobileOpen={mobileMenuOpen} 
+        onMobileClose={() => setMobileMenuOpen(false)}
+        onMenuToggle={handleMenuToggle}
+      />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header profile={profile} onMenuClick={() => setMobileMenuOpen(true)} />
+        <Header 
+          profile={profile} 
+          onMenuClick={handleMenuToggle}
+        />
         <main className="flex-1 overflow-auto">
           {children}
         </main>

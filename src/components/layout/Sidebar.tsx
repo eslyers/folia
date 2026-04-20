@@ -30,6 +30,7 @@ interface SidebarProps {
   profile: Profile;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  onMenuToggle?: () => void;
 }
 
 interface NavItem {
@@ -105,7 +106,7 @@ function getRoleBadge(role: string) {
   );
 }
 
-export function Sidebar({ profile, mobileOpen, onMobileClose }: SidebarProps) {
+export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -121,6 +122,15 @@ export function Sidebar({ profile, mobileOpen, onMobileClose }: SidebarProps) {
       setIsMobileOpen(mobileOpen);
     }
   }, [mobileOpen]);
+
+  // Handle hamburger toggle - use parent's toggle if available
+  const handleMenuToggle = () => {
+    if (onMenuToggle) {
+      onMenuToggle();
+    } else {
+      setIsMobileOpen(prev => !prev);
+    }
+  };
 
   useEffect(() => {
     const checkMobile = () => {
@@ -247,8 +257,11 @@ export function Sidebar({ profile, mobileOpen, onMobileClose }: SidebarProps) {
   // Mobile close button inside sidebar
   const MobileCloseButton = () => {
     const handleClose = () => {
-      setIsMobileOpen(false);
-      if (onMobileClose) onMobileClose();
+      if (onMobileClose) {
+        onMobileClose();
+      } else {
+        setIsMobileOpen(false);
+      }
     };
     return (
       <div className="flex justify-end p-4 lg:hidden">
@@ -274,11 +287,11 @@ export function Sidebar({ profile, mobileOpen, onMobileClose }: SidebarProps) {
       {/* Mobile overlay */}
       {isMobile && isMobileOpen && <MobileOverlay />}
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar - opens from LEFT to match hamburger */}
       {isMobile && (
         <aside className={clsx(
-          "fixed inset-y-0 right-0 z-50 w-72 bg-[var(--color-surface)] border-l border-[var(--border)] flex flex-col transform transition-transform duration-300 lg:hidden",
-          isMobileOpen ? "translate-x-0" : "translate-x-full"
+          "fixed inset-y-0 left-0 z-50 w-72 bg-[var(--color-surface)] border-r border-[var(--border)] flex flex-col transform transition-transform duration-300 lg:hidden",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}>
           <MobileCloseButton />
           <SidebarContent />
