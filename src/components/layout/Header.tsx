@@ -196,18 +196,34 @@ export function Header({ profile, onMenuClick }: HeaderProps) {
 
   return (
     <header className="bg-[var(--color-surface)] border-b border-[var(--border)] px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-      {/* Mobile menu button + Page title */}
+      {/* Mobile: logo + hamburger | Desktop: hamburger + page title */}
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="p-2 rounded-lg hover:bg-[var(--color-cream)] transition-colors lg:hidden"
+          className="p-2 rounded-lg hover:bg-[var(--color-cream)] transition-colors"
           aria-label="Abrir menu"
         >
-          <Menu className="h-5 w-5 text-[var(--color-brown-medium)]" />
+          <Menu className="h-5 w-5 text-[var(--color-brown-medium)] lg:hidden" />
         </button>
-        <span className="text-lg sm:text-xl font-semibold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
-          {getPageName()}
-        </span>
+        {/* Mobile: logo | Desktop: page title */}
+        <div className="hidden lg:flex items-center">
+          <span className="text-xl font-semibold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
+            {getPageName()}
+          </span>
+        </div>
+        <div className="lg:hidden flex items-center">
+          <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 rounded-lg bg-gradient-to-br from-[var(--color-gold)]/20 to-[var(--color-gold)]/5 p-0.5">
+            <img
+              src="/folia-logo.jpg"
+              alt="FOLIA"
+              className="w-full h-full object-contain rounded"
+              draggable={false}
+            />
+          </div>
+          <span className="ml-2 text-lg font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
+            FOLIA
+          </span>
+        </div>
       </div>
 
       {/* Actions */}
