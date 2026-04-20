@@ -169,8 +169,8 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      {/* Logo - Premium */}
-      <div className="p-5 border-b border-[var(--border)]">
+      {/* Logo - Premium - hidden on mobile, only shows on desktop sidebar */}
+      <div className="p-5 border-b border-[var(--border)] hidden lg:block">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 rounded-xl bg-gradient-to-br from-[var(--color-gold)]/20 to-[var(--color-gold)]/5 p-1">
             {/* Static logo asset (does not change between themes) */}
