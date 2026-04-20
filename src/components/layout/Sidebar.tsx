@@ -238,7 +238,7 @@ export function Sidebar({ profile }: SidebarProps) {
   const MobileHamburger = () => (
     <button
       onClick={() => setIsMobileOpen(true)}
-      className="fixed top-4 right-4 z-50 p-2 bg-[var(--color-green-olive)] text-white rounded-lg shadow-lg lg:hidden"
+      className="fixed top-16 right-4 z-[60] p-2.5 bg-[var(--color-green-olive)] text-white rounded-xl shadow-xl hover:bg-[var(--color-green-olive)]/90 transition-all lg:hidden"
     >
       <Menu className="h-6 w-6" />
     </button>
