@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Palette } from "lucide-react";
+import { Bell, Palette, Menu } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 
 interface HeaderProps {
   profile: Profile;
+  onMenuClick?: () => void;
 }
 
 interface Notification {
@@ -195,8 +196,15 @@ export function Header({ profile }: HeaderProps) {
 
   return (
     <header className="bg-[var(--color-surface)] border-b border-[var(--border)] px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-      {/* Page title / Breadcrumb */}
-      <div className="flex items-center gap-2">
+      {/* Mobile menu button + Page title */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onMenuClick}
+          className="p-2 rounded-lg hover:bg-[var(--color-cream)] transition-colors lg:hidden"
+          aria-label="Abrir menu"
+        >
+          <Menu className="h-5 w-5 text-[var(--color-brown-medium)]" />
+        </button>
         <span className="text-lg sm:text-xl font-semibold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
           {getPageName()}
         </span>

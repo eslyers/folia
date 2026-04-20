@@ -17,6 +17,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -73,9 +74,9 @@ export default function AdminLayout({
 
   return (
     <div className="flex min-h-screen bg-[var(--background)]">
-      <Sidebar profile={profile} />
+      <Sidebar profile={profile} mobileOpen={mobileMenuOpen} onMobileClose={() => setMobileMenuOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header profile={profile} />
+        <Header profile={profile} onMenuClick={() => setMobileMenuOpen(true)} />
         <main className="flex-1 overflow-auto">
           {children}
         </main>

@@ -15,7 +15,6 @@ import {
   DollarSign,
   Settings,
   LogOut,
-  Menu,
   X,
   Shield,
   UserCog,
@@ -29,6 +28,8 @@ import { isMasterAdmin, isTenantAdmin, isGestor } from "@/lib/auth";
 
 interface SidebarProps {
   profile: Profile;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 interface NavItem {
@@ -114,6 +115,13 @@ export function Sidebar({ profile }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Sync with parent mobile state
+  useEffect(() => {
+    if (mobileOpen !== undefined) {
+      setIsMobileOpen(mobileOpen);
+    }
+  }, [mobileOpen]);
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -124,7 +132,9 @@ export function Sidebar({ profile }: SidebarProps) {
   }, []);
 
   useEffect(() => {
-    setIsMobileOpen(false);
+    if (onMobileClose) {
+      setIsMobileOpen(false);
+    }
   }, [pathname]);
 
   const isActive = (href: string, exact?: boolean) => {
@@ -234,33 +244,26 @@ export function Sidebar({ profile }: SidebarProps) {
     </div>
   );
 
-  // Mobile hamburger - move to RIGHT side to avoid overlap with content
-  const MobileHamburger = () => (
-    <button
-      onClick={() => setIsMobileOpen(true)}
-      className="fixed top-16 right-4 z-[60] p-2.5 bg-[var(--color-green-olive)] text-white rounded-xl shadow-xl hover:bg-[var(--color-green-olive)]/90 transition-all lg:hidden"
-    >
-      <Menu className="h-6 w-6" />
-    </button>
-  );
-
   // Mobile close button inside sidebar
-  const MobileCloseButton = () => (
-    <div className="flex justify-end p-4 lg:hidden">
-      <button 
-        onClick={() => setIsMobileOpen(false)} 
-        className="p-2 rounded-lg hover:bg-[var(--color-cream)]"
-      >
-        <X className="h-6 w-6" />
-      </button>
-    </div>
-  );
+  const MobileCloseButton = () => {
+    const handleClose = () => {
+      setIsMobileOpen(false);
+      if (onMobileClose) onMobileClose();
+    };
+    return (
+      <div className="flex justify-end p-4 lg:hidden">
+        <button 
+          onClick={handleClose} 
+          className="p-2 rounded-lg hover:bg-[var(--color-cream)]"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
+    );
+  };
 
   return (
     <>
-      {/* Mobile hamburger - right side to avoid overlap */}
-      {isMobile && <MobileHamburger />}
-
       {/* Desktop sidebar */}
       {!isMobile && (
         <aside className="w-64 min-h-screen bg-[var(--color-surface)] border-r border-[var(--border)] flex flex-col flex-shrink-0">
