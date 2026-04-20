@@ -174,21 +174,31 @@ export function Header({ profile }: HeaderProps) {
     return `${diffDays}d atrás`;
   };
 
+  // Get current page name from pathname for breadcrumb
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+  const getPageName = () => {
+    if (pathname === '/admin') return 'Visão Geral';
+    if (pathname.includes('/saas/access-control')) return 'Controle de Acesso';
+    if (pathname.includes('/saas')) return 'Empresas SaaS';
+    if (pathname.includes('/employees')) return 'Funcionários';
+    if (pathname.includes('/schedules')) return 'Escalas';
+    if (pathname.includes('/team/point')) return 'Ponto da Equipe';
+    if (pathname.includes('/timesheets')) return 'Fechamento';
+    if (pathname.includes('/audit')) return 'Histórico/Audit';
+    if (pathname.includes('/logs')) return 'Logs do Sistema';
+    if (pathname.includes('/finance')) return 'Gestão Financeira';
+    if (pathname.includes('/notifications')) return 'Notificações';
+    if (pathname.includes('/settings')) return 'Configurações';
+    if (pathname.includes('/access')) return 'Gestão de Acessos';
+    return 'Painel';
+  };
+
   return (
     <header className="bg-[var(--color-surface)] border-b border-[var(--border)] px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-50">
-      {/* Logo */}
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 flex items-center justify-center">
-          {/* Static logo asset (does not change between themes) */}
-          <img
-            src="/folia-logo.jpg"
-            alt="FOLIA"
-            className="w-8 h-8 object-contain"
-            draggable={false}
-          />
-        </div>
-        <span className="font-semibold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)] hidden sm:block">
-          FOLIA
+      {/* Page title / Breadcrumb */}
+      <div className="flex items-center gap-2">
+        <span className="text-lg sm:text-xl font-semibold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
+          {getPageName()}
         </span>
       </div>
 

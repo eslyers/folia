@@ -149,25 +149,25 @@ export function Sidebar({ profile }: SidebarProps) {
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      {/* Logo */}
+      {/* Logo - Premium */}
       <div className="p-5 border-b border-[var(--border)]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 rounded-xl bg-gradient-to-br from-[var(--color-gold)]/20 to-[var(--color-gold)]/5 p-1">
             {/* Static logo asset (does not change between themes) */}
             <img
               src="/folia-logo.jpg"
               alt="FOLIA"
-              className="w-10 h-10 object-contain"
+              className="w-full h-full object-contain rounded-lg"
               draggable={false}
             />
           </div>
-          <div>
-            <span className="text-xl font-semibold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
+          <div className="flex flex-col">
+            <span className="text-xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)] tracking-wide">
               FOLIA
             </span>
-            <p className="text-xs text-[var(--color-brown-medium)] mt-0.5">
+            <span className="text-xs text-[var(--color-brown-medium)] font-medium">
               {isAdminSection ? "Painel Administrativo" : "Meu Espaço"}
-            </p>
+            </span>
           </div>
         </div>
       </div>
