@@ -31,8 +31,14 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
         <div className="flex items-center justify-between h-20">
           {/* Premium Logo */}
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--color-green-olive)] to-[var(--color-green-emerald)] flex items-center justify-center shadow-lg shadow-[var(--color-green-olive)]/20">
-              <span className="text-white font-bold text-xl">F</span>
+            <div className="w-12 h-12 flex items-center justify-center">
+              {/* Static logo asset (does not change between themes) */}
+              <img
+                src="/folia-logo.png"
+                alt="FOLIA"
+                className="w-12 h-12 object-contain"
+                draggable={false}
+              />
             </div>
             <div>
               <span className="text-2xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)] bg-gradient-to-r from-[var(--color-brown-dark)] to-[var(--color-brown-medium)] bg-clip-text text-transparent">

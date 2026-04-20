@@ -152,8 +152,14 @@ export function Sidebar({ profile }: SidebarProps) {
       {/* Logo */}
       <div className="p-5 border-b border-[var(--border)]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[var(--color-green-olive)] flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-lg">F</span>
+          <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+            {/* Static logo asset (does not change between themes) */}
+            <img
+              src="/folia-logo.png"
+              alt="FOLIA"
+              className="w-10 h-10 object-contain"
+              draggable={false}
+            />
           </div>
           <div>
             <span className="text-xl font-semibold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">

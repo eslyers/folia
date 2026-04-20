@@ -178,8 +178,14 @@ export function Header({ profile }: HeaderProps) {
     <header className="bg-[var(--color-surface)] border-b border-[var(--border)] px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-50">
       {/* Logo */}
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-[var(--color-gold)] flex items-center justify-center">
-          <span className="text-white font-bold text-sm">F</span>
+        <div className="w-8 h-8 flex items-center justify-center">
+          {/* Static logo asset (does not change between themes) */}
+          <img
+            src="/folia-logo.png"
+            alt="FOLIA"
+            className="w-8 h-8 object-contain"
+            draggable={false}
+          />
         </div>
         <span className="font-semibold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)] hidden sm:block">
           FOLIA
