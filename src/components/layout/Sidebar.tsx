@@ -105,7 +105,7 @@ function getRoleBadge(role: string) {
   );
 }
 
-export function Sidebar({ profile }: SidebarProps) {
+export function Sidebar({ profile, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();

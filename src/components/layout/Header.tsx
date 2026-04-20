@@ -67,7 +67,7 @@ const THEMES = [
   },
 ];
 
-export function Header({ profile }: HeaderProps) {
+export function Header({ profile, onMenuClick }: HeaderProps) {
   const supabase = createClient();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
