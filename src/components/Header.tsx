@@ -34,7 +34,7 @@ export function Header({ profile, pendingCount = 0 }: HeaderProps) {
             <div className="w-12 h-12 flex items-center justify-center">
               {/* Static logo asset (does not change between themes) */}
               <img
-                src="/folia-logo.png"
+                src="/folia-logo.jpg"
                 alt="FOLIA"
                 className="w-12 h-12 object-contain"
                 draggable={false}

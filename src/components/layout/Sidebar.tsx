@@ -155,7 +155,7 @@ export function Sidebar({ profile }: SidebarProps) {
           <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
             {/* Static logo asset (does not change between themes) */}
             <img
-              src="/folia-logo.png"
+              src="/folia-logo.jpg"
               alt="FOLIA"
               className="w-10 h-10 object-contain"
               draggable={false}
