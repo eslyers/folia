@@ -39,26 +39,35 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // Get auth from header
+    const authHeader = request.headers.get("Authorization");
     
-    if (sessionError) {
-      console.error("[DEBUG] Session error:", sessionError);
+    if (!authHeader) {
+      return NextResponse.json({ error: "Unauthorized - no auth header" }, { status: 401 });
     }
     
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized - no session" }, { status: 401 });
+    // Use admin client for everything (bypasses RLS)
+    const adminClient = createServiceClient();
+    
+    // Get user from token using admin client
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
+    
+    if (userError || !user) {
+      console.error("[DEBUG] getUser error:", userError);
+      return NextResponse.json({ error: "Unauthorized - invalid token" }, { status: 401 });
     }
 
-    const user = session.user;
-
-    // Verify master admin
-    const { data: profile } = await supabase
+    // Verify master admin using admin client
+    const { data: profile, error: profileError } = await adminClient
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
+
+    if (profileError) {
+      console.error("[DEBUG] Profile error:", profileError);
+    }
 
     if (profile?.role !== "master_admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });

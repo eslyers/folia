@@ -10,19 +10,19 @@ export async function createClient() {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll();
+          try {
+            return cookieStore.getAll();
+          } catch {
+            return [];
+          }
         },
         setAll(cookiesToSet) {
-          // In Next.js 16, cookies() is readonly in Server Components
-          // Cookie setting is handled by the proxy/middleware for incoming requests
-          // and by the browser for client-side operations
           try {
-            // Try to set cookies (will fail in read-only context)
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options as any);
             });
           } catch (e) {
-            // Silently ignore - cookies are managed by middleware/proxy
+            // Cookies are readonly in some contexts
           }
         },
       },
