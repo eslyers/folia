@@ -39,23 +39,19 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get auth token from header
-    const authHeader = request.headers.get("Authorization");
-    const token = authHeader?.replace("Bearer ", "");
+    const supabase = await createClient();
+
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized - no token" }, { status: 401 });
+    if (sessionError) {
+      console.error("[DEBUG] Session error:", sessionError);
     }
     
-    // Create supabase client with the user's token
-    const supabase = createClient();
-    
-    // Verify the token and get user
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
-      return NextResponse.json({ error: "Unauthorized - invalid token" }, { status: 401 });
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized - no session" }, { status: 401 });
     }
+
+    const user = session.user;
 
     // Verify master admin
     const { data: profile } = await supabase
