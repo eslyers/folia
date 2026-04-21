@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
+import { Topbar } from "@/components/layout/Topbar";
 import type { Profile } from "@/lib/types";
 import { isTenantAdmin } from "@/lib/auth";
 
@@ -17,7 +17,7 @@ export default function AdminLayout({
   const pathname = usePathname();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -72,23 +72,17 @@ export default function AdminLayout({
     );
   }
 
-  // Toggle function that always works
-  const handleMenuToggle = () => {
-    setMobileMenuOpen(prev => !prev);
-  };
-
   return (
-    <div className="flex min-h-screen bg-[var(--background)]">
-      <Sidebar 
+    <div className="flex flex-col h-screen bg-gray-50">
+      <Topbar 
         profile={profile} 
-        mobileOpen={mobileMenuOpen} 
-        onMobileClose={() => setMobileMenuOpen(false)}
-        onMenuToggle={handleMenuToggle}
+        onMenuToggle={() => setSidebarOpen(prev => !prev)} 
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header 
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar 
           profile={profile} 
-          onMenuClick={handleMenuToggle}
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
         />
         <main className="flex-1 overflow-auto">
           {children}

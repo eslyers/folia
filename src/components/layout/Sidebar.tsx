@@ -2,35 +2,32 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
-  Home,
-  Building2,
+  LayoutDashboard,
+  FileText,
+  Calendar,
   Users,
-  CalendarCheck,
-  Clock,
   BarChart3,
-  ScrollText,
-  Scroll,
-  DollarSign,
   Settings,
-  LogOut,
-  X,
+  Clock,
+  ClipboardCheck,
+  Building2,
   Shield,
   UserCog,
-  UserCircle,
+  ScrollText,
+  DollarSign,
   Bell,
+  Scroll,
+  UserCircle,
 } from "lucide-react";
 import { clsx } from "clsx";
-import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { isMasterAdmin, isTenantAdmin, isGestor } from "@/lib/auth";
 
-interface SidebarProps {
+interface SidebarNavProps {
   profile: Profile;
-  mobileOpen?: boolean;
-  onMobileClose?: () => void;
-  onMenuToggle?: () => void;
+  collapsed?: boolean;
 }
 
 interface NavItem {
@@ -41,12 +38,12 @@ interface NavItem {
 }
 
 const MASTER_ADMIN_ITEMS: NavItem[] = [
-  { label: "Visão Geral", href: "/admin", icon: Home, exact: true },
+  { label: "Visão Geral", href: "/admin", icon: LayoutDashboard, exact: true },
   { label: "Empresas SaaS", href: "/admin/saas", icon: Building2 },
   { label: "Controle Acesso", href: "/admin/saas/access-control", icon: Shield },
   { label: "Funcionários Global", href: "/admin/employees", icon: Users },
   { label: "Gestão Acessos", href: "/admin/access", icon: UserCog },
-  { label: "Escalas", href: "/admin/schedules", icon: CalendarCheck },
+  { label: "Escalas", href: "/admin/schedules", icon: Calendar },
   { label: "Ponto Equipe", href: "/admin/team/point", icon: Clock },
   { label: "Fechamento", href: "/admin/timesheets", icon: BarChart3 },
   { label: "Histórico/Audit", href: "/admin/audit", icon: ScrollText },
@@ -58,9 +55,9 @@ const MASTER_ADMIN_ITEMS: NavItem[] = [
 ];
 
 const TENANT_ADMIN_ITEMS: NavItem[] = [
-  { label: "Visão Geral", href: "/admin", icon: Home, exact: true },
+  { label: "Visão Geral", href: "/admin", icon: LayoutDashboard, exact: true },
   { label: "Funcionários", href: "/admin/employees", icon: Users },
-  { label: "Escalas", href: "/admin/schedules", icon: CalendarCheck },
+  { label: "Escalas", href: "/admin/schedules", icon: Calendar },
   { label: "Ponto", href: "/admin/team/point", icon: Clock },
   { label: "Fechamento", href: "/admin/timesheets", icon: BarChart3 },
   { label: "Histórico", href: "/admin/audit", icon: ScrollText },
@@ -70,14 +67,14 @@ const TENANT_ADMIN_ITEMS: NavItem[] = [
 const GESTOR_ITEMS: NavItem[] = [
   { label: "Minha Equipe", href: "/admin/employees", icon: Users },
   { label: "Ponto", href: "/admin/team/point", icon: Clock },
-  { label: "Meus Pedidos", href: "/admin/my-requests", icon: CalendarCheck },
+  { label: "Meus Pedidos", href: "/admin/my-requests", icon: ClipboardCheck },
   { label: "Configurações", href: "/admin/settings", icon: Settings },
 ];
 
 const FUNCIONARIO_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: Home, exact: true },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
   { label: "Ponto", href: "/dashboard/point", icon: Clock },
-  { label: "Meus Pedidos", href: "/admin/my-requests", icon: CalendarCheck },
+  { label: "Meus Pedidos", href: "/admin/my-requests", icon: ClipboardCheck },
   { label: "Configurações", href: "/settings", icon: Settings },
 ];
 
@@ -88,64 +85,17 @@ function getNavItems(role: string): NavItem[] {
   return FUNCIONARIO_ITEMS;
 }
 
-const ROLE_BADGE_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
-  master_admin: { bg: "bg-purple-100", text: "text-purple-800", label: "🏆 Master Admin" },
-  tenant_admin: { bg: "bg-blue-100", text: "text-blue-800", label: "🏢 Admin" },
-  gestor: { bg: "bg-green-100", text: "text-green-800", label: "👔 Gestor" },
-  funcionario: { bg: "bg-gray-100", text: "text-gray-800", label: "👤 Funcionário" },
-  admin: { bg: "bg-blue-100", text: "text-blue-800", label: "🏢 Admin" },
-  employee: { bg: "bg-gray-100", text: "text-gray-800", label: "👤 Funcionário" },
-};
-
-function getRoleBadge(role: string) {
-  const config = ROLE_BADGE_CONFIG[role] ?? ROLE_BADGE_CONFIG.funcionario;
-  return (
-    <span className={clsx("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold", config.bg, config.text)}>
-      {config.label}
-    </span>
-  );
+function getSectionLabel(pathname: string): string {
+  if (pathname.startsWith("/admin")) return "Gestão";
+  if (pathname.startsWith("/dashboard")) return "Menu";
+  if (pathname.startsWith("/settings")) return "Sistema";
+  return "Menu";
 }
 
-export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: SidebarProps) {
+export function SidebarNav({ profile, collapsed = false }: SidebarNavProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const supabase = createClient();
-  const role = profile.role;
-  const navItems = getNavItems(role);
-
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Sync with parent mobile state
-  useEffect(() => {
-    if (mobileOpen !== undefined) {
-      setIsMobileOpen(mobileOpen);
-    }
-  }, [mobileOpen]);
-
-  // Handle hamburger toggle - use parent's toggle if available
-  const handleMenuToggle = () => {
-    if (onMenuToggle) {
-      onMenuToggle();
-    } else {
-      setIsMobileOpen(prev => !prev);
-    }
-  };
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  useEffect(() => {
-    if (onMobileClose) {
-      setIsMobileOpen(false);
-    }
-  }, [pathname]);
+  const navItems = getNavItems(profile.role);
+  const sectionLabel = getSectionLabel(pathname);
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href;
@@ -153,47 +103,16 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
     return base !== "/" ? pathname.startsWith(base) : pathname === "/";
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
-
-  const isAdminSection = pathname.startsWith("/admin");
-
-  const MobileOverlay = () => (
-    <div 
-      className="fixed inset-0 bg-black/50 z-40"
-      onClick={() => setIsMobileOpen(false)}
-    />
-  );
-
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      {/* Logo - Premium - hidden on mobile, only shows on desktop sidebar */}
-      <div className="p-5 border-b border-[var(--border)] hidden lg:block">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 rounded-xl bg-gradient-to-br from-[var(--color-gold)]/20 to-[var(--color-gold)]/5 p-1">
-            {/* Static logo asset (does not change between themes) */}
-            <img
-              src="/folia-logo.jpg"
-              alt="FOLIA"
-              className="w-full h-full object-contain rounded-lg"
-              draggable={false}
-            />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)] tracking-wide">
-              FOLIA
-            </span>
-            <span className="text-xs text-[var(--color-brown-medium)] font-medium">
-              {isAdminSection ? "Painel Administrativo" : "Meu Espaço"}
+  return (
+    <nav className={clsx("flex flex-col h-full", collapsed ? "px-3 py-4" : "p-4")}>
+      <div className="flex-1 space-y-0.5 overflow-y-auto">
+        {!collapsed && (
+          <div className="px-3 pb-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              {sectionLabel}
             </span>
           </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-0.5 overflow-y-auto">
+        )}
         {navItems.map((item) => {
           const active = isActive(item.href, item.exact);
           return (
@@ -201,100 +120,87 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
               key={item.href + item.label}
               href={item.href}
               className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-folia",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 active
-                  ? "bg-[var(--color-green-olive)]/10 text-[var(--color-green-olive)]"
-                  : "text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]"
+                  ? "bg-green-500 text-white shadow-sm"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
               )}
+              title={collapsed ? item.label : undefined}
             >
               <item.icon className="h-5 w-5 flex-shrink-0" />
-              <span className="flex-1">{item.label}</span>
+              {!collapsed && <span>{item.label}</span>}
             </Link>
           );
         })}
-      </nav>
-
-      {/* User info + logout */}
-      <div className="p-4 border-t border-[var(--border)] space-y-3">
-        <div className="px-3 py-2 rounded-lg bg-[var(--color-cream)]">
-          <p className="text-xs text-[var(--color-brown-medium)] mb-1.5">Acesso</p>
-          {getRoleBadge(role)}
-        </div>
-
-        <div className="flex items-center gap-3 px-3 py-2">
-          <div className="w-8 h-8 rounded-full bg-[var(--color-gold)]/20 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-semibold text-[var(--color-gold)]">
-              {profile.name?.charAt(0).toUpperCase() ?? "A"}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-[var(--color-brown-dark)] truncate">
-              {profile.name}
-            </p>
-            <p className="text-xs text-[var(--color-brown-medium)] truncate">{profile.email}</p>
-          </div>
-        </div>
-
-        {profile.tenant_id && role !== "master_admin" && (
-          <div className="px-3">
-            <span className="text-xs text-[var(--color-brown-medium)] bg-[var(--color-cream)] px-2 py-1 rounded-md">
-              🏢 {profile.tenant_id === "00000000-0000-0000-0000-000000000000" ? "Default" : profile.tenant_id.slice(0, 8)}
-            </span>
-          </div>
-        )}
-
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--color-error)] hover:bg-red-50 transition-colors"
-        >
-          <LogOut className="h-5 w-5" />
-          <span>Sair</span>
-        </button>
       </div>
-    </div>
+    </nav>
   );
+}
 
-  // Mobile close button inside sidebar
-  const MobileCloseButton = () => {
-    const handleClose = () => {
-      if (onMobileClose) {
-        onMobileClose();
-      } else {
-        setIsMobileOpen(false);
-      }
-    };
-    return (
-      <div className="flex justify-end p-4 lg:hidden">
-        <button 
-          onClick={handleClose} 
-          className="p-2 rounded-lg hover:bg-[var(--color-cream)]"
-        >
-          <X className="h-6 w-6" />
-        </button>
-      </div>
-    );
+interface SidebarProps {
+  profile: Profile;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+  onMenuToggle?: () => void;
+}
+
+export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: SidebarProps) {
+  const pathname = usePathname();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (mobileOpen !== undefined) setIsMobileOpen(mobileOpen);
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (pathname && onMobileClose) setIsMobileOpen(false);
+  }, [pathname]);
+
+  const handleMenuToggle = () => {
+    if (onMenuToggle) onMenuToggle();
+    else setIsMobileOpen(prev => !prev);
   };
 
   return (
     <>
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar - 220px */}
       {!isMobile && (
-        <aside className="w-64 min-h-screen bg-[var(--color-surface)] border-r border-[var(--border)] flex flex-col flex-shrink-0">
-          <SidebarContent />
+        <aside className="w-[220px] min-h-screen bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+          <SidebarNav profile={profile} />
         </aside>
       )}
 
       {/* Mobile overlay */}
-      {isMobile && isMobileOpen && <MobileOverlay />}
+      {isMobile && isMobileOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setIsMobileOpen(false)} />
+      )}
 
-      {/* Mobile sidebar - opens from LEFT to match hamburger */}
+      {/* Mobile sidebar */}
       {isMobile && (
         <aside className={clsx(
-          "fixed inset-y-0 left-0 z-50 w-72 bg-[var(--color-surface)] border-r border-[var(--border)] flex flex-col transform transition-transform duration-300 lg:hidden",
+          "fixed inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-gray-200 flex flex-col transition-transform duration-300",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}>
-          <MobileCloseButton />
-          <SidebarContent />
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">F</span>
+              </div>
+              <span className="text-lg font-bold text-gray-900">FOLIA</span>
+            </div>
+            <button onClick={() => setIsMobileOpen(false)} className="p-2 rounded-lg hover:bg-gray-100">
+              ✕
+            </button>
+          </div>
+          <SidebarNav profile={profile} />
         </aside>
       )}
     </>

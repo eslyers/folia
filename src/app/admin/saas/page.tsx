@@ -16,6 +16,7 @@ interface Tenant {
   name: string;
   domain: string | null;
   slug: string;
+  logo_url: string | null;
   settings: Record<string, any>;
   is_active: boolean;
   created_at: string;
@@ -79,7 +80,7 @@ export default function SaasAdminPage() {
   const [showCreateWebhook, setShowCreateWebhook] = useState(false);
   
   // Form state
-  const [newTenant, setNewTenant] = useState({ name: "", domain: "", slug: "" });
+  const [newTenant, setNewTenant] = useState({ name: "", domain: "", slug: "", logo_url: "" });
   const [editTenant, setEditTenant] = useState<Tenant | null>(null);
   const [newWebhook, setNewWebhook] = useState({ name: "", channel: "slack" as "slack" | "teams", webhook_url: "", events: [] as string[] });
   const [saving, setSaving] = useState(false);
@@ -193,6 +194,7 @@ export default function SaasAdminPage() {
         name: newTenant.name,
         domain: newTenant.domain || null,
         slug,
+        logo_url: newTenant.logo_url || null,
         settings: { timezone: "America/Sao_Paulo", locale: "pt-BR", plan: "basic" },
         is_active: true,
       })
@@ -207,7 +209,7 @@ export default function SaasAdminPage() {
 
     setSuccess("Empresa criada com sucesso!");
     setShowCreateTenant(false);
-    setNewTenant({ name: "", domain: "", slug: "" });
+    setNewTenant({ name: "", domain: "", slug: "", logo_url: "" });
     await loadData();
     setSaving(false);
   };
@@ -236,6 +238,7 @@ export default function SaasAdminPage() {
       .update({
         name: editTenant.name,
         domain: editTenant.domain || null,
+        logo_url: editTenant.logo_url || null,
         settings: editTenant.settings,
       })
       .eq("id", editTenant.id);
@@ -613,9 +616,13 @@ export default function SaasAdminPage() {
                   return (
                     <div key={tenant.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-cream)] hover:bg-[var(--color-cream)]/80 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-white">
-                          <Building2 className="h-4 w-4 text-[var(--color-gold)]" />
-                        </div>
+                        {tenant.logo_url ? (
+                          <img src={tenant.logo_url} alt={tenant.name} className="w-10 h-10 rounded-lg object-cover" />
+                        ) : (
+                          <div className="p-2 rounded-lg bg-white">
+                            <Building2 className="h-4 w-4 text-[var(--color-gold)]" />
+                          </div>
+                        )}
                         <div>
                           <p className="font-medium text-[var(--color-brown-dark)]">{tenant.name}</p>
                           <p className="text-xs text-[var(--color-brown-medium)]">/{tenant.slug}</p>
@@ -734,9 +741,13 @@ export default function SaasAdminPage() {
                   <div key={tenant.id} className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-4 py-4 items-center hover:bg-[var(--color-cream)]/50 transition-colors">
                     <div className="col-span-4">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-[var(--color-gold)]/10">
-                          <Building2 className="h-5 w-5 text-[var(--color-gold)]" />
-                        </div>
+                        {tenant.logo_url ? (
+                          <img src={tenant.logo_url} alt={tenant.name} className="w-10 h-10 rounded-lg object-cover" />
+                        ) : (
+                          <div className="p-2 rounded-lg bg-[var(--color-gold)]/10">
+                            <Building2 className="h-5 w-5 text-[var(--color-gold)]" />
+                          </div>
+                        )}
                         <div>
                           <p className="font-semibold text-[var(--color-brown-dark)]">{tenant.name}</p>
                           <p className="text-xs text-[var(--color-brown-medium)]">
@@ -921,7 +932,7 @@ export default function SaasAdminPage() {
       {/* Create Tenant Modal */}
       <Modal
         isOpen={showCreateTenant}
-        onClose={() => { setShowCreateTenant(false); setError(null); setNewTenant({ name: "", domain: "", slug: "" }); }}
+        onClose={() => { setShowCreateTenant(false); setError(null); setNewTenant({ name: "", domain: "", slug: "", logo_url: "" }); }}
         title="Nova Empresa"
         size="md"
       >
@@ -944,6 +955,16 @@ export default function SaasAdminPage() {
               value={newTenant.domain}
               onChange={(e) => setNewTenant(prev => ({ ...prev, domain: e.target.value }))}
               placeholder="empresa.com"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
+              Logo URL <span className="text-xs text-[var(--color-brown-medium)]">(opcional)</span>
+            </label>
+            <Input
+              value={newTenant.logo_url}
+              onChange={(e) => setNewTenant(prev => ({ ...prev, logo_url: e.target.value }))}
+              placeholder="https://exemplo.com/logo.png"
             />
           </div>
           <div>
@@ -996,6 +1017,16 @@ export default function SaasAdminPage() {
                 value={editTenant.domain || ""}
                 onChange={(e) => setEditTenant(prev => prev ? { ...prev, domain: e.target.value } : null)}
                 placeholder="empresa.com"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
+                Logo URL <span className="text-xs text-[var(--color-brown-medium)]">(opcional)</span>
+              </label>
+              <Input
+                value={editTenant.logo_url || ""}
+                onChange={(e) => setEditTenant(prev => prev ? { ...prev, logo_url: e.target.value } : null)}
+                placeholder="https://exemplo.com/logo.png"
               />
             </div>
             <div className="flex gap-3 pt-2">

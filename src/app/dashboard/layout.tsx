@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
+import { Topbar } from "@/components/layout/Topbar";
 import type { Profile } from "@/lib/types";
 
 export default function DashboardLayout({
@@ -16,6 +16,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
@@ -71,10 +72,17 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--background)]">
-      <Sidebar profile={profile} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header profile={profile} />
+    <div className="flex flex-col h-screen bg-gray-50">
+      <Topbar 
+        profile={profile} 
+        onMenuToggle={() => setSidebarOpen(prev => !prev)} 
+      />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar 
+          profile={profile} 
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
+        />
         <main className="flex-1 overflow-auto">
           {children}
         </main>

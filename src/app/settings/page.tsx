@@ -223,18 +223,16 @@ export default function SettingsPage() {
   }
 
   return (
-        <div className="min-h-screen bg-[var(--background)]">
-
-        <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8 animate-fade-in-up">
-            <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
-              Meu Perfil 👤
-            </h1>
-            <p className="text-[var(--color-brown-medium)] mt-1">
-              Visualize e edite suas informações pessoais
-            </p>
-          </div>
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="mb-8 animate-fade-in-up">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Meu Perfil 👤
+        </h1>
+        <p className="text-gray-500 mt-1">
+          Visualize e edite suas informações pessoais
+        </p>
+      </div>
 
           {/* Message */}
           {message && (
@@ -468,10 +466,9 @@ export default function SettingsPage() {
           </Card>
 
           {/* Info */}
-          <div className="mt-6 text-center text-sm text-[var(--color-brown-medium)]">
+          <div className="mt-6 text-center text-sm text-gray-500">
             <p>Precisa de ajuda? Entre em contato com o administrador.</p>
           </div>
-        </main>
-      </div>
+        </div>
   );
 }

@@ -145,18 +145,16 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8 animate-fade-in-up">
-            <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
-              Calendário da Equipe 👥
-            </h1>
-            <p className="text-[var(--color-brown-medium)] mt-1">
-              Veja quando seus colegas estarão de folga
-            </p>
-          </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="mb-8 animate-fade-in-up">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Calendário da Equipe 👥
+        </h1>
+        <p className="text-gray-500 mt-1">
+          Veja quando seus colegas estarão de folga
+        </p>
+      </div>
 
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -328,7 +326,6 @@ export default function TeamPage() {
               </div>
             )}
           </Card>
-        </main>
-      </div>
+        </div>
   );
 }
