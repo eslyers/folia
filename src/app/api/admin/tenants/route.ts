@@ -21,36 +21,8 @@ async function validateAuth(authHeader: string | null) {
 }
 
 export async function GET() {
-  try {
-    console.log("[DEBUG] GET /api/admin/tenants - starting");
-    
-    let adminClient;
-    try {
-      adminClient = createServiceClient();
-      console.log("[DEBUG] Service client created successfully");
-    } catch (e: any) {
-      console.error("[DEBUG] Failed to create service client:", e.message);
-      return NextResponse.json({ error: "Service client init failed: " + e.message }, { status: 500 });
-    }
-    
-    console.log("[DEBUG] Querying tenants table...");
-    const { data, error } = await adminClient
-      .from("tenants")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    console.log("[DEBUG] Query result:", { dataCount: data?.length, error: error?.message });
-
-    if (error) {
-      console.error("[DEBUG] Query error:", error);
-      return NextResponse.json({ error: error.message, details: "service client query failed" }, { status: 500 });
-    }
-
-    return NextResponse.json({ data });
-  } catch (error: any) {
-    console.error("[DEBUG] GET exception:", error);
-    return NextResponse.json({ error: error.message || "Internal error" }, { status: 500 });
-  }
+  console.log("[DEBUG] GET /api/admin/tenants - FUNCTION CALLED AT ALL");
+  return NextResponse.json({ data: [], message: "GET working" });
 }
 
 export async function POST(request: NextRequest) {
