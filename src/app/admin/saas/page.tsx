@@ -154,30 +154,33 @@ export default function SaasAdminPage() {
   };
 
   const loadTenants = async () => {
-    const { data, error } = await supabase
-      .from("tenants")
-      .select("*")
-      .order("created_at", { ascending: false }) as { data: Tenant[] | null, error: any };
+    try {
+      const response = await fetch("/api/admin/tenants");
+      const result = await response.json();
 
-    if (error) {
-      setError("Erro ao carregar tenants");
-      return;
-    }
+      if (!response.ok) {
+        setError("Erro ao carregar empresas");
+        return;
+      }
 
-    const tenantList = data || [];
-    setTenants(tenantList);
-    
-    // Load stats for each tenant
-    const stats: Record<string, TenantStats> = {};
-    for (const tenant of tenantList) {
-      const { data: statData } = await (supabase as any)
-        .rpc("get_tenant_stats", { p_tenant_id: tenant.id });
-      stats[tenant.id] = statData || { employee_count: 0, pending_requests: 0, approved_requests: 0, total_requests: 0 };
+      const tenantList = result.data || [];
+      setTenants(tenantList);
+      
+      // Load stats for each tenant
+      const stats: Record<string, TenantStats> = {};
+      for (const tenant of tenantList) {
+        const { data: statData } = await (supabase as any)
+          .rpc("get_tenant_stats", { p_tenant_id: tenant.id });
+        stats[tenant.id] = statData || { employee_count: 0, pending_requests: 0, approved_requests: 0, total_requests: 0 };
+      }
+      setTenantStats(stats);
+    } catch {
+      setError("Erro ao carregar empresas");
     }
-    setTenantStats(stats);
   };
 
   const handleCreateTenant = async () => {
+    console.log("[DEBUG] handleCreateTenant chamado", { name: newTenant.name, slug: newTenant.slug });
     if (!newTenant.name || !newTenant.slug) {
       setError("Nome e slug são obrigatórios");
       return;
@@ -188,72 +191,100 @@ export default function SaasAdminPage() {
 
     const slug = newTenant.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     
-    const { data, error } = await (supabase as any)
-      .from("tenants")
-      .insert({
-        name: newTenant.name,
-        domain: newTenant.domain || null,
-        slug,
-        logo_url: newTenant.logo_url || null,
-        settings: { timezone: "America/Sao_Paulo", locale: "pt-BR", plan: "basic" },
-        is_active: true,
-      })
-      .select()
-      .single();
+    try {
+      const response = await fetch("/api/admin/tenants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newTenant.name,
+          domain: newTenant.domain || null,
+          slug,
+          logo_url: newTenant.logo_url || null,
+          settings: { timezone: "America/Sao_Paulo", locale: "pt-BR", plan: "basic" },
+        }),
+      });
 
-    if (error) {
-      setError(`Erro ao criar tenant: ${error.message}`);
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(`Erro ao criar empresa: ${result.error}`);
+        setSaving(false);
+        return;
+      }
+
+      setSuccess("Empresa criada com sucesso!");
+      setShowCreateTenant(false);
+      setNewTenant({ name: "", domain: "", slug: "", logo_url: "" });
+      await loadData();
+    } catch (err) {
+      setError("Erro ao criar empresa. Tente novamente.");
+    } finally {
       setSaving(false);
-      return;
     }
-
-    setSuccess("Empresa criada com sucesso!");
-    setShowCreateTenant(false);
-    setNewTenant({ name: "", domain: "", slug: "", logo_url: "" });
-    await loadData();
-    setSaving(false);
   };
 
   const handleToggleTenant = async (tenant: Tenant) => {
-    const { error } = await (supabase as any)
-      .from("tenants")
-      .update({ is_active: !tenant.is_active })
-      .eq("id", tenant.id);
+    try {
+      const response = await fetch("/api/admin/tenants", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: tenant.id,
+          name: tenant.name,
+          domain: tenant.domain,
+          logo_url: tenant.logo_url,
+          settings: tenant.settings,
+          is_active: !tenant.is_active,
+        }),
+      });
 
-    if (error) {
-      setError(`Erro ao atualizar tenant: ${error.message}`);
-      return;
+      const result = await response.json();
+      if (!response.ok) {
+        setError(`Erro ao atualizar empresa: ${result.error}`);
+        return;
+      }
+
+      await loadData();
+      setSuccess(tenant.is_active ? "Empresa desativada" : "Empresa ativada");
+    } catch {
+      setError("Erro ao atualizar empresa");
     }
-
-    await loadData();
-    setSuccess(tenant.is_active ? "Empresa desativada" : "Empresa ativada");
   };
 
   const handleEditTenant = async () => {
     if (!editTenant) return;
     setSaving(true);
 
-    const { error } = await (supabase as any)
-      .from("tenants")
-      .update({
-        name: editTenant.name,
-        domain: editTenant.domain || null,
-        logo_url: editTenant.logo_url || null,
-        settings: editTenant.settings,
-      })
-      .eq("id", editTenant.id);
+    try {
+      const response = await fetch("/api/admin/tenants", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editTenant.id,
+          name: editTenant.name,
+          domain: editTenant.domain || null,
+          logo_url: editTenant.logo_url || null,
+          settings: editTenant.settings,
+          is_active: editTenant.is_active,
+        }),
+      });
 
-    if (error) {
-      setError(`Erro ao editar tenant: ${error.message}`);
+      const result = await response.json();
+      if (!response.ok) {
+        setError(`Erro ao editar empresa: ${result.error}`);
+        setSaving(false);
+        return;
+      }
+
+      setShowEditTenant(false);
+      setEditTenant(null);
+      await loadData();
+      setSuccess("Empresa atualizada!");
+    } catch {
+      setError("Erro ao editar empresa");
+    } finally {
       setSaving(false);
-      return;
     }
-
-    setShowEditTenant(false);
-    setEditTenant(null);
-    await loadData();
-    setSuccess("Empresa atualizada!");
-    setSaving(false);
   };
 
   const handleDeleteTenant = async (tenant: Tenant) => {
@@ -266,15 +297,22 @@ export default function SaasAdminPage() {
       return;
     }
 
-    const { error } = await (supabase as any).from("tenants").delete().eq("id", tenant.id);
-    
-    if (error) {
-      setError(`Erro ao excluir tenant: ${error.message}`);
-      return;
-    }
+    try {
+      const response = await fetch(`/api/admin/tenants?id=${tenant.id}`, {
+        method: "DELETE",
+      });
 
-    await loadData();
-    setSuccess("Empresa excluída");
+      const result = await response.json();
+      if (!response.ok) {
+        setError(`Erro ao excluir empresa: ${result.error}`);
+        return;
+      }
+
+      await loadData();
+      setSuccess("Empresa excluída");
+    } catch {
+      setError("Erro ao excluir empresa");
+    }
   };
 
   const openWebhooks = async (tenant: Tenant) => {
@@ -936,7 +974,11 @@ export default function SaasAdminPage() {
         title="Nova Empresa"
         size="md"
       >
-        <div className="space-y-4">
+        <form 
+          id="create-tenant-form"
+          onSubmit={(e) => { e.preventDefault(); console.log('[DEBUG] form onSubmit firing'); handleCreateTenant(); }}
+          className="space-y-4"
+        >
           <div>
             <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
               Nome da Empresa <span className="text-red-500">*</span>
@@ -945,6 +987,7 @@ export default function SaasAdminPage() {
               value={newTenant.name}
               onChange={(e) => setNewTenant(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Magna Inc."
+              required
             />
           </div>
           <div>
@@ -975,20 +1018,29 @@ export default function SaasAdminPage() {
               value={newTenant.slug}
               onChange={(e) => setNewTenant(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") }))}
               placeholder="magna-inc"
+              required
             />
             <p className="text-xs text-[var(--color-brown-light)] mt-1">
               Será usado como: suaurl.com/{newTenant.slug || "slug"}
             </p>
           </div>
           <div className="flex gap-3 pt-2">
-            <Button variant="ghost" className="flex-1" onClick={() => setShowCreateTenant(false)}>
+            <button 
+              type="button" 
+              className="flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+              onClick={() => { console.log('[DEBUG] Cancel clicked'); setShowCreateTenant(false); }}
+            >
               Cancelar
-            </Button>
-            <Button variant="primary" className="flex-1" loading={saving} onClick={handleCreateTenant}>
-              Criar Empresa
-            </Button>
+            </button>
+            <button 
+              type="submit" 
+              className="flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-[#C7A76C] text-[#2C2416] hover:bg-[#D4A853] disabled:opacity-50"
+              disabled={saving}
+            >
+              {saving ? "Criando..." : "Criar Empresa"}
+            </button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       {/* Edit Tenant Modal */}
