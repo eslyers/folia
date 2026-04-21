@@ -155,7 +155,7 @@ export default function SaasAdminPage() {
 
   const loadTenants = async () => {
     try {
-      const response = await fetch("/api/admin/tenants");
+      const response = await fetch("/api/tenants");
       const result = await response.json();
 
       console.log("[DEBUG] loadTenants response:", response.status, result);
@@ -198,7 +198,7 @@ export default function SaasAdminPage() {
     const authToken = session?.access_token;
     
     try {
-      const response = await fetch("/api/admin/tenants", {
+      const response = await fetch("/api/tenants", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -234,7 +234,7 @@ export default function SaasAdminPage() {
 
   const handleToggleTenant = async (tenant: Tenant) => {
     try {
-      const response = await fetch("/api/admin/tenants", {
+      const response = await fetch("/api/tenants", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -265,7 +265,7 @@ export default function SaasAdminPage() {
     setSaving(true);
 
     try {
-      const response = await fetch("/api/admin/tenants", {
+      const response = await fetch("/api/tenants", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -307,7 +307,7 @@ export default function SaasAdminPage() {
     }
 
     try {
-      const response = await fetch(`/api/admin/tenants?id=${tenant.id}`, {
+      const response = await fetch(`/api/tenants?id=${tenant.id}`, {
         method: "DELETE",
       });
 
