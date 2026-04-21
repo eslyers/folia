@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createClient as createServiceClient } from "@/lib/supabase/admin";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 export async function GET() {
   try {
@@ -51,8 +51,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Create a client with ANON key (has JWT secret for token validation)
-    const { createClient: createAnonClient } = await import('@supabase/supabase-js');
-    const anonClient = createAnonClient(
+    const anonClient = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
