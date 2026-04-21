@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@/lib/supabase/admin";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
+// Disable edge runtime auth
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 // Helper to validate auth token
 async function validateAuth(authHeader: string | null) {
   if (!authHeader) return { error: "No auth header", user: null };
