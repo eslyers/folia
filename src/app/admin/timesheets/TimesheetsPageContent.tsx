@@ -403,8 +403,9 @@ export default function TimesheetsPageContent() {
                         variant="ghost"
                         size="sm"
                         onClick={() => openDetails(member)}
+                        className="text-stone-600 hover:text-stone-900"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-5 w-5" />
                         Ver Detalhes
                       </Button>
                     </div>

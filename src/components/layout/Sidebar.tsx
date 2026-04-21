@@ -108,7 +108,7 @@ export function SidebarNav({ profile, collapsed = false }: SidebarNavProps) {
       <div className="flex-1 space-y-0.5 overflow-y-auto">
         {!collapsed && (
           <div className="px-3 pb-2">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+            <span className="text-xs font-semibold text-stone-400 uppercase tracking-wide">
               {sectionLabel}
             </span>
           </div>
@@ -122,12 +122,12 @@ export function SidebarNav({ profile, collapsed = false }: SidebarNavProps) {
               className={clsx(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 active
-                  ? "bg-green-500 text-white shadow-sm"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  ? "bg-gradient-to-r from-[#5C724A] to-[#6B7D57] text-white shadow-sm"
+                  : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
               )}
               title={collapsed ? item.label : undefined}
             >
-              <item.icon className="h-5 w-5 flex-shrink-0" />
+              <item.icon className={clsx("h-5 w-5 flex-shrink-0", active ? "text-white/90" : "text-stone-500")} />
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );
@@ -173,7 +173,19 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
     <>
       {/* Desktop sidebar - 220px */}
       {!isMobile && (
-        <aside className="w-[220px] min-h-screen bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+        <aside className="w-[220px] min-h-screen bg-stone-50 border-r border-stone-200 flex flex-col flex-shrink-0">
+          {/* User badge at top */}
+          <div className="px-4 py-3 border-b border-stone-100">
+            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white border border-stone-200 shadow-sm">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#5C724A] to-[#4A5F3C] text-white flex items-center justify-center text-sm font-semibold shadow-sm">
+                {profile.name?.charAt(0).toUpperCase() ?? "U"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-stone-900 truncate">{profile.name?.split(" ")[0]}</p>
+                <p className="text-xs text-stone-500 truncate">{profile.email}</p>
+              </div>
+            </div>
+          </div>
           <SidebarNav profile={profile} />
         </aside>
       )}
@@ -186,17 +198,17 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
       {/* Mobile sidebar */}
       {isMobile && (
         <aside className={clsx(
-          "fixed inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-gray-200 flex flex-col transition-transform duration-300",
+          "fixed inset-y-0 left-0 z-50 w-[280px] bg-stone-50 border-r border-stone-200 flex flex-col transition-transform duration-300",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}>
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-stone-200">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-[#5C724A] to-[#4A5F3C] rounded-lg flex items-center justify-center shadow-sm">
                 <span className="text-white font-bold text-sm">F</span>
               </div>
-              <span className="text-lg font-bold text-gray-900">FOLIA</span>
+              <span className="text-lg font-bold text-stone-900">FOLIA</span>
             </div>
-            <button onClick={() => setIsMobileOpen(false)} className="p-2 rounded-lg hover:bg-gray-100">
+            <button onClick={() => setIsMobileOpen(false)} className="p-2 rounded-lg hover:bg-stone-200 text-stone-600">
               ✕
             </button>
           </div>
