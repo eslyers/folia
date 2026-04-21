@@ -158,8 +158,10 @@ export default function SaasAdminPage() {
       const response = await fetch("/api/admin/tenants");
       const result = await response.json();
 
+      console.log("[DEBUG] loadTenants response:", response.status, result);
+
       if (!response.ok) {
-        setError("Erro ao carregar empresas");
+        setError("Erro ao carregar empresas: " + (result.error || response.statusText));
         return;
       }
 

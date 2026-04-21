@@ -22,19 +22,24 @@ export async function GET() {
     // TODO: add proper auth
     const adminClient = createServiceClient();
     
+    console.log("[DEBUG] GET /api/admin/tenants - using service client");
+    
     const { data, error } = await adminClient
       .from("tenants")
       .select("*")
       .order("created_at", { ascending: false });
 
+    console.log("[DEBUG] GET result:", { dataCount: data?.length, error: error?.message });
+
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[DEBUG] GET error:", error);
+      return NextResponse.json({ error: error.message, details: "service client query failed" }, { status: 500 });
     }
 
     return NextResponse.json({ data });
-  } catch (error) {
-    console.error("[DEBUG] GET error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("[DEBUG] GET exception:", error);
+    return NextResponse.json({ error: error.message || "Internal error" }, { status: 500 });
   }
 }
 
