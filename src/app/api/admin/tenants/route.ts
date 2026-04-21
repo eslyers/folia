@@ -18,21 +18,27 @@ async function validateAuth(authHeader: string | null) {
 
 export async function GET() {
   try {
-    // For GET, we skip auth check for now since it's causing issues
-    // TODO: add proper auth
-    const adminClient = createServiceClient();
+    console.log("[DEBUG] GET /api/admin/tenants - starting");
     
-    console.log("[DEBUG] GET /api/admin/tenants - using service client");
+    let adminClient;
+    try {
+      adminClient = createServiceClient();
+      console.log("[DEBUG] Service client created successfully");
+    } catch (e: any) {
+      console.error("[DEBUG] Failed to create service client:", e.message);
+      return NextResponse.json({ error: "Service client init failed: " + e.message }, { status: 500 });
+    }
     
+    console.log("[DEBUG] Querying tenants table...");
     const { data, error } = await adminClient
       .from("tenants")
       .select("*")
       .order("created_at", { ascending: false });
 
-    console.log("[DEBUG] GET result:", { dataCount: data?.length, error: error?.message });
+    console.log("[DEBUG] Query result:", { dataCount: data?.length, error: error?.message });
 
     if (error) {
-      console.error("[DEBUG] GET error:", error);
+      console.error("[DEBUG] Query error:", error);
       return NextResponse.json({ error: error.message, details: "service client query failed" }, { status: 500 });
     }
 
