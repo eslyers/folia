@@ -302,14 +302,7 @@ export default function EmployeesPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
-              Funcionários 👥
-            </h1>
-            <p className="text-[var(--color-brown-medium)] mt-1">
-              {currentTenantName ? `${currentTenantName} — ` : ""}Cadastro e gestão de equipe
-            </p>
-          </div>
+          {/* Page title removed - Sidebar already shows current page */}
           <div className="flex gap-3">
             <Button variant="outline" onClick={() => window.open("/api/reports/employees", "_blank")}>
               <Download className="h-5 w-5 mr-2" />
