@@ -41,21 +41,30 @@ export async function POST(request: NextRequest) {
   try {
     // Get auth from header
     const authHeader = request.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
     
-    if (!authHeader) {
+    console.log("[DEBUG] Authorization header:", authHeader ? "present" : "missing");
+    console.log("[DEBUG] Token length:", token?.length || 0);
+    
+    if (!authHeader || !token) {
       return NextResponse.json({ error: "Unauthorized - no auth header" }, { status: 401 });
     }
     
-    // Use admin client for everything (bypasses RLS)
-    const adminClient = createServiceClient();
+    // Create a client with ANON key (has JWT secret for token validation)
+    const { createClient: createAnonClient } = await import('@supabase/supabase-js');
+    const anonClient = createAnonClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
     
-    // Get user from token using admin client
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await adminClient.auth.getUser(token);
+    // Get user from token
+    const { data: { user }, error: userError } = await anonClient.auth.getUser(token);
+    
+    console.log("[DEBUG] getUser result:", { userId: user?.id, error: userError?.message });
     
     if (userError || !user) {
       console.error("[DEBUG] getUser error:", userError);
-      return NextResponse.json({ error: "Unauthorized - invalid token" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized - invalid token: " + (userError?.message || "unknown") }, { status: 401 });
     }
 
     // Verify master admin using admin client
