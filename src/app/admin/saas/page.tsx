@@ -191,10 +191,17 @@ export default function SaasAdminPage() {
 
     const slug = newTenant.slug.toLowerCase().replace(/[^a-z0-9-]/g, "-");
     
+    // Get session token for auth
+    const { data: { session } } = await supabase.auth.getSession();
+    const authToken = session?.access_token;
+    
     try {
       const response = await fetch("/api/admin/tenants", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(authToken && { "Authorization": `Bearer ${authToken}` }),
+        },
         body: JSON.stringify({
           name: newTenant.name,
           domain: newTenant.domain || null,
