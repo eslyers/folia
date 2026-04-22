@@ -28,6 +28,7 @@ interface CalendarProps {
   onDateClick?: (date: Date) => void;
   showNavigation?: boolean;
   currentUserName?: string;
+  size?: "normal" | "compact";
 }
 
 export function Calendar({
@@ -36,6 +37,7 @@ export function Calendar({
   onDateClick,
   showNavigation = true,
   currentUserName,
+  size = "normal",
 }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [tooltip, setTooltip] = useState<{ show: boolean; x: number; y: number; content: string }>({

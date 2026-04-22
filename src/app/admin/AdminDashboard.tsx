@@ -59,9 +59,29 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedRequestIds, setSelectedRequestIds] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" }>({
+    key: "name",
+    direction: "asc",
+  });
 
   const pendingRequests = requests.filter((r) => r.status === "pending");
   const approvedRequests = requests.filter((r) => r.status === "approved");
+
+
+  const handleSort = (key: string) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+
+  const sortedProfiles = [...profiles].sort((a, b) => {
+    const aVal = a[sortConfig.key as keyof typeof a] ?? "";
+    const bVal = b[sortConfig.key as keyof typeof b] ?? "";
+    const comparison = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
+    return sortConfig.direction === "asc" ? comparison : -comparison;
+  });
 
   const handleApprove = async (requestId: string, userId: string) => {
     setProcessing(requestId);
@@ -523,15 +543,35 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
             <table className="w-full">
               <thead>
                 <tr className="border-b border-[var(--border)]">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Funcionário</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Férias</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Banco de Horas</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Classificação</th>
+                  <th 
+                    className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)] cursor-pointer hover:text-[var(--color-gold)]"
+                    onClick={() => handleSort("name")}
+                  >
+                    Funcionário {sortConfig.key === "name" && (sortConfig.direction === "asc" ? "↑" : "↓")}
+                  </th>
+                  <th 
+                    className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)] cursor-pointer hover:text-[var(--color-gold)]"
+                    onClick={() => handleSort("vacation_balance")}
+                  >
+                    Férias {sortConfig.key === "vacation_balance" && (sortConfig.direction === "asc" ? "↑" : "↓")}
+                  </th>
+                  <th 
+                    className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)] cursor-pointer hover:text-[var(--color-gold)]"
+                    onClick={() => handleSort("hours_balance")}
+                  >
+                    Banco de Horas {sortConfig.key === "hours_balance" && (sortConfig.direction === "asc" ? "↑" : "↓")}
+                  </th>
+                  <th 
+                    className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)] cursor-pointer hover:text-[var(--color-gold)]"
+                    onClick={() => handleSort("position")}
+                  >
+                    Classificação {sortConfig.key === "position" && (sortConfig.direction === "asc" ? "↑" : "↓")}
+                  </th>
                   <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {profiles.map((p) => {
+                {sortedProfiles.map((p) => {
                   const userRequests = requests.filter(r => r.user_id === p.id);
                   const approvedCount = userRequests.filter(r => r.status === "approved").length;
                   return (
