@@ -265,9 +265,15 @@ export default function SaasAdminPage() {
     setSaving(true);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token;
+      
       const response = await fetch("/api/tenants", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(authToken && { "Authorization": `Bearer ${authToken}` }),
+        },
         body: JSON.stringify({
           id: editTenant.id,
           name: editTenant.name,
