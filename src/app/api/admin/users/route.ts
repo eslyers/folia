@@ -178,6 +178,12 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Use service role key for admin operations
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     const supabase = await createClient();
 
     const { error } = await supabase
