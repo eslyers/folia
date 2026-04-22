@@ -6,7 +6,13 @@ import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import type { Profile } from "@/lib/types";
-import { isTenantAdmin } from "@/lib/auth";
+import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
+
+interface Tenant {
+  id: string;
+  name: string;
+  domain?: string;
+}
 
 export default function AdminLayout({
   children,
@@ -16,6 +22,8 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const supabase = createClient();
@@ -41,11 +49,38 @@ export default function AdminLayout({
       }
 
       setProfile(profileData);
+
+      // Fetch tenants
+      if (isMasterAdmin(profileData.role)) {
+        // Master admin sees all tenants
+        const { data: allTenants } = await supabase
+          .from("tenants")
+          .select("id, name, domain")
+          .order("name");
+        setTenants(allTenants || []);
+      } else if (profileData.tenant_id) {
+        // Regular admin sees only their tenant
+        const { data: tenantData } = await supabase
+          .from("tenants")
+          .select("id, name, domain")
+          .eq("id", profileData.tenant_id)
+          .single();
+        if (tenantData) {
+          setTenants([tenantData]);
+          setCurrentTenant(tenantData);
+        }
+      }
+
       setLoading(false);
     };
 
     checkUser();
   }, [pathname]);
+
+  const handleTenantChange = (tenant: Tenant) => {
+    setCurrentTenant(tenant);
+    // Could also update profile.tenant_id and refresh data
+  };
 
   if (loading || !profile) {
     return (
@@ -76,6 +111,9 @@ export default function AdminLayout({
     <div className="flex flex-col h-screen bg-gray-50">
       <Topbar 
         profile={profile} 
+        tenants={tenants}
+        currentTenant={currentTenant}
+        onTenantChange={handleTenantChange}
         onMenuToggle={() => setSidebarOpen(prev => !prev)} 
       />
       <div className="flex flex-1 overflow-hidden">
