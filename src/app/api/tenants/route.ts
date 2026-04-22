@@ -21,8 +21,24 @@ async function validateAuth(authHeader: string | null) {
 }
 
 export async function GET() {
-  console.log("[DEBUG] GET /api/admin/tenants - FUNCTION CALLED AT ALL");
-  return NextResponse.json({ data: [], message: "GET working" });
+  try {
+    // Get all tenants using service client
+    const adminClient = createServiceClient();
+    const { data, error } = await adminClient
+      .from("tenants")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("[DEBUG] GET tenants error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ data: data || [] });
+  } catch (error) {
+    console.error("[DEBUG] GET error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
