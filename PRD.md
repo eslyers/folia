@@ -1,4 +1,4 @@
-# FOLIA - Product Requirements Document (PRD)
+# FOLIA - Product Requirements Document (PRD1)
 
 **Versão:** 1.0
 **Data:** 15/04/2026
