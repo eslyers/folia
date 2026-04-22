@@ -70,7 +70,7 @@ export default function EmployeesPage() {
 
       const { data: allEmployees, error: empError } = await supabase
         .from("profiles")
-        .select("*, manager:profiles!manager_id(id, name), schedule:work_schedules(id, name), tenant:tenants(id, name)")
+        .select("*")
         .order("name");
 
       console.log("[DEBUG] Employees query:", allEmployees?.length, "error:", empError);
