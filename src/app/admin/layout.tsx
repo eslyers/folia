@@ -112,7 +112,7 @@ export default function AdminLayout({
       <Topbar 
         profile={profile} 
         tenants={tenants}
-        currentTenant={currentTenant}
+        currentTenant={currentTenant ?? undefined}
         onTenantChange={handleTenantChange}
         onMenuToggle={() => setSidebarOpen(prev => !prev)} 
       />
