@@ -526,6 +526,7 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
                   <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Funcionário</th>
                   <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Férias</th>
                   <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Banco de Horas</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Classificação</th>
                   <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Status</th>
                 </tr>
               </thead>
@@ -554,6 +555,11 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
                         <span className="text-xs text-[var(--color-brown-medium)]"> hrs</span>
                       </td>
                       <td className="text-center py-3 px-4">
+                        <span className="text-sm text-[var(--color-brown-dark)]">
+                          {p.position || "-"}
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-4">
                         <span className={`inline-flex items-center rounded-full border border-transparent text-xs font-semibold px-2.5 py-0.5 ${p.role === "master_admin" ? "bg-purple-100 text-purple-800" : p.role === "tenant_admin" ? "bg-blue-100 text-blue-800" : p.role === "gestor" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
                           {getRoleLabel(p.role)}
                         </span>
@@ -570,9 +576,11 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
         <Card className="p-6 mt-8">
           <h2 className="text-xl font-semibold text-[var(--color-brown-dark)] mb-4 flex items-center gap-2">
             <CalendarIcon className="h-5 w-5 text-[var(--color-gold)]" />
-            Calendário de Férias
+            Calendário de Eventos
           </h2>
-          <Calendar leaveRequests={requests} profiles={profiles} />
+          <div className="w-full overflow-hidden" style={{ maxHeight: "400px" }}>
+            <Calendar leaveRequests={requests} profiles={profiles} />
+          </div>
         </Card>
       </main>
 
