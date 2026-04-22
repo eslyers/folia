@@ -527,9 +527,10 @@ export default function EmployeesPage() {
                 <Input
                   label="Email *"
                   type="email"
-                  value={editingEmployee.email}
+                  value={editingEmployee.email || ""}
                   onChange={(e) => setEditingEmployee({ ...editingEmployee, email: e.target.value })}
                   placeholder="email@empresa.com"
+                  autoComplete="off"
                 />
 
                 <Input
@@ -538,6 +539,7 @@ export default function EmployeesPage() {
                   value={editingEmployee.password || ""}
                   onChange={(e) => setEditingEmployee({ ...editingEmployee, password: e.target.value })}
                   placeholder="Mínimo 6 caracteres"
+                  autoComplete="new-password"
                 />
               </>
             )}
