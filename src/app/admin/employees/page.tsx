@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Users, Edit2, Trash2, Calendar, Save, Loader2, Clock, Download } from "lucide-react";
+import { Plus, Users, Edit2, Trash2, Calendar, Save, Loader2, Clock, Download, Search, ChevronUp, ChevronDown } from "lucide-react";
 
 import { Card, Button, Input } from "@/components/ui";
 import { Modal } from "@/components/ui";
@@ -33,9 +33,13 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [filteredEmployees, setFilteredEmployees] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [tenants, setTenants] = useState<any[]>([]);
   const [currentTenantName, setCurrentTenantName] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<string>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<EmployeeForm | null>(null);
@@ -82,6 +86,7 @@ export default function EmployeesPage() {
 
       console.log("[DEBUG] Employees query:", allEmployees?.length, "error:", empError);
       setEmployees(allEmployees || []);
+      setFilteredEmployees(allEmployees || []);
 
       const { data: tenantData } = await supabase
         .from("tenants")
@@ -112,6 +117,53 @@ export default function EmployeesPage() {
       setLoading(false);
     }
   }, [router, supabase]);
+
+  // Filter and sort employees
+  useEffect(() => {
+    let result = [...employees];
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(emp =>
+        emp.name?.toLowerCase().includes(query) ||
+        emp.email?.toLowerCase().includes(query) ||
+        emp.position?.toLowerCase().includes(query) ||
+        emp.department?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      let aVal: any = a[sortField];
+      let bVal: any = b[sortField];
+
+      // Handle null/undefined
+      if (aVal == null) aVal = "";
+      if (bVal == null) bVal = "";
+
+      // String comparison
+      if (typeof aVal === "string") {
+        aVal = aVal.toLowerCase();
+        bVal = (bVal as string).toLowerCase();
+      }
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    setFilteredEmployees(result);
+  }, [employees, searchQuery, sortField, sortDirection]);
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -408,24 +460,82 @@ export default function EmployeesPage() {
               <p>Nenhum funcionário cadastrado</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[var(--border)]">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Nome</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Cargo</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Área</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Gestor</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Escala</th>
-                    <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Admissão</th>
-                    <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Tempo</th>
-                    <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Férias</th>
-                    <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employees.map((emp) => {
-                    const stats = getVacationStats(emp);
+            <>
+              {/* Search and Filter Bar */}
+              <div className="mb-4 flex items-center gap-4">
+                <div className="relative flex-1 max-w-md">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar por nome, email, cargo..."
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)] placeholder:text-gray-400"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                </div>
+                <span className="text-sm text-[var(--color-brown-medium)]">
+                  {filteredEmployees.length} de {employees.length} funcionários
+                </span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-[var(--border)]">
+                      <th 
+                        className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)] cursor-pointer hover:bg-gray-50 select-none"
+                        onClick={() => handleSort("name")}
+                      >
+                        <div className="flex items-center gap-1">
+                          Nome
+                          {sortField === "name" && (sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                        </div>
+                      </th>
+                      <th 
+                        className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)] cursor-pointer hover:bg-gray-50 select-none"
+                        onClick={() => handleSort("position")}
+                      >
+                        <div className="flex items-center gap-1">
+                          Cargo
+                          {sortField === "position" && (sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                        </div>
+                      </th>
+                      <th 
+                        className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)] cursor-pointer hover:bg-gray-50 select-none"
+                        onClick={() => handleSort("department")}
+                      >
+                        <div className="flex items-center gap-1">
+                          Área
+                          {sortField === "department" && (sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                        </div>
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Gestor</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Escala</th>
+                      <th 
+                        className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)] cursor-pointer hover:bg-gray-50 select-none"
+                        onClick={() => handleSort("hire_date")}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          Admissão
+                          {sortField === "hire_date" && (sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                        </div>
+                      </th>
+                      <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Tempo</th>
+                      <th 
+                        className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)] cursor-pointer hover:bg-gray-50 select-none"
+                        onClick={() => handleSort("vacation_balance")}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          Férias
+                          {sortField === "vacation_balance" && (sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                        </div>
+                      </th>
+                      <th className="text-center py-3 px-4 text-sm font-medium text-[var(--color-brown-medium)]">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEmployees.map((emp) => {
+                      const stats = getVacationStats(emp);
                     const vacationStatus = getVacationStatus(emp);
 
                     return (
@@ -502,6 +612,7 @@ export default function EmployeesPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </Card>
       </main>
