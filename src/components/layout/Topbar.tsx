@@ -63,6 +63,7 @@ export function Topbar({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -76,6 +77,16 @@ export function Topbar({
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Fetch notifications on mount and when profile changes
+  useEffect(() => {
+    if (profile?.id) {
+      fetchNotifications();
+      // Poll for new notifications every 30 seconds
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [profile?.id]);
 
   useEffect(() => {
     if (notificationsOpen) {
@@ -102,6 +113,8 @@ export function Topbar({
   }, []);
 
   const fetchNotifications = async () => {
+    if (!profile?.id) return;
+    
     const { data } = await supabase
       .from("notifications")
       .select("*")
@@ -109,6 +122,14 @@ export function Topbar({
       .order("created_at", { ascending: false })
       .limit(10);
     setNotifications(data || []);
+    
+    // Fetch unread count
+    const { count } = await supabase
+      .from("notifications")
+      .select("*", { count: 'exact', head: true })
+      .eq("user_id", profile.id)
+      .eq("is_read", false);
+    setUnreadCount(count || 0);
   };
 
   const handleLogout = async () => {
@@ -202,9 +223,9 @@ export function Topbar({
             title="Notificações"
           >
             <Bell className="h-5 w-5 text-stone-600" />
-            {pendingCount > 0 && (
+            {unreadCount > 0 && (
               <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
-                {pendingCount > 9 ? "9+" : pendingCount}
+                {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
           </button>
