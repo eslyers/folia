@@ -124,6 +124,19 @@ export async function POST(request: Request) {
       }
     }
 
+    // Create notification for admin who created the employee
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user) {
+      const roleLabel = role === "gestor" ? "Gestor" : role === "tenant_admin" ? "Admin Empresa" : "Funcionário";
+      await supabase.from("notifications").insert({
+        user_id: sessionData.session.user.id,
+        title: "Funcionário criado",
+        message: `${name} foi adicionado como ${roleLabel}${department ? ` no departamento ${department}` : ""}`,
+        type: "success",
+        is_read: false,
+      });
+    }
+
     return NextResponse.json({
       success: true,
       user: {
@@ -176,6 +189,19 @@ export async function PUT(request: Request) {
         { error: "Erro ao atualizar: " + error.message },
         { status: 500 }
       );
+    }
+
+    // Create notification for admin who updated the employee
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user) {
+      const roleLabel = role === "gestor" ? "Gestor" : role === "tenant_admin" ? "Admin Empresa" : "Funcionário";
+      await supabase.from("notifications").insert({
+        user_id: sessionData.session.user.id,
+        title: "Funcionário atualizado",
+        message: `${name} teve seus dados atualizados (${roleLabel})`,
+        type: "info",
+        is_read: false,
+      });
     }
 
     return NextResponse.json({ success: true });
