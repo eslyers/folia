@@ -68,10 +68,17 @@ export default function EmployeesPage() {
 
       setProfile(adminProfile);
 
-      const { data: allEmployees, error: empError } = await supabase
+      let query = supabase
         .from("profiles")
         .select("*")
         .order("name");
+
+      // Se não for master_admin, filtra pelo tenant do admin
+      if (!isMasterAdmin(adminProfile.role) && adminProfile.tenant_id) {
+        query = query.eq("tenant_id", adminProfile.tenant_id);
+      }
+
+      const { data: allEmployees, error: empError } = await query;
 
       console.log("[DEBUG] Employees query:", allEmployees?.length, "error:", empError);
       setEmployees(allEmployees || []);
