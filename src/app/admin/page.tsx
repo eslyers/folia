@@ -41,17 +41,33 @@ function AdminContent() {
 
       setProfile(profileData);
 
-      // Fetch leave requests WITHOUT JOINS (avoids RLS issues with profile data)
-      const { data: requests } = await supabase
+      // Get tenant_id from profile
+      const adminTenantId = (profileData as any)?.tenant_id;
+      console.log("[ADMIN] Admin tenant_id:", adminTenantId);
+
+      // Fetch leave requests filtered by tenant (if admin has a tenant)
+      let requestsQuery = supabase
         .from("leave_requests")
         .select("*")
         .order("created_at", { ascending: false });
+      
+      if (adminTenantId) {
+        requestsQuery = requestsQuery.eq("tenant_id", adminTenantId);
+      }
 
-      // Fetch all profiles separately (admin can see all via is_admin policy)
-      const { data: allProfiles } = await supabase
+      const { data: requests } = await requestsQuery;
+
+      // Fetch profiles filtered by tenant (if admin has a tenant)
+      let profilesQuery = supabase
         .from("profiles")
         .select("*")
         .order("name");
+      
+      if (adminTenantId) {
+        profilesQuery = profilesQuery.eq("tenant_id", adminTenantId);
+      }
+
+      const { data: allProfiles } = await profilesQuery;
 
       console.log("[ADMIN] Requests fetched:", requests?.length, requests);
       console.log("[ADMIN] Profiles fetched:", allProfiles?.length, allProfiles);
