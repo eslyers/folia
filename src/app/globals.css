@@ -656,7 +656,3 @@ html {
   border: 1px solid var(--border);
 }
 
-/* User dropdown - dark mode */
-[data-theme="dark"] .group-hover\\:opacity-100 {
-  background-color: var(--color-card) !important;
-}
