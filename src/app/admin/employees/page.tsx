@@ -256,9 +256,15 @@ export default function EmployeesPage() {
           return;
         }
 
+        const { data: { session } } = await supabase.auth.getSession();
+        const authToken = session?.access_token;
+        
         const response = await fetch("/api/admin/users", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            ...(authToken && { "Authorization": `Bearer ${authToken}` }),
+          },
           body: JSON.stringify({
             email: editingEmployee.email.trim(),
             password: editingEmployee.password,

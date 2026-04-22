@@ -26,10 +26,26 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Get current user session for notification
-    const { data: sessionData } = await supabaseAdmin.auth.getSession();
-    const currentUserId = sessionData?.session?.user?.id;
-    console.log("[Admin API POST] Current user ID:", currentUserId);
+    // Get current user from the Authorization header (sent by frontend)
+    // The frontend sends the Bearer token in the request
+    const authHeader = request.headers.get("Authorization");
+    let currentUserId: string | null = null;
+    
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+      if (userData?.user) {
+        currentUserId = userData.user.id;
+        console.log("[Admin API POST] User from token:", currentUserId);
+      }
+    }
+    
+    if (!currentUserId) {
+      // Fallback: try to get session from supabaseAdmin
+      const { data: sessionData } = await supabaseAdmin.auth.getSession();
+      currentUserId = sessionData?.session?.user?.id || null;
+      console.log("[Admin API POST] User from session:", currentUserId);
+    }
 
     // First create the user in auth.users
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -183,6 +199,23 @@ export async function PUT(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
+
+    // Get current user from the Authorization header
+    const authHeader = request.headers.get("Authorization");
+    let currentUserId: string | null = null;
+    
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const { data: userData } = await supabaseAdmin.auth.getUser(token);
+      if (userData?.user) {
+        currentUserId = userData.user.id;
+      }
+    }
+
+    if (!currentUserId) {
+      const { data: sessionData } = await supabaseAdmin.auth.getSession();
+      currentUserId = sessionData?.session?.user?.id || null;
+    }
 
     const supabase = await createClient();
 
