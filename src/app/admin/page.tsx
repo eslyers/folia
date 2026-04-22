@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AdminDashboard } from "./AdminDashboard";
-import { isTenantAdmin } from "@/lib/auth";
+import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
 
 export default function AdminPage() {
   return <AdminContent />;
@@ -16,7 +16,40 @@ function AdminContent() {
   const [profile, setProfile] = useState<any>(null);
   const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const supabase = createClient();
+
+  // Fetch data based on selected tenant
+  const fetchData = async (tenantId: string | null) => {
+    // Fetch leave requests filtered by tenant
+    let requestsQuery = supabase
+      .from("leave_requests")
+      .select("*")
+      .order("created_at", { ascending: false });
+    
+    if (tenantId) {
+      requestsQuery = requestsQuery.eq("tenant_id", tenantId);
+    }
+    const { data: requests } = await requestsQuery;
+
+    // Fetch profiles filtered by tenant
+    let profilesQuery = supabase
+      .from("profiles")
+      .select("*")
+      .order("name");
+    
+    if (tenantId) {
+      profilesQuery = profilesQuery.eq("tenant_id", tenantId);
+    }
+    const { data: allProfiles } = await profilesQuery;
+
+    console.log("[ADMIN] Requests fetched:", requests?.length);
+    console.log("[ADMIN] Profiles fetched:", allProfiles?.length);
+
+    setLeaveRequests(requests || []);
+    setProfiles(allProfiles || []);
+  };
 
   useEffect(() => {
     const checkUser = async () => {
@@ -41,44 +74,42 @@ function AdminContent() {
 
       setProfile(profileData);
 
-      // Get tenant_id from profile
+      const adminRole = (profileData as any)?.role;
       const adminTenantId = (profileData as any)?.tenant_id;
       console.log("[ADMIN] Admin tenant_id:", adminTenantId);
+      console.log("[ADMIN] Admin role:", adminRole);
 
-      // Fetch leave requests filtered by tenant (if admin has a tenant)
-      let requestsQuery = supabase
-        .from("leave_requests")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      if (adminTenantId) {
-        requestsQuery = requestsQuery.eq("tenant_id", adminTenantId);
+      // Set default tenant for non-master admins
+      if (!isMasterAdmin(adminRole) && adminTenantId) {
+        setSelectedTenantId(adminTenantId);
+        await fetchData(adminTenantId);
+      } else if (isMasterAdmin(adminRole)) {
+        // Fetch all tenants for master_admin
+        const { data: allTenants } = await supabase
+          .from("tenants")
+          .select("id, name")
+          .order("name");
+        setTenants(allTenants || []);
+        // Fetch all data (no filter)
+        await fetchData(null);
       }
 
-      const { data: requests } = await requestsQuery;
-
-      // Fetch profiles filtered by tenant (if admin has a tenant)
-      let profilesQuery = supabase
-        .from("profiles")
-        .select("*")
-        .order("name");
-      
-      if (adminTenantId) {
-        profilesQuery = profilesQuery.eq("tenant_id", adminTenantId);
-      }
-
-      const { data: allProfiles } = await profilesQuery;
-
-      console.log("[ADMIN] Requests fetched:", requests?.length, requests);
-      console.log("[ADMIN] Profiles fetched:", allProfiles?.length, allProfiles);
-
-      setLeaveRequests(requests || []);
-      setProfiles(allProfiles || []);
       setLoading(false);
     };
 
     checkUser();
   }, []);
+
+  // Re-fetch when tenant selection changes
+  useEffect(() => {
+    if (profile && selectedTenantId) {
+      // For master_admin, fetchData is called on tenant change
+      // For tenant_admin, we already fetched with their tenant on mount
+      if (isMasterAdmin(profile.role)) {
+        fetchData(selectedTenantId || null);
+      }
+    }
+  }, [selectedTenantId]);
 
   if (loading) {
     return (
@@ -99,5 +130,37 @@ function AdminContent() {
     );
   }
 
-  return <AdminDashboard profile={profile} leaveRequests={leaveRequests} profiles={profiles} />;
+  return (
+    <div className="min-h-screen bg-[var(--cream)]">
+      {/* Tenant Selector for Master Admin */}
+      {isMasterAdmin(profile?.role) && tenants.length > 0 && (
+        <div className="bg-white border-b border-[var(--border)] px-6 py-4">
+          <div className="max-w-7xl mx-auto flex items-center gap-4">
+            <label className="text-sm font-medium text-[var(--color-brown-dark)]">
+              Filtrar por empresa:
+            </label>
+            <select
+              value={selectedTenantId}
+              onChange={(e) => setSelectedTenantId(e.target.value)}
+              className="px-4 py-2 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
+            >
+              <option value="">Todas as empresas</option>
+              {tenants.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+      
+      <AdminDashboard 
+        profile={profile} 
+        leaveRequests={leaveRequests} 
+        profiles={profiles}
+        selectedTenantId={selectedTenantId}
+      />
+    </div>
+  );
 }

@@ -46,9 +46,10 @@ interface AdminDashboardProps {
   profile: Profile;
   leaveRequests: LeaveRequest[];
   profiles: Profile[];
+  selectedTenantId?: string;
 }
 
-export function AdminDashboard({ profile, leaveRequests, profiles }: AdminDashboardProps) {
+export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenantId }: AdminDashboardProps) {
   const router = useRouter();
   const supabase = createClient();
   const [requests, setRequests] = useState(leaveRequests);
