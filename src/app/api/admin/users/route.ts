@@ -52,34 +52,67 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create profile using service role (bypasses RLS)
-    const supabase = await createClient();
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: authData.user.id,
-      name: name,
-      email: email,
-      role: role || "employee",
-      department: department || null,
-      position: position || null,
-      hire_date: hire_date || null,
-      vacation_balance: vacation_balance || 30,
-      hours_balance: hours_balance || 0,
-      manager_id: manager_id || null,
-      schedule_id: schedule_id || null,
-    });
+    // Check if profile already exists (from failed previous attempt)
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", authData.user.id)
+      .single();
 
-    if (profileError) {
-      console.error("[Admin API] Profile error:", profileError);
-      // Try to delete the auth user if profile creation fails
-      try {
-        await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-      } catch (deleteError) {
-        console.error("[Admin API] Failed to delete auth user:", deleteError);
+    if (existingProfile) {
+      // Profile exists, update it instead
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          name: name,
+          email: email,
+          role: role || "employee",
+          department: department || null,
+          position: position || null,
+          hire_date: hire_date || null,
+          vacation_balance: vacation_balance || 30,
+          hours_balance: hours_balance || 0,
+          manager_id: manager_id || null,
+          schedule_id: schedule_id || null,
+        })
+        .eq("id", authData.user.id);
+
+      if (updateError) {
+        console.error("[Admin API] Profile update error:", updateError);
+        return NextResponse.json(
+          { error: "Erro ao atualizar perfil: " + updateError.message },
+          { status: 500 }
+        );
       }
-      return NextResponse.json(
-        { error: "Erro ao criar perfil: " + profileError.message },
-        { status: 500 }
-      );
+    } else {
+      // Create profile using service role (bypasses RLS)
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: authData.user.id,
+        name: name,
+        email: email,
+        role: role || "employee",
+        department: department || null,
+        position: position || null,
+        hire_date: hire_date || null,
+        vacation_balance: vacation_balance || 30,
+        hours_balance: hours_balance || 0,
+        manager_id: manager_id || null,
+        schedule_id: schedule_id || null,
+      });
+
+      if (profileError) {
+        console.error("[Admin API] Profile error:", profileError);
+        // Try to delete the auth user if profile creation fails
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+        } catch (deleteError) {
+          console.error("[Admin API] Failed to delete auth user:", deleteError);
+        }
+        return NextResponse.json(
+          { error: "Erro ao criar perfil: " + profileError.message },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({

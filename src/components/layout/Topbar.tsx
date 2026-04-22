@@ -12,6 +12,10 @@ import {
   Sun,
   Moon,
   Building2,
+  Palette,
+  Leaf,
+  Waves,
+  Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
@@ -53,7 +57,8 @@ export function Topbar({
   const router = useRouter();
   const supabase = createClient();
   const [scrolled, setScrolled] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark" | "golden" | "forest" | "ocean">("light");
+  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -88,6 +93,9 @@ export function Topbar({
       if (!target.closest('.tenant-dropdown')) {
         setTenantDropdownOpen(false);
       }
+      if (!target.closest('.theme-dropdown')) {
+        setThemeDropdownOpen(false);
+      }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
@@ -109,16 +117,24 @@ export function Topbar({
     router.refresh();
   };
 
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
+  const themes: { id: "light" | "dark" | "golden" | "forest" | "ocean"; label: string; icon: React.ReactNode }[] = [
+    { id: "light", label: "Light", icon: <Sun className="h-4 w-4" /> },
+    { id: "dark", label: "Dark", icon: <Moon className="h-4 w-4" /> },
+    { id: "golden", label: "Golden", icon: <Sparkles className="h-4 w-4" /> },
+    { id: "forest", label: "Forest", icon: <Leaf className="h-4 w-4" /> },
+    { id: "ocean", label: "Ocean", icon: <Waves className="h-4 w-4" /> },
+  ];
+
+  const setThemeWithStorage = (newTheme: typeof theme) => {
     setTheme(newTheme);
     document.documentElement.setAttribute("data-theme", newTheme);
     localStorage.setItem("theme", newTheme);
+    setThemeDropdownOpen(false);
   };
 
   // Load theme from localStorage on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "golden" | "forest" | "ocean" | null;
     if (savedTheme) {
       setTheme(savedTheme);
       document.documentElement.setAttribute("data-theme", savedTheme);
@@ -231,18 +247,47 @@ export function Topbar({
           )}
         </div>
 
-        {/* Theme toggle */}
-        <button 
-          onClick={toggleTheme}
-          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-stone-100 transition-colors"
-          title={theme === "light" ? "Modo escuro" : "Modo claro"}
-        >
-          {theme === "light" ? (
-            <Moon className="h-5 w-5 text-stone-600" />
-          ) : (
-            <Sun className="h-5 w-5 text-stone-600" />
+        {/* Theme selector dropdown */}
+        <div className="relative theme-dropdown">
+          <button 
+            onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
+            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-stone-100 transition-colors"
+            title="Trocar tema"
+          >
+            <Palette className="h-5 w-5 text-stone-600" />
+          </button>
+
+          {themeDropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
+              <div className="px-4 py-2.5 border-b border-gray-100">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tema</p>
+              </div>
+              {themes.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setThemeWithStorage(t.id)}
+                  className={clsx(
+                    "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors",
+                    theme === t.id
+                      ? "bg-[#5C724A]/10 text-[#5C724A] font-medium"
+                      : "text-gray-700 hover:bg-gray-50"
+                  )}
+                >
+                  <span className={clsx(
+                    "w-7 h-7 rounded-lg flex items-center justify-center",
+                    theme === t.id ? "bg-[#5C724A]/15" : "bg-gray-100"
+                  )}>
+                    {t.icon}
+                  </span>
+                  {t.label}
+                  {theme === t.id && (
+                    <span className="ml-auto text-xs text-[#5C724A]">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
           )}
-        </button>
+        </div>
 
         {/* Divider */}
         <div className="w-px h-8 bg-gray-200 mx-2" />
