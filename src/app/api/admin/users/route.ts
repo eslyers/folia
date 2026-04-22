@@ -53,6 +53,7 @@ export async function POST(request: Request) {
     }
 
     // Check if profile already exists (from failed previous attempt)
+    const supabase = await createClient();
     const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id")
