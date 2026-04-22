@@ -61,6 +61,7 @@ const TENANT_ADMIN_ITEMS: NavItem[] = [
   { label: "Ponto", href: "/admin/team/point", icon: Clock },
   { label: "Fechamento", href: "/admin/timesheets", icon: BarChart3 },
   { label: "Histórico", href: "/admin/audit", icon: ScrollText },
+  { label: "Notificações", href: "/admin/notifications", icon: Bell },
   { label: "Configurações", href: "/admin/settings", icon: Settings },
 ];
 
