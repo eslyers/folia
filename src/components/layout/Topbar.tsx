@@ -80,7 +80,9 @@ export function Topbar({
 
   // Fetch notifications on mount and when profile changes
   useEffect(() => {
+    console.log("[Topbar] useEffect triggered, profile.id:", profile?.id);
     if (profile?.id) {
+      console.log("[Topbar] Calling fetchNotifications");
       fetchNotifications();
       // Poll for new notifications every 30 seconds
       const interval = setInterval(fetchNotifications, 30000);
@@ -113,22 +115,39 @@ export function Topbar({
   }, []);
 
   const fetchNotifications = async () => {
-    if (!profile?.id) return;
+    if (!profile?.id) {
+      console.log("[Topbar] No profile.id, skipping fetch");
+      return;
+    }
     
-    const { data } = await supabase
+    console.log("[Topbar] Fetching notifications for user:", profile.id);
+    
+    const { data, error } = await supabase
       .from("notifications")
       .select("*")
       .eq("user_id", profile.id)
       .order("created_at", { ascending: false })
       .limit(10);
+    
+    if (error) {
+      console.error("[Topbar] Error fetching notifications:", error);
+    } else {
+      console.log("[Topbar] Notifications fetched:", data?.length, "items");
+    }
+    
     setNotifications(data || []);
     
     // Fetch unread count
-    const { count } = await supabase
+    const { count, error: countError } = await supabase
       .from("notifications")
       .select("*", { count: 'exact', head: true })
       .eq("user_id", profile.id)
       .eq("is_read", false);
+    
+    if (countError) {
+      console.error("[Topbar] Error fetching unread count:", countError);
+    }
+    
     setUnreadCount(count || 0);
   };
 
