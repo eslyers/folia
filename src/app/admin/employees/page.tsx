@@ -573,11 +573,14 @@ export default function EmployeesPage() {
               >
                 <option value="">Nenhum</option>
                 {employees
-                  .filter((e) => e.id !== editingEmployee.id)
+                  .filter((e) => e.id !== editingEmployee.id && (e.role === "gestor" || e.role === "tenant_admin"))
                   .map((e) => (
-                    <option key={e.id} value={e.id}>{e.name}</option>
+                    <option key={e.id} value={e.id}>{e.name} ({e.role === "tenant_admin" ? "Admin" : "Gestor"})</option>
                   ))}
               </select>
+              <p className="text-xs text-[var(--color-brown-medium)] mt-1">
+                Apenas gestores e admins da empresa
+              </p>
             </div>
 
             <div>
