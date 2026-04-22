@@ -554,3 +554,109 @@ html {
 [data-theme="dark"] tbody tr:hover {
   background-color: var(--color-surface) !important;
 }
+
+/* =====================================================
+   DARK THEME - SIDEBAR
+   ===================================================== */
+
+/* Sidebar background */
+[data-theme="dark"] aside,
+[data-theme="dark"] aside[class*="w-"],
+[data-theme="dark"] .min-h-screen aside {
+  background-color: var(--color-surface) !important;
+}
+
+/* Sidebar text and icons - alto contraste */
+[data-theme="dark"] aside .text-stone-600,
+[data-theme="dark"] aside .text-stone-500,
+[data-theme="dark"] aside .text-stone-400 {
+  color: #9E9E9E !important;
+}
+
+[data-theme="dark"] aside .text-stone-900,
+[data-theme="dark"] aside .text-stone-800 {
+  color: #F5F5F5 !important;
+}
+
+/* Sidebar navigation items - hover states */
+[data-theme="dark"] aside nav a,
+[data-theme="dark"] aside nav button {
+  background-color: transparent !important;
+}
+
+[data-theme="dark"] aside nav a:hover {
+  background-color: var(--color-surface) !important;
+}
+
+/* Sidebar active item */
+[data-theme="dark"] aside nav a[class*="bg-gradient-to-r"] {
+  background: linear-gradient(to right, var(--color-green-olive), #6B7D57) !important;
+}
+
+/* Sidebar dividers and borders */
+[data-theme="dark"] aside .border-b,
+[data-theme="dark"] aside [class*="border-"] {
+  border-color: var(--border) !important;
+}
+
+/* Sidebar section labels */
+[data-theme="dark"] aside .text-stone-400,
+[data-theme="dark"] aside [class*="text-xs"] {
+  color: #6B6B6B !important;
+}
+
+/* Status badges in dark mode - alta legibilidade */
+[data-theme="dark"] [class*="rounded-full"][class*="text-"][class*="bg-"] {
+  border: 1px solid currentColor;
+  opacity: 0.9;
+}
+
+/* Dark theme status badges - contraste adequado */
+[data-theme="dark"] .bg-green-100,
+[data-theme="dark"] .bg-green-50 {
+  background-color: #1B3D1F !important;
+  color: #6FCF73 !important;
+}
+
+[data-theme="dark"] .bg-blue-100,
+[data-theme="dark"] .bg-blue-50 {
+  background-color: #1A2B4D !important;
+  color: #6B9FD4 !important;
+}
+
+[data-theme="dark"] .bg-purple-100,
+[data-theme="dark"] .bg-purple-50 {
+  background-color: #2D1F4D !important;
+  color: #B06BCF !important;
+}
+
+[data-theme="dark"] .bg-amber-100,
+[data-theme="dark"] .bg-amber-50,
+[data-theme="dark"] .bg-yellow-100,
+[data-theme="dark"] .bg-yellow-50 {
+  background-color: #3D2D1A !important;
+  color: #D4A853 !important;
+}
+
+[data-theme="dark"] .bg-red-100,
+[data-theme="dark"] .bg-red-50 {
+  background-color: #3D1A1A !important;
+  color: #CF6B6B !important;
+}
+
+[data-theme="dark"] .bg-gray-100,
+[data-theme="dark"] .bg-gray-50 {
+  background-color: #2D2D2D !important;
+  color: #B0B0B0 !important;
+}
+
+/* Notifications popup - dark mode */
+[data-theme="dark"] .bg-white.rounded-xl {
+  background-color: var(--color-card) !important;
+  border: 1px solid var(--border);
+}
+
+/* User dropdown - dark mode */
+[data-theme="dark"] .group-hover\\:opacity-100 {
+  background-color: var(--color-card) !important;
+}
