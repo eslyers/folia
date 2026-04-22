@@ -118,6 +118,8 @@ export default function EmployeesPage() {
   }, [fetchData]);
 
   const openNewModal = () => {
+    // Auto-assign tenant from current admin's session
+    const defaultTenantId = profile?.tenant_id || "";
     setEditingEmployee({
       name: "",
       email: "",
@@ -130,7 +132,7 @@ export default function EmployeesPage() {
       hours_balance: 0,
       manager_id: "",
       schedule_id: "",
-      tenant_id: profile?.tenant_id || "",
+      tenant_id: defaultTenantId,
     });
     setModalOpen(true);
   };
@@ -642,21 +644,24 @@ export default function EmployeesPage() {
               </select>
             </div>
 
-            {/* Tenant selector for master_admin */}
-            {tenants.length > 0 && (
+            {/* Tenant selector - show for master_admin and if admin has a tenant */}
+            {(tenants.length > 0 || profile?.tenant_id) && (
               <div>
                 <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1.5">
                   Empresa
                 </label>
                 <select
-                  value={editingEmployee.tenant_id || ""}
+                  value={editingEmployee.tenant_id || profile?.tenant_id || ""}
                   onChange={(e) => setEditingEmployee({ ...editingEmployee, tenant_id: e.target.value })}
                   className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)]"
                 >
-                  <option value="">Selecione...</option>
-                  {tenants.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
+                  {tenants.length > 0 ? (
+                    tenants.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))
+                  ) : (
+                    <option value={profile?.tenant_id}>{currentTenantName || "Empresa atual"}</option>
+                  )}
                 </select>
               </div>
             )}

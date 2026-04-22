@@ -4,7 +4,7 @@ import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 
 export async function POST(request: Request) {
   try {
-    const { email, password, name, role, department, position, hire_date, vacation_balance, hours_balance, manager_id, schedule_id } = await request.json();
+    const { email, password, name, role, department, position, hire_date, vacation_balance, hours_balance, manager_id, schedule_id, tenant_id } = await request.json();
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -52,8 +52,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if profile already exists (from failed previous attempt)
+    // Create profile
     const supabase = await createClient();
+
+    // Use tenant_id from request body (sent from frontend), or leave null
+    // The frontend already sends the admin's tenant_id in the body
+    const profileTenantId = tenant_id || null;
+
+    // Check if profile already exists (from failed previous attempt)
     const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id")
@@ -61,7 +67,7 @@ export async function POST(request: Request) {
       .single();
 
     if (existingProfile) {
-      // Profile exists, update it instead
+      // Profile exists, update it
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
@@ -75,6 +81,7 @@ export async function POST(request: Request) {
           hours_balance: hours_balance || 0,
           manager_id: manager_id || null,
           schedule_id: schedule_id || null,
+          tenant_id: profileTenantId,
         })
         .eq("id", authData.user.id);
 
@@ -86,7 +93,7 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // Create profile using service role (bypasses RLS)
+      // Create profile
       const { error: profileError } = await supabase.from("profiles").insert({
         id: authData.user.id,
         name: name,
@@ -99,6 +106,7 @@ export async function POST(request: Request) {
         hours_balance: hours_balance || 0,
         manager_id: manager_id || null,
         schedule_id: schedule_id || null,
+        tenant_id: profileTenantId,
       });
 
       if (profileError) {
@@ -139,7 +147,6 @@ export async function PUT(request: Request) {
   try {
     const { id, name, role, department, position, hire_date, vacation_balance, hours_balance, manager_id, schedule_id } = await request.json();
 
-
     if (!id) {
       return NextResponse.json(
         { error: "ID do usuário é obrigatório" },
@@ -147,9 +154,7 @@ export async function PUT(request: Request) {
       );
     }
 
-
     const supabase = await createClient();
-
 
     const { error } = await supabase
       .from("profiles")
