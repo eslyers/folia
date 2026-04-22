@@ -108,13 +108,18 @@ export async function PUT(request: NextRequest) {
     const { error: authError, user } = await validateAuth(authHeader);
     
     if (authError || !user) {
+      console.error("[DEBUG] PUT auth error:", authError);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    console.log("[DEBUG] PUT authenticated user:", user.id);
 
     const adminClient = createServiceClient();
 
     const body = await request.json();
     const { id, name, domain, logo_url, settings, is_active } = body;
+
+    console.log("[DEBUG] PUT updating tenant:", id, { name, domain, logo_url, settings, is_active });
 
     const { data, error } = await adminClient
       .from("tenants")
@@ -124,17 +129,21 @@ export async function PUT(request: NextRequest) {
         logo_url: logo_url || null,
         settings,
         is_active,
+        updated_at: new Date().toISOString(),
       })
       .eq("id", id)
       .select()
       .single();
 
     if (error) {
+      console.error("[DEBUG] PUT update error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    console.log("[DEBUG] PUT success:", data);
     return NextResponse.json({ data });
   } catch (error) {
+    console.error("[DEBUG] PUT catch error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
