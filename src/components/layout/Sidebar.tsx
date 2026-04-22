@@ -174,18 +174,6 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
       {/* Desktop sidebar - 220px */}
       {!isMobile && (
         <aside className="w-[220px] min-h-screen bg-stone-50 border-r border-stone-200 flex flex-col flex-shrink-0">
-          {/* User badge at top */}
-          <div className="px-4 py-3 border-b border-stone-100">
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white border border-stone-200 shadow-sm">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#5C724A] to-[#4A5F3C] text-white flex items-center justify-center text-sm font-semibold shadow-sm">
-                {profile.name?.charAt(0).toUpperCase() ?? "U"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-stone-900 truncate">{profile.name?.split(" ")[0]}</p>
-                <p className="text-xs text-stone-500 truncate">{profile.email}</p>
-              </div>
-            </div>
-          </div>
           <SidebarNav profile={profile} />
         </aside>
       )}
