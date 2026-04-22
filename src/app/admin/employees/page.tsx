@@ -155,9 +155,15 @@ export default function EmployeesPage() {
 
     try {
       if (editingEmployee.id) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const authToken = session?.access_token;
+        
         const response = await fetch("/api/admin/users", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            ...(authToken && { "Authorization": `Bearer ${authToken}` }),
+          },
           body: JSON.stringify({
             id: editingEmployee.id,
             name: editingEmployee.name.trim(),
