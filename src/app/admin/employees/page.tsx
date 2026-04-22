@@ -41,6 +41,8 @@ export default function EmployeesPage() {
   const [editingEmployee, setEditingEmployee] = useState<EmployeeForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -147,7 +149,7 @@ export default function EmployeesPage() {
     if (!editingEmployee) return;
 
     if (!editingEmployee.name.trim()) {
-      alert("Nome é obrigatório");
+      setError("Nome é obrigatório");
       return;
     }
 
@@ -182,12 +184,12 @@ export default function EmployeesPage() {
         if (!response.ok) throw new Error(result.error);
       } else {
         if (!editingEmployee.email.trim()) {
-          alert("Email é obrigatório");
+          setError("Email é obrigatório");
           setSaving(false);
           return;
         }
         if (!editingEmployee.password || editingEmployee.password.length < 6) {
-          alert("Senha deve ter pelo menos 6 caracteres");
+          setError("Senha deve ter pelo menos 6 caracteres");
           setSaving(false);
           return;
         }
@@ -217,9 +219,10 @@ export default function EmployeesPage() {
 
       await fetchData();
       setModalOpen(false);
+      setSuccess(editingEmployee?.id ? "Funcionário atualizado com sucesso!" : "Funcionário criado com sucesso!");
     } catch (err: any) {
       console.error("Error saving:", err);
-      alert("Erro ao salvar: " + err.message);
+      setError("Erro ao salvar: " + err.message);
     }
 
     setSaving(false);
@@ -237,7 +240,7 @@ export default function EmployeesPage() {
       setEmployees((prev) => prev.filter((e) => e.id !== id));
     } catch (err: any) {
       console.error("Error deleting:", err);
-      alert("Erro ao excluir: " + err.message);
+      setError("Erro ao excluir: " + err.message);
     }
 
     setDeleting(null);
@@ -304,6 +307,22 @@ export default function EmployeesPage() {
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
+
+      {/* Error Banner */}
+      {error && (
+        <div className="fixed top-4 right-4 z-50 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 max-w-md">
+          <div className="flex-1">{error}</div>
+          <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800 font-bold">×</button>
+        </div>
+      )}
+
+      {/* Success Banner */}
+      {success && (
+        <div className="fixed top-4 right-4 z-50 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 max-w-md">
+          <div className="flex-1">{success}</div>
+          <button onClick={() => setSuccess(null)} className="text-green-600 hover:text-green-800 font-bold">×</button>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
