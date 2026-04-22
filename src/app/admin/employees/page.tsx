@@ -68,11 +68,12 @@ export default function EmployeesPage() {
 
       setProfile(adminProfile);
 
-      const { data: allEmployees } = await supabase
+      const { data: allEmployees, error: empError } = await supabase
         .from("profiles")
         .select("*, manager:profiles!manager_id(id, name), schedule:work_schedules(id, name), tenant:tenants(id, name)")
         .order("name");
 
+      console.log("[DEBUG] Employees query:", allEmployees?.length, "error:", empError);
       setEmployees(allEmployees || []);
 
       const { data: tenantData } = await supabase
