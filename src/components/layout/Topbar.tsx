@@ -110,9 +110,20 @@ export function Topbar({
   };
 
   const toggleTheme = () => {
-    setTheme(prev => prev === "light" ? "dark" : "light");
-    document.documentElement.classList.toggle("dark");
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+    localStorage.setItem("theme", newTheme);
   };
+
+  // Load theme from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }
+  }, []);
 
   const handleTenantSelect = (tenant: Tenant) => {
     setTenantDropdownOpen(false);
@@ -232,15 +243,6 @@ export function Topbar({
             <Sun className="h-5 w-5 text-stone-600" />
           )}
         </button>
-
-        {/* Settings */}
-        <Link 
-          href="/settings"
-          className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-stone-100 transition-colors"
-          title="Configurações"
-        >
-          <Settings className="h-5 w-5 text-stone-600" />
-        </Link>
 
         {/* Divider */}
         <div className="w-px h-8 bg-gray-200 mx-2" />
