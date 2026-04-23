@@ -22,18 +22,14 @@ function AdminContent() {
 
   // Fetch data based on selected tenant
   const fetchData = async (tenantId: string | null) => {
-    // Fetch leave requests filtered by tenant
-    let requestsQuery = supabase
+    // Fetch leave requests WITHOUT tenant filter (leave_requests table doesn't have tenant_id column)
+    const { data: requests } = await supabase
       .from("leave_requests")
       .select("*")
       .order("created_at", { ascending: false });
-    
-    if (tenantId) {
-      requestsQuery = requestsQuery.eq("tenant_id", tenantId);
-    }
-    const { data: requests } = await requestsQuery;
 
-    // Fetch profiles filtered by tenant
+
+    // Fetch profiles filtered by tenant (profiles table has tenant_id)
     let profilesQuery = supabase
       .from("profiles")
       .select("*")
