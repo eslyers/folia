@@ -40,33 +40,76 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
+    // EXTRACT TOKEN FROM HEADER - THIS IS THE KEY FIX!
+    const authHeader = request.headers.get("Authorization");
+    let userId: string | null = null;
+    let profile: any = null;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      console.log("[Schedules POST] No session found");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      console.log("[Schedules POST] Token received:", token.substring(0, 20) + "...");
+
+      // Create a new supabase client and manually set the session with the token
+      const supabase = await createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+      if (authError || !user) {
+        console.log("[Schedules POST] Token validation failed:", authError?.message);
+        return NextResponse.json({ error: "Unauthorized - invalid token" }, { status: 401 });
+      }
+
+      userId = user.id;
+      console.log("[Schedules POST] User from token:", userId);
+
+      // Get profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("role, tenant_id")
+        .eq("id", userId)
+        .single();
+
+      profile = profileData;
+
+      if (!profile) {
+        console.log("[Schedules POST] No profile found for user:", userId);
+        return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      }
+
+      console.log("[Schedules POST] Profile:", profile);
+    } else {
+      // No token - try regular session
+      console.log("[Schedules POST] No Authorization header found");
+      const supabase = await createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        console.log("[Schedules POST] No session found");
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      userId = session.user.id;
+
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("role, tenant_id")
+        .eq("id", userId)
+        .single();
+
+      profile = profileData;
+
+      if (!profile) {
+        console.log("[Schedules POST] No profile found");
+        return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      }
     }
 
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, tenant_id")
-      .eq("id", session.user.id)
-      .single();
-
-    console.log("[Schedules POST] User:", session.user.id, "Profile:", profile);
-
-    if (!profile) {
-      console.log("[Schedules POST] No profile found");
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
-
+    // Role check
     if (!isTenantAdmin(profile.role)) {
       console.log("[Schedules POST] Role check failed:", profile.role);
       return NextResponse.json({ error: "Forbidden - role: " + profile.role }, { status: 403 });
     }
 
+    // Parse body
     const body = await request.json();
     const {
       name,
@@ -78,21 +121,19 @@ export async function POST(request: Request) {
       friday = true,
       saturday = false,
       sunday = false,
-      tolerance_minutes = 5,
+      tolerance_minutes = 0,
       start_work = "09:00",
       end_work = "18:00",
       lunch_duration_minutes = 60,
+      is_active = true,
     } = body;
 
-    if (!name?.trim()) {
-      return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 });
-    }
-
-    const { data: schedule, error } = await supabase
+    // Insert
+    const supabase = await createClient();
+    const { data: schedule, error: insertError } = await supabase
       .from("work_schedules")
       .insert({
-        name: name.trim(),
-        tenant_id: profile.tenant_id,
+        name,
         daily_hours,
         monday,
         tuesday,
@@ -105,16 +146,18 @@ export async function POST(request: Request) {
         start_work,
         end_work,
         lunch_duration_minutes,
-        is_active: true,
+        is_active,
+        tenant_id: profile.tenant_id,
       })
       .select()
       .single();
 
-    if (error) {
-      console.error("[Schedules POST] Error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (insertError) {
+      console.error("[Schedules POST] Insert error:", insertError);
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
+    console.log("[Schedules POST] Created:", schedule);
     return NextResponse.json({ schedule });
 
   } catch (error) {
