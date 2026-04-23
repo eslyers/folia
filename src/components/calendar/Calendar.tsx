@@ -49,19 +49,22 @@ export function Calendar({
 
   const isCompact = size === "compact";
   const containerPadding = isCompact ? "p-2" : "p-4";
-  const navMargin = isCompact ? "mb-2" : "mb-4";
-  const titleSize = isCompact ? "text-sm" : "text-lg";
-  const headerMargin = isCompact ? "mb-1" : "mb-2";
-  const dayHeaderPadding = isCompact ? "py-1" : "py-2";
-  const dayCellPadding = isCompact ? "p-0.5" : "p-1";
-  const dayCellText = isCompact ? "text-[10px]" : "text-sm";
-  const dotSize = isCompact ? "w-1 h-1" : "w-2 h-2";
+  const navMargin = isCompact ? "mb-1" : "mb-4";
+  const titleSize = isCompact ? "text-xs" : "text-lg";
+  const headerMargin = isCompact ? "mb-0.5" : "mb-2";
+  const dayHeaderPadding = isCompact ? "py-0.5" : "py-2";
+  const dayHeaderText = isCompact ? "text-[8px]" : "text-xs";
+  const dayCellPadding = isCompact ? "p-0" : "p-1";
+  const dayCellText = isCompact ? "text-[9px]" : "text-sm";
+  const dayHeight = isCompact ? "h-6" : "h-9";
+  const dotSize = isCompact ? "w-0.5 h-0.5" : "w-2 h-2";
   const dotsMargin = isCompact ? "mt-0" : "mt-0.5";
-  const legendMargin = isCompact ? "mt-2 pt-2" : "mt-4 pt-4";
-  const legendGap = isCompact ? "gap-2" : "gap-4";
+  const legendMargin = isCompact ? "mt-1 pt-1" : "mt-4 pt-4";
+  const legendGap = isCompact ? "gap-1" : "gap-4";
   const legendItemGap = isCompact ? "gap-1" : "gap-2";
-  const legendDotSize = isCompact ? "w-2 h-2" : "w-3 h-3";
-  const legendText = isCompact ? "text-[10px]" : "text-xs";
+  const legendDotSize = isCompact ? "w-1.5 h-1.5" : "w-3 h-3";
+  const legendText = isCompact ? "text-[9px]" : "text-xs";
+  const navBtnSize = isCompact ? "h-5 w-5" : "h-5 w-5";
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -239,7 +242,7 @@ export function Calendar({
               onMouseLeave={handleMouseLeave}
               disabled={!isInCurrentMonth}
               className={clsx(
-                `aspect-square rounded-lg flex flex-col items-center justify-center transition-folia relative ${dayCellPadding} ${dayCellText}`,
+                `aspect-square rounded-lg flex flex-col items-center justify-center transition-folia relative ${dayCellPadding} ${dayCellText} ${dayHeight}`,
                 getDayStyle(day),
                 onDateClick && isInCurrentMonth && "cursor-pointer"
               )}

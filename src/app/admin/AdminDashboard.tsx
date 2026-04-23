@@ -618,7 +618,7 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
             <CalendarIcon className="h-5 w-5 text-[var(--color-gold)]" />
             Calendário de Eventos
           </h2>
-          <div className="max-h-[280px] overflow-y-auto">
+          <div className="w-full">
             <Calendar leaveRequests={requests} profiles={profiles} size="compact" />
           </div>
         </Card>
