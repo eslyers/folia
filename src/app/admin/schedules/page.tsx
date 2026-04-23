@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Clock, Edit2, Trash2, Users, Save, X, Loader2, Check } from "lucide-react";
 
 import { Card, Button, Input, Modal } from "@/components/ui";
+import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { isTenantAdmin } from "@/lib/auth";
@@ -202,7 +203,13 @@ export default function SchedulesPage() {
       setModalOpen(false);
     } catch (err: any) {
       console.error("Error saving:", err);
-      alert("Erro ao salvar: " + err.message);
+      // Replace alert with styled error handling
+      const errorMsg = err.message || "Erro desconhecido";
+      if (errorMsg.includes("Unauthorized")) {
+        alert("Você não tem permissão. Verifique se está logado como admin.");
+      } else {
+        alert("Erro ao salvar: " + errorMsg);
+      }
     }
 
     setSaving(false);

@@ -44,8 +44,10 @@ export async function POST(request: Request) {
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
+      console.log("[Schedules POST] No session found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -53,8 +55,16 @@ export async function POST(request: Request) {
       .eq("id", session.user.id)
       .single();
 
-    if (!profile || !isTenantAdmin(profile.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    console.log("[Schedules POST] User:", session.user.id, "Profile:", profile);
+
+    if (!profile) {
+      console.log("[Schedules POST] No profile found");
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    if (!isTenantAdmin(profile.role)) {
+      console.log("[Schedules POST] Role check failed:", profile.role);
+      return NextResponse.json({ error: "Forbidden - role: " + profile.role }, { status: 403 });
     }
 
     const body = await request.json();
