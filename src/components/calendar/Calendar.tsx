@@ -55,10 +55,10 @@ export function Calendar({
   const dayHeaderPadding = isCompact ? "py-1" : "py-2";
   const dayHeaderText = isCompact ? "text-[10px]" : "text-xs";
   const dayCellPadding = isCompact ? "p-0.5" : "p-1";
-  const dayCellText = isCompact ? "text-xs" : "text-sm";
-  const dayHeight = isCompact ? "h-9" : "h-9";
-  const dotSize = isCompact ? "w-1 h-1" : "w-2 h-2";
-  const dotsMargin = isCompact ? "mt-0" : "mt-0.5";
+  const dayCellText = isCompact ? "text-sm" : "text-sm";
+  const dayHeight = isCompact ? "min-h-[44px]" : "h-9";
+  const dotSize = isCompact ? "w-1.5 h-1.5" : "w-2 h-2";
+  const dotsMargin = isCompact ? "mt-0.5" : "mt-0.5";
   const legendMargin = isCompact ? "mt-2 pt-2" : "mt-4 pt-4";
   const legendGap = isCompact ? "gap-2" : "gap-4";
   const legendItemGap = isCompact ? "gap-1" : "gap-2";
@@ -166,7 +166,7 @@ export function Calendar({
   };
 
   return (
-    <div className={containerPadding}>
+    <div className={`${containerPadding} flex flex-col`}>
       {tooltip.show && (
         <div
           className="fixed z-50 bg-[var(--color-brown-dark)] text-white text-xs px-3 py-2 rounded-lg shadow-lg whitespace-pre-line pointer-events-none transform -translate-x-1/2 -translate-y-full"
@@ -215,7 +215,7 @@ export function Calendar({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1 flex-1">
         {days.map((day, idx) => {
           const leaves = getLeaveForDate(day);
           const isInCurrentMonth = isSameMonth(day, currentDate);
@@ -242,7 +242,7 @@ export function Calendar({
               onMouseLeave={handleMouseLeave}
               disabled={!isInCurrentMonth}
               className={clsx(
-                `aspect-square rounded-lg flex flex-col items-center justify-center transition-folia relative ${dayCellPadding} ${dayCellText} ${dayHeight}`,
+                `w-full rounded-lg flex flex-col items-center justify-center transition-folia relative ${dayCellPadding} ${dayCellText} ${dayHeight}`,
                 getDayStyle(day),
                 onDateClick && isInCurrentMonth && "cursor-pointer"
               )}
