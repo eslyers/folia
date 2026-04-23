@@ -181,10 +181,17 @@ export default function SchedulesPage() {
     setSaving(true);
 
     try {
+      // Get auth token for API calls
+      const { data: { session } } = await supabase.auth.getSession();
+      const authHeaders = {
+        "Content-Type": "application/json",
+        ...(session?.access_token && { "Authorization": `Bearer ${session.access_token}` }),
+      };
+
       if (editingSchedule.id) {
         const response = await fetch(`/api/point/schedules/${editingSchedule.id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders,
           body: JSON.stringify(editingSchedule),
         });
         const result = await response.json();
@@ -192,7 +199,7 @@ export default function SchedulesPage() {
       } else {
         const response = await fetch("/api/point/schedules", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders,
           body: JSON.stringify(editingSchedule),
         });
         const result = await response.json();
