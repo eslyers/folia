@@ -47,6 +47,22 @@ export function Calendar({
     content: "",
   });
 
+  const isCompact = size === "compact";
+  const containerPadding = isCompact ? "p-2" : "p-4";
+  const navMargin = isCompact ? "mb-2" : "mb-4";
+  const titleSize = isCompact ? "text-sm" : "text-lg";
+  const headerMargin = isCompact ? "mb-1" : "mb-2";
+  const dayHeaderPadding = isCompact ? "py-1" : "py-2";
+  const dayCellPadding = isCompact ? "p-0.5" : "p-1";
+  const dayCellText = isCompact ? "text-[10px]" : "text-sm";
+  const dotSize = isCompact ? "w-1 h-1" : "w-2 h-2";
+  const dotsMargin = isCompact ? "mt-0" : "mt-0.5";
+  const legendMargin = isCompact ? "mt-2 pt-2" : "mt-4 pt-4";
+  const legendGap = isCompact ? "gap-2" : "gap-4";
+  const legendItemGap = isCompact ? "gap-1" : "gap-2";
+  const legendDotSize = isCompact ? "w-2 h-2" : "w-3 h-3";
+  const legendText = isCompact ? "text-[10px]" : "text-xs";
+
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
@@ -55,8 +71,7 @@ export function Calendar({
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getLeaveForDate = (date: Date) => {
-    // Compare dates as YYYY-MM-DD strings to avoid timezone issues
-    const dateStr = date.toLocaleDateString('en-CA'); // Returns YYYY-MM-DD in local time
+    const dateStr = date.toLocaleDateString('en-CA');
     return leaveRequests.filter((req) => {
       return dateStr >= req.start_date && dateStr <= req.end_date;
     });
@@ -70,7 +85,6 @@ export function Calendar({
   const getUserName = (userId: string) => {
     const user = profiles.find((p) => p.id === userId);
     if (user?.name) return user.name;
-    // If profiles list is empty but we have currentUserName, use that
     if (currentUserName && profiles.length === 0) return currentUserName;
     return "Você";
   };
@@ -114,12 +128,12 @@ export function Calendar({
 
   const getLeaveTypeColor = (type: string) => {
     switch (type) {
-      case "vacation": return { backgroundColor: "#3b82f6" }; // blue-500
-      case "day_off": return { backgroundColor: "#a855f7" }; // purple-500
-      case "hours": return { backgroundColor: "#f97316" }; // orange-500
-      case "sick": return { backgroundColor: "#ef4444" }; // red-500
-      case "other": return { backgroundColor: "#6b7280" }; // gray-500
-      default: return { backgroundColor: "#9ca3af" }; // gray-400
+      case "vacation": return { backgroundColor: "#3b82f6" };
+      case "day_off": return { backgroundColor: "#a855f7" };
+      case "hours": return { backgroundColor: "#f97316" };
+      case "sick": return { backgroundColor: "#ef4444" };
+      case "other": return { backgroundColor: "#6b7280" };
+      default: return { backgroundColor: "#9ca3af" };
     }
   };
 
@@ -149,8 +163,7 @@ export function Calendar({
   };
 
   return (
-    <div className="w-full relative">
-      {/* Tooltip */}
+    <div className={containerPadding}>
       {tooltip.show && (
         <div
           className="fixed z-50 bg-[var(--color-brown-dark)] text-white text-xs px-3 py-2 rounded-lg shadow-lg whitespace-pre-line pointer-events-none transform -translate-x-1/2 -translate-y-full"
@@ -164,9 +177,8 @@ export function Calendar({
         </div>
       )}
 
-      {/* Header */}
       {showNavigation && (
-        <div className="flex items-center justify-between mb-4">
+        <div className={`flex items-center justify-between ${navMargin}`}>
           <Button
             variant="ghost"
             size="sm"
@@ -175,7 +187,7 @@ export function Calendar({
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <h3 className="text-lg font-semibold text-[var(--color-brown-dark)] capitalize">
+          <h3 className={`${titleSize} font-semibold text-[var(--color-brown-dark)] capitalize`}>
             {format(currentDate, "MMMM yyyy", { locale: ptBR })}
           </h3>
           <Button
@@ -189,19 +201,17 @@ export function Calendar({
         </div>
       )}
 
-      {/* Week days header */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className={`grid grid-cols-7 gap-1 ${headerMargin}`}>
         {weekDays.map((day) => (
           <div
             key={day}
-            className="text-center text-xs font-medium text-[var(--color-brown-medium)] py-2"
+            className={`text-center text-xs font-medium text-[var(--color-brown-medium)] ${dayHeaderPadding}`}
           >
             {day}
           </div>
         ))}
       </div>
 
-      {/* Days grid */}
       <div className="grid grid-cols-7 gap-1">
         {days.map((day, idx) => {
           const leaves = getLeaveForDate(day);
@@ -217,7 +227,6 @@ export function Calendar({
                 if (leaves.length > 0) {
                   handleMouseEnter(e, day);
                 } else if (holiday) {
-                  // Show holiday tooltip
                   const rect = (e.target as HTMLElement).getBoundingClientRect();
                   setTooltip({
                     show: true,
@@ -230,18 +239,18 @@ export function Calendar({
               onMouseLeave={handleMouseLeave}
               disabled={!isInCurrentMonth}
               className={clsx(
-                "aspect-square p-1 rounded-lg text-sm flex flex-col items-center justify-center transition-folia relative",
+                `aspect-square rounded-lg flex flex-col items-center justify-center transition-folia relative ${dayCellPadding} ${dayCellText}`,
                 getDayStyle(day),
                 onDateClick && isInCurrentMonth && "cursor-pointer"
               )}
             >
               <span className="leading-none">{format(day, "d")}</span>
               {leaves.length > 0 && isInCurrentMonth && (
-                <div className="flex flex-wrap gap-0.5 mt-0.5 justify-center max-w-full">
+                <div className={`flex flex-wrap gap-0.5 ${dotsMargin} justify-center max-w-full`}>
                   {leaves.slice(0, 6).map((l, i) => (
                     <span
                       key={i}
-                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      className={`rounded-full flex-shrink-0 ${dotSize}`}
                       style={getLeaveTypeColor(l.type)}
                     />
                   ))}
@@ -252,34 +261,33 @@ export function Calendar({
         })}
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-[var(--border)]">
-        <div className="flex items-center gap-2 text-xs text-[var(--color-brown-medium)]">
-          <span className="w-3 h-3 rounded bg-blue-500" />
+      <div className={`flex flex-wrap ${legendGap} ${legendMargin} border-t border-[var(--border)]`}>
+        <div className={`flex items-center ${legendItemGap} ${legendText} text-[var(--color-brown-medium)]`}>
+          <span className={`rounded ${legendDotSize} bg-blue-500`} />
           <span>Férias</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--color-brown-medium)]">
-          <span className="w-3 h-3 rounded bg-purple-500" />
+        <div className={`flex items-center ${legendItemGap} ${legendText} text-[var(--color-brown-medium)]`}>
+          <span className={`rounded ${legendDotSize} bg-purple-500`} />
           <span>Folga</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--color-brown-medium)]">
-          <span className="w-3 h-3 rounded bg-orange-500" />
+        <div className={`flex items-center ${legendItemGap} ${legendText} text-[var(--color-brown-medium)]`}>
+          <span className={`rounded ${legendDotSize} bg-orange-500`} />
           <span>Banco de Horas</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--color-brown-medium)]">
-          <span className="w-3 h-3 rounded bg-red-500" />
+        <div className={`flex items-center ${legendItemGap} ${legendText} text-[var(--color-brown-medium)]`}>
+          <span className={`rounded ${legendDotSize} bg-red-500`} />
           <span>Licença</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--color-brown-medium)]">
-          <span className="w-3 h-3 rounded bg-gray-500" />
+        <div className={`flex items-center ${legendItemGap} ${legendText} text-[var(--color-brown-medium)]`}>
+          <span className={`rounded ${legendDotSize} bg-gray-500`} />
           <span>Outro</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--color-brown-medium)]">
-          <span className="w-3 h-3 rounded bg-[var(--color-gold)]" />
+        <div className={`flex items-center ${legendItemGap} ${legendText} text-[var(--color-brown-medium)]`}>
+          <span className={`rounded ${legendDotSize} bg-[var(--color-gold)]`} />
           <span>Hoje</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-red-600">
-          <span className="w-3 h-3 rounded bg-red-200" />
+        <div className={`flex items-center ${legendItemGap} ${legendText} text-red-600`}>
+          <span className={`rounded ${legendDotSize} bg-red-200`} />
           <span>Feriado</span>
         </div>
       </div>
