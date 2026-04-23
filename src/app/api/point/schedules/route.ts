@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isTenantAdmin } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
       .eq("id", session.user.id)
       .single();
 
-    if (!profile || profile.role !== "admin") {
+    if (!profile || !isTenantAdmin(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
