@@ -402,3 +402,71 @@ BEGIN
   WHERE id = p_user_id;
 END;
 $$ LANGUAGE plpgsql;
+-- =====================================================
+-- TABLE: work_schedules
+-- =====================================================
+CREATE TABLE IF NOT EXISTS work_schedules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  daily_hours INTEGER NOT NULL DEFAULT 8,
+  monday BOOLEAN NOT NULL DEFAULT true,
+  tuesday BOOLEAN NOT NULL DEFAULT true,
+  wednesday BOOLEAN NOT NULL DEFAULT true,
+  thursday BOOLEAN NOT NULL DEFAULT true,
+  friday BOOLEAN NOT NULL DEFAULT true,
+  saturday BOOLEAN NOT NULL DEFAULT false,
+  sunday BOOLEAN NOT NULL DEFAULT false,
+  tolerance_minutes INTEGER NOT NULL DEFAULT 5,
+  start_work TEXT NOT NULL DEFAULT '09:00',
+  end_work TEXT NOT NULL DEFAULT '18:00',
+  lunch_duration_minutes INTEGER NOT NULL DEFAULT 60,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  tenant_id UUID REFERENCES profiles(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =====================================================
+-- Enable RLS
+-- =====================================================
+ALTER TABLE work_schedules ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for work_schedules
+CREATE POLICY "Users can view their own schedules" ON work_schedules
+  FOR SELECT USING (auth.uid() = tenant_id OR tenant_id IS NULL);
+
+CREATE POLICY "Tenant admins can manage schedules" ON work_schedules
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.role IN ('tenant_admin', 'master_admin')
+    )
+  );
+
+-- =====================================================
+-- TABLE: schedule_assignments (junction table)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS schedule_assignments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  schedule_id UUID NOT NULL REFERENCES work_schedules(id) ON DELETE CASCADE,
+  effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, effective_date)
+);
+
+-- Enable RLS
+ALTER TABLE schedule_assignments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their assignments" ON schedule_assignments
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Tenant admins can manage assignments" ON schedule_assignments
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.role IN ('tenant_admin', 'master_admin')
+    )
+  );

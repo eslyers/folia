@@ -357,7 +357,7 @@ export default function SchedulesPage() {
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--color-cream)] mb-3">
                   <Clock className="h-5 w-5 text-[var(--color-brown-medium)]" />
                   <div>
-                    <p className="text-sm font-semibold text-[var(--color-brown-dark)]">{schedule.daily_hours.toFixed(2)}h dia</p>
+                    <p className="text-sm font-semibold text-[var(--color-brown-dark)]">{Number(schedule.daily_hours).toFixed(2)}h dia</p>
                     <p className="text-xs text-[var(--color-brown-medium)]">{schedule.start_work} - {schedule.end_work}</p>
                   </div>
                 </div>
