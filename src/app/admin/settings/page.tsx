@@ -248,11 +248,13 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Dias de férias por ano"
-                  type="number"
-                  value={Number(form.vacation_days_per_year)}
-                  onChange={(e) =>
-                    setForm({ ...form, vacation_days_per_year: parseInt(e.target.value) || 0 })
-                  }
+                  type="text"
+                  inputMode="numeric"
+                  value={form.vacation_days_per_year || ""}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "").replace(/^0+/, "") || "0";
+                    setForm({ ...form, vacation_days_per_year: parseInt(val) || 0 });
+                  }}
                   onBlur={(e) => {
                     const val = parseInt(e.target.value) || 0;
                     setForm({ ...form, vacation_days_per_year: val });
@@ -265,11 +267,13 @@ export default function SettingsPage() {
 
                 <Input
                   label="Carry-over máximo"
-                  type="number"
-                  value={Number(form.carry_over_days)}
-                  onChange={(e) =>
-                    setForm({ ...form, carry_over_days: parseInt(e.target.value) || 0 })
-                  }
+                  type="text"
+                  inputMode="numeric"
+                  value={form.carry_over_days || ""}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "").replace(/^0+/, "") || "0";
+                    setForm({ ...form, carry_over_days: parseInt(val) || 0 });
+                  }}
                   onBlur={(e) => {
                     const val = parseInt(e.target.value) || 0;
                     setForm({ ...form, carry_over_days: val });
@@ -290,11 +294,13 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Máximo de dias consecutivos"
-                  type="number"
-                  value={Number(form.max_consecutive_days)}
-                  onChange={(e) =>
-                    setForm({ ...form, max_consecutive_days: parseInt(e.target.value) || 0 })
-                  }
+                  type="text"
+                  inputMode="numeric"
+                  value={form.max_consecutive_days || ""}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "").replace(/^0+/, "") || "0";
+                    setForm({ ...form, max_consecutive_days: parseInt(val) || 0 });
+                  }}
                   onBlur={(e) => {
                     const val = parseInt(e.target.value) || 0;
                     setForm({ ...form, max_consecutive_days: val });
@@ -307,11 +313,13 @@ export default function SettingsPage() {
 
                 <Input
                   label="Antecedência mínima (dias)"
-                  type="number"
-                  value={Number(form.min_days_notice)}
-                  onChange={(e) =>
-                    setForm({ ...form, min_days_notice: parseInt(e.target.value) || 0 })
-                  }
+                  type="text"
+                  inputMode="numeric"
+                  value={form.min_days_notice || ""}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "").replace(/^0+/, "") || "0";
+                    setForm({ ...form, min_days_notice: parseInt(val) || 0 });
+                  }}
                   onBlur={(e) => {
                     const val = parseInt(e.target.value) || 0;
                     setForm({ ...form, min_days_notice: val });
