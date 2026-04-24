@@ -456,6 +456,7 @@ export default function NotificationsPage() {
                 <p className="text-sm text-[var(--color-brown-medium)] mt-1">Teste o sistema usando os botões acima.</p>
               </div>
             ) : (
+              <>
               <div className="space-y-3">
                 {paginatedLogs.map((log) => (
                   <div
@@ -542,6 +543,7 @@ export default function NotificationsPage() {
                   </div>
                 </div>
               )}
+              </>
             )}
           </div>
         </div>
