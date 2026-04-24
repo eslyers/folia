@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Clock, Edit2, Trash2, Users, Save, X, Loader2, Check } from "lucide-react";
 
-import { Card, Button, Input, Modal } from "@/components/ui";
+import { Card, Button, Input, Modal, DatePicker } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
@@ -550,11 +550,10 @@ export default function SchedulesPage() {
             <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-2">
               Data de Vigência
             </label>
-            <input
-              type="date"
+            <DatePicker
               value={effectiveDate}
-              onChange={(e) => setEffectiveDate(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
+              onChange={setEffectiveDate}
+              minDate={new Date().toISOString().split('T')[0]}
             />
             <p className="text-xs text-[var(--color-brown-medium)] mt-2">
               A partir desta data, os funcionários selecionados usarão esta escala.
