@@ -489,9 +489,9 @@ export default function EmployeesPage() {
                 <Calendar className="h-6 w-6 text-[var(--color-warning)]" />
               </div>
               <div>
-                <p className="text-sm text-[var(--color-brown-medium)]">Zeraram Saldo</p>
+                <p className="text-sm text-[var(--color-brown-medium)]">Banco de Horas Negativo</p>
                 <p className="text-2xl font-bold text-[var(--color-brown-dark)]">
-                  {employees.filter((e) => (e.vacation_balance ?? 30) <= 0).length}
+                  {employees.filter((e) => (e.hours_balance ?? 0) < 0).length}
                 </p>
               </div>
             </div>
