@@ -252,9 +252,16 @@ export default function SchedulesPage() {
     setAssigning(true);
 
     try {
+      // Get auth token for API calls
+      const { data: { session } } = await supabase.auth.getSession();
+      const authHeaders = {
+        "Content-Type": "application/json",
+        ...(session?.access_token && { "Authorization": `Bearer ${session.access_token}` }),
+      };
+
       const response = await fetch(`/api/point/schedules/${assigningSchedule.id}/assign`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders,
         body: JSON.stringify({ user_ids: selectedUserIds }),
       });
       const result = await response.json();
