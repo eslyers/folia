@@ -74,7 +74,7 @@ export default function EmployeesPage() {
 
       let query = supabase
         .from("profiles")
-        .select("*, manager:profiles(name), schedule:work_schedules(name)")
+        .select("*, schedule:work_schedules(name)")
         .order("name");
 
       // Se não for master_admin, filtra pelo tenant do admin
@@ -84,10 +84,23 @@ export default function EmployeesPage() {
 
       const { data: allEmployees, error: empError } = await query;
 
+      // Buscar todos os perfis do tenant para mapear manager names
+      const { data: allProfiles } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .eq("tenant_id", adminProfile.tenant_id);
 
-      console.log("[DEBUG] Employees query:", allEmployees?.length, "error:", empError);
-      setEmployees(allEmployees || []);
-      setFilteredEmployees(allEmployees || []);
+      const profileMap = new Map(allProfiles?.map((p: any) => [p.id, p.name]) || []);
+      
+      // Adicionar manager_name a cada employee
+      const employeesWithManagers = (allEmployees || []).map((emp: any) => ({
+        ...emp,
+        manager: emp.manager_id ? { name: profileMap.get(emp.manager_id) || "-" } : null
+      }));
+
+      console.log("[DEBUG] Employees query:", employeesWithManagers?.length, "error:", empError);
+      setEmployees(employeesWithManagers);
+      setFilteredEmployees(employeesWithManagers);
 
       const { data: tenantData } = await supabase
         .from("tenants")
