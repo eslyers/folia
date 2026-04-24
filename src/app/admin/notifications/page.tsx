@@ -500,42 +500,40 @@ export default function NotificationsPage() {
               {logs.length > itemsPerPage && (
                 <div className="flex items-center justify-between gap-4 mt-6 pt-4 border-t border-[var(--border)]">
                   {/* Items per page selector - Custom Premium Dropdown */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 relative">
                     <span className="text-sm text-[var(--color-brown-medium)]">Exibir:</span>
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowItemsDropdown(!showItemsDropdown)}
-                        className="flex items-center gap-2 bg-white border border-[var(--color-gold)] rounded-lg px-4 py-2 text-sm font-medium text-[var(--color-brown-dark)] shadow-sm hover:shadow-md transition-all min-w-[80px] justify-between"
-                      >
-                        <span>{itemsPerPage}</span>
-                        <ChevronRight className="h-4 w-4 text-[var(--color-gold)] rotate-90" />
-                      </button>
-                      
-                      {showItemsDropdown && (
-                        <>
-                          <div className="fixed inset-0 z-10" onClick={() => setShowItemsDropdown(false)} />
-                          <div className="absolute top-full left-0 mt-2 bg-white border border-[var(--color-gold)] rounded-xl shadow-xl z-20 overflow-hidden min-w-[100px]">
-                            {[10, 20, 30, 50, 100].map((num) => (
-                              <button
-                                key={num}
-                                onClick={() => {
-                                  setItemsPerPage(num);
-                                  setCurrentPage(1);
-                                  setShowItemsDropdown(false);
-                                }}
-                                className={`w-full px-4 py-2.5 text-sm text-left transition-all ${
-                                  num === itemsPerPage 
-                                    ? "bg-[var(--color-gold)] text-[var(--color-brown-dark)] font-semibold" 
-                                    : "text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]"
-                                }`}
-                              >
-                                {num}
-                              </button>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
+                    <button
+                      onClick={() => setShowItemsDropdown(!showItemsDropdown)}
+                      className="flex items-center gap-2 bg-white border border-[var(--color-gold)] rounded-lg px-4 py-2 text-sm font-medium text-[var(--color-brown-dark)] shadow-sm hover:shadow-md transition-all min-w-[80px] justify-between z-30"
+                    >
+                      <span>{itemsPerPage}</span>
+                      <ChevronRight className="h-4 w-4 text-[var(--color-gold)] rotate-90" />
+                    </button>
+                    
+                    {showItemsDropdown && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowItemsDropdown(false)} />
+                        <div className="absolute top-full left-0 mt-2 bg-white border-2 border-[var(--color-gold)] rounded-xl shadow-2xl z-50 overflow-visible min-w-[100px]">
+                          {[10, 20, 30, 50, 100].map((num) => (
+                            <button
+                              key={num}
+                              onClick={() => {
+                                setItemsPerPage(num);
+                                setCurrentPage(1);
+                                setShowItemsDropdown(false);
+                              }}
+                              className={`w-full px-4 py-2.5 text-sm text-left transition-all first:rounded-t-xl last:rounded-b-xl ${
+                                num === itemsPerPage 
+                                  ? "bg-[var(--color-gold)] text-[var(--color-brown-dark)] font-semibold" 
+                                  : "text-[var(--color-brown-dark)] hover:bg-[var(--color-gold)]/20"
+                              }`}
+                            >
+                              {num}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                     <span className="text-sm text-[var(--color-brown-medium)]">itens</span>
                   </div>
 
