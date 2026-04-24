@@ -146,6 +146,62 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
     }
   };
 
+  const handleCancel = async (requestId: string, userId: string) => {
+    if (!confirm("Tem certeza que deseja cancelar esta solicitação? O saldo será devolvido ao funcionário.")) return;
+    
+    setProcessing(requestId);
+    setError(null);
+
+    try {
+      // Get request details
+      const request = requests.find(r => r.id === requestId);
+      if (!request) {
+        setError("Pedido não encontrado");
+        setProcessing(null);
+        return;
+      }
+
+      // Return balance if it was vacation
+      if (request.type === "vacation") {
+        const { error: rpcError } = await (supabase as any).rpc("add_vacation_balance", {
+          p_user_id: userId,
+          p_days: request.days_count,
+        });
+
+        if (rpcError) {
+          setError("Falha ao devolver saldo. Tente novamente.");
+          setProcessing(null);
+          return;
+        }
+      }
+
+      // Update request status
+      const { error: updateError } = await (supabase as any)
+        .from("leave_requests")
+        .update({
+          status: "cancelled",
+          reviewed_by: profile.id,
+          reviewed_at: new Date().toISOString(),
+          cancellation_reason: "Cancelado pelo gestor",
+        })
+        .eq("id", requestId);
+
+      if (updateError) {
+        setError(updateError.message);
+      } else {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r.id === requestId ? { ...r, status: "cancelled" as const } : r
+          )
+        );
+      }
+    } catch (e: any) {
+      setError(e.message || "Erro ao cancelar pedido");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
   const handleReject = (requestId: string) => {
     setRejectingRequestId(requestId);
     setRejectionReason("");
@@ -514,18 +570,29 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
                   {approvedRequests.slice(0, 10).map((request) => (
                     <div
                       key={request.id}
-                      className="p-3 rounded-lg bg-[var(--color-cream)]"
+                      className="p-3 rounded-lg bg-[var(--color-cream)] flex items-center justify-between"
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium text-[var(--color-brown-dark)] text-sm">
-                          {getUserName(request.user_id)}
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium text-[var(--color-brown-dark)] text-sm">
+                            {getUserName(request.user_id)}
+                          </p>
+                          <span className="inline-flex items-center rounded-full border border-transparent bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5">Aprovado</span>
+                        </div>
+                        <p className="text-xs text-[var(--color-brown-medium)]">
+                          {format(new Date(request.start_date), "dd/MM")} - {format(new Date(request.end_date), "dd/MM")}
+                          • {request.days_count} dias
                         </p>
-                        <span className="inline-flex items-center rounded-full border border-transparent bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5">Aprovado</span>
                       </div>
-                      <p className="text-xs text-[var(--color-brown-medium)]">
-                        {format(new Date(request.start_date), "dd/MM")} - {format(new Date(request.end_date), "dd/MM")}
-                        • {request.days_count} dias
-                      </p>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        loading={processing === request.id}
+                        onClick={() => handleCancel(request.id, request.user_id)}
+                        title="Cancelar solicitação"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>
