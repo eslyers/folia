@@ -247,12 +247,7 @@ export default function LandingClient() {
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[var(--color-green-olive)] flex items-center justify-center">
-                <span className="text-white font-bold text-lg">F</span>
-              </div>
-              <span className="text-xl font-semibold text-[var(--color-brown-dark)] font-[family-name:var(--font-playfair)]">
-                FOLIA
-              </span>
+              <img src="/logo.png" alt="FOLIA" className="h-10 object-contain" />
             </div>
 
             {/* Desktop Nav */}
