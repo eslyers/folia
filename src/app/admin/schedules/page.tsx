@@ -209,6 +209,7 @@ export default function SchedulesPage() {
 
       await fetchData();
       setModalOpen(false);
+      showToast("Escala salva com sucesso!", "success");
     } catch (err: any) {
       console.error("Error saving:", err);
       // Replace alert with styled error handling
@@ -236,6 +237,7 @@ export default function SchedulesPage() {
       if (!response.ok) throw new Error(result.error);
 
       await fetchData();
+      showToast("Escala excluída com sucesso!", "success");
     } catch (err: any) {
       console.error("Error deleting:", err);
       showToast("Erro ao excluir: " + err.message, "error");
@@ -260,6 +262,7 @@ export default function SchedulesPage() {
 
       await fetchData();
       setAssignModalOpen(false);
+      showToast("Escala atribuída com sucesso!", "success");
     } catch (err: any) {
       console.error("Error assigning:", err);
       showToast("Erro ao atribuir: " + err.message, "error");
