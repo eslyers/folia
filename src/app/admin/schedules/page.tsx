@@ -74,6 +74,7 @@ export default function SchedulesPage() {
   const [editingSchedule, setEditingSchedule] = useState<ScheduleForm | null>(null);
   const [assigningSchedule, setAssigningSchedule] = useState<WorkSchedule | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [effectiveDate, setEffectiveDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
   const [assigning, setAssigning] = useState(false);
 
@@ -266,7 +267,7 @@ export default function SchedulesPage() {
       const response = await fetch(`/api/point/schedules/${assigningSchedule.id}/assign`, {
         method: "POST",
         headers: authHeaders,
-        body: JSON.stringify({ user_ids: selectedUserIds }),
+        body: JSON.stringify({ user_ids: selectedUserIds, effective_date: effectiveDate }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error);
@@ -544,6 +545,23 @@ export default function SchedulesPage() {
         size="md"
       >
         <div>
+          {/* Effective Date Selector */}
+          <div className="mb-4 p-4 bg-[var(--color-cream)] rounded-lg border border-[var(--border)]">
+            <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-2">
+              Data de Vigência
+            </label>
+            <input
+              type="date"
+              value={effectiveDate}
+              onChange={(e) => setEffectiveDate(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
+            />
+            <p className="text-xs text-[var(--color-brown-medium)] mt-2">
+              A partir desta data, os funcionários selecionados usarão esta escala.
+              Escalas anteriores são mantidas no histórico.
+            </p>
+          </div>
+
           <p className="text-sm text-[var(--color-brown-medium)] mb-4">
             Selecione os funcionários que usarão esta escala:
           </p>

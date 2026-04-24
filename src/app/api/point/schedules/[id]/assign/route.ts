@@ -5,7 +5,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const { id } = await params;
     
-    // EXTRACT TOKEN FROM HEADER
+    // Get auth token from header
     const authHeader = request.headers.get("Authorization");
     let userId: string | null = null;
     let profile: any = null;
@@ -22,7 +22,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
       userId = user.id;
 
-      // Get profile
       const { data: profileData } = await supabase
         .from("profiles")
         .select("role, tenant_id")
@@ -35,7 +34,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         return NextResponse.json({ error: "Profile not found" }, { status: 404 });
       }
     } else {
-      // No token - try regular session
       const supabase = await createClient();
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -59,32 +57,46 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const body = await request.json();
-    const { user_ids } = body;
+    const { user_ids, effective_date } = body;
 
     if (!Array.isArray(user_ids)) {
       return NextResponse.json({ error: "user_ids must be an array" }, { status: 400 });
     }
 
+    // Default to today if no effective_date provided
+    const effectiveFrom = effective_date || new Date().toISOString().split('T')[0];
+
     const supabase = await createClient();
     
-    // Assign schedule to all specified users
-    const updates = user_ids.map((userId: string) =>
-      supabase
-        .from("profiles")
-        .update({ schedule_id: id })
-        .eq("id", userId)
-        .eq("tenant_id", profile.tenant_id)
-    );
+    // Assign schedule to all specified users using the history function
+    const assigned: string[] = [];
+    const errors: string[] = [];
 
-    const results = await Promise.all(updates);
-    const errors = results.filter((r) => r.error);
+    for (const uid of user_ids) {
+      const { data, error } = await supabase.rpc('assign_user_schedule', {
+        p_user_id: uid,
+        p_schedule_id: id,
+        p_effective_from: effectiveFrom,
+        p_reason: `Schedule assigned by admin: ${profile.role}`
+      });
 
-    if (errors.length > 0) {
-      console.error("[Assign Schedule] Errors:", errors.map((e) => e.error));
-      return NextResponse.json({ error: "Some assignments failed" }, { status: 500 });
+      if (error) {
+        console.error(`[Assign Schedule] Error for user ${uid}:`, error);
+        errors.push(uid);
+      } else {
+        assigned.push(uid);
+      }
     }
 
-    return NextResponse.json({ success: true, assigned: user_ids.length });
+    if (errors.length > 0) {
+      return NextResponse.json({ 
+        error: "Some assignments failed", 
+        assigned: assigned.length,
+        failed: errors.length 
+      }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, assigned: assigned.length });
 
   } catch (error) {
     console.error("[Assign Schedule] Error:", error);
