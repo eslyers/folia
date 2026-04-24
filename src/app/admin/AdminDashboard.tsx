@@ -619,7 +619,7 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
             Calendário de Eventos
           </h2>
           <div className="w-full">
-            <Calendar leaveRequests={requests} profiles={profiles} size="compact" />
+            <Calendar leaveRequests={requests.filter(r => r.status === "approved" || r.status === "pending")} profiles={profiles} size="compact" />
           </div>
         </Card>
       </main>
