@@ -249,24 +249,26 @@ export default function SettingsPage() {
                 <Input
                   label="Dias de férias por ano"
                   type="number"
-                  value={form.vacation_days_per_year}
+                  value={Number(form.vacation_days_per_year)}
                   onChange={(e) =>
                     setForm({ ...form, vacation_days_per_year: parseInt(e.target.value) || 0 })
                   }
                   min={0}
                   max={365}
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   helperText="Dias padrões concedidos anualmente (CLT: 30 dias)"
                 />
 
                 <Input
                   label="Carry-over máximo"
                   type="number"
-                  value={form.carry_over_days}
+                  value={Number(form.carry_over_days)}
                   onChange={(e) =>
                     setForm({ ...form, carry_over_days: parseInt(e.target.value) || 0 })
                   }
                   min={0}
                   max={365}
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   helperText="Máximo de dias que podem ser transferidos para o ano seguinte"
                 />
               </div>
@@ -281,12 +283,13 @@ export default function SettingsPage() {
                 <Input
                   label="Máximo de dias consecutivos"
                   type="number"
-                  value={form.max_consecutive_days}
+                  value={Number(form.max_consecutive_days)}
                   onChange={(e) =>
                     setForm({ ...form, max_consecutive_days: parseInt(e.target.value) || 0 })
                   }
                   min={1}
                   max={365}
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   helperText="Limite de dias de folga em uma única solicitação"
                 />
 
