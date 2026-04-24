@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui";
 
-import { Play, Mail, CheckCircle, XCircle, AlertCircle, Bell, Send, X } from "lucide-react";
+import { Play, Mail, CheckCircle, XCircle, AlertCircle, Bell, Send, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 
@@ -104,6 +104,18 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Calculate paginated logs
+  const paginatedLogs = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return logs.slice(startIndex, endIndex);
+  }, [logs, currentPage, itemsPerPage]);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(logs.length / itemsPerPage);
 
   const showToast = (type: Toast["type"], message: string) => {
     const id = Date.now().toString();
@@ -174,6 +186,7 @@ export default function NotificationsPage() {
 
       setStats({ total, sent, failed, pending: 0 });
       setLogs(logsWithNames);
+      setCurrentPage(1); // Reset to first page when data loads
     } catch (error) {
       console.error("Error loading data:", error);
       // Set empty state on error
@@ -433,6 +446,34 @@ export default function NotificationsPage() {
               <AlertCircle className="h-5 w-5 text-[var(--color-gold)]" />
               Logs de Notificações
             </h3>
+            
+            {/* Pagination Controls */}
+            {!loading && logs.length > 0 && (
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-[var(--color-brown-medium)]">Itens por página:</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={30}>30</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-[var(--color-brown-medium)]">
+                    Total: {logs.length} itens
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="p-4">
@@ -450,8 +491,9 @@ export default function NotificationsPage() {
                 <p className="text-sm text-[var(--color-brown-medium)] mt-1">Teste o sistema usando os botões acima.</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {logs.map((log) => (
+              <>
+                <div className="space-y-3">
+                  {paginatedLogs.map((log) => (
                   <div
                     key={log.id}
                     className="flex items-center justify-between p-4 rounded-xl border border-[var(--border)] hover:bg-[var(--color-cream)] transition-colors duration-200"
@@ -487,7 +529,57 @@ export default function NotificationsPage() {
                   </div>
                 ))}
               </div>
-            )}
+
+              {/* Pagination Navigation */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-[var(--border)]">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  {/* Page Numbers */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="px-3 min-w-[40px]"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </>
           </div>
         </div>
 
