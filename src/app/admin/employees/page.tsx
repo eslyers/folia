@@ -74,7 +74,7 @@ export default function EmployeesPage() {
 
       let query = supabase
         .from("profiles")
-        .select("*, manager:profiles!profiles_manager_id_fkey(name), schedule:work_schedules(name)")
+        .select("*, schedule:work_schedules(name)")
         .order("name");
 
       // Se não for master_admin, filtra pelo tenant do admin
