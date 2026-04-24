@@ -7,26 +7,62 @@ export async function GET(request: Request) {
     const year = parseInt(searchParams.get("year") || new Date().getFullYear().toString());
     const month = parseInt(searchParams.get("month") || (new Date().getMonth() + 1).toString());
 
-    const supabase = await createClient();
+    // EXTRACT TOKEN FROM HEADER - Same as schedules API
+    const authHeader = request.headers.get("Authorization");
+    let userId: string | null = null;
+    let profile: any = null;
 
-    // Check auth
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      
+      const supabase = await createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+      if (authError || !user) {
+        return NextResponse.json({ error: "Unauthorized - invalid token" }, { status: 401 });
+      }
+
+      userId = user.id;
+
+      // Get profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("role, tenant_id")
+        .eq("id", userId)
+        .single();
+
+      profile = profileData;
+
+      if (!profile) {
+        return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      }
+    } else {
+      // No token - try regular session
+      const supabase = await createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      userId = session.user.id;
+
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("role, tenant_id")
+        .eq("id", userId)
+        .single();
+
+      profile = profileData;
     }
-
-    // Check admin
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, tenant_id")
-      .eq("id", session.user.id)
-      .single();
 
     if (!profile || !['admin', 'tenant_admin', 'master_admin'].includes(profile.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const tenantId = profile.tenant_id;
+
+    const supabase = await createClient();
 
     // Get first day of month
     const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
