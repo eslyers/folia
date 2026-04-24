@@ -56,6 +56,7 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
   const [processing, setProcessing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
+  const [cancellingRequest, setCancellingRequest] = useState<{id: string, userId: string, userName: string, type: string, days: number} | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedRequestIds, setSelectedRequestIds] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
@@ -146,26 +147,32 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
     }
   };
 
-  const handleCancel = async (requestId: string, userId: string) => {
-    if (!confirm("Tem certeza que deseja cancelar esta solicitação? O saldo será devolvido ao funcionário.")) return;
+  const handleCancel = (requestId: string, userId: string) => {
+    const request = requests.find(r => r.id === requestId);
+    if (!request) return;
     
-    setProcessing(requestId);
+    const userName = getUserName(userId);
+    setCancellingRequest({
+      id: requestId,
+      userId,
+      userName,
+      type: request.type,
+      days: request.days_count
+    });
+  };
+
+  const confirmCancel = async () => {
+    if (!cancellingRequest) return;
+    
+    setProcessing(cancellingRequest.id);
     setError(null);
 
     try {
-      // Get request details
-      const request = requests.find(r => r.id === requestId);
-      if (!request) {
-        setError("Pedido não encontrado");
-        setProcessing(null);
-        return;
-      }
-
       // Return balance if it was vacation
-      if (request.type === "vacation") {
+      if (cancellingRequest.type === "vacation") {
         const { error: rpcError } = await (supabase as any).rpc("add_vacation_balance", {
-          p_user_id: userId,
-          p_days: request.days_count,
+          p_user_id: cancellingRequest.userId,
+          p_days: cancellingRequest.days,
         });
 
         if (rpcError) {
@@ -184,16 +191,17 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
           reviewed_at: new Date().toISOString(),
           cancellation_reason: "Cancelado pelo gestor",
         })
-        .eq("id", requestId);
+        .eq("id", cancellingRequest.id);
 
       if (updateError) {
         setError(updateError.message);
       } else {
         setRequests((prev) =>
           prev.map((r) =>
-            r.id === requestId ? { ...r, status: "cancelled" as const } : r
+            r.id === cancellingRequest.id ? { ...r, status: "cancelled" as const } : r
           )
         );
+        setCancellingRequest(null);
       }
     } catch (e: any) {
       setError(e.message || "Erro ao cancelar pedido");
@@ -740,6 +748,60 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Cancellation Confirmation Modal */}
+      <Modal
+        isOpen={cancellingRequest !== null}
+        onClose={() => setCancellingRequest(null)}
+        title="Confirmar Cancelamento"
+        size="sm"
+      >
+        {cancellingRequest && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-red-50 mb-4">
+              <X className="h-8 w-8 text-[var(--color-error)]" />
+            </div>
+            <p className="text-sm text-[var(--color-brown-medium)] text-center mb-4">
+              Deseja cancelar a solicitação de <span className="font-semibold text-[var(--color-brown-dark)]">{cancellingRequest.userName}</span>?
+            </p>
+            <div className="bg-[var(--color-cream)] rounded-lg p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-[var(--color-brown-medium)]">Tipo:</span>
+                <span className="font-medium text-[var(--color-brown-dark)]">{cancellingRequest.type === "vacation" ? "Férias" : cancellingRequest.type === "day_off" ? "Folga" : cancellingRequest.type}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-[var(--color-brown-medium)]">Dias:</span>
+                <span className="font-medium text-[var(--color-brown-dark)]">{cancellingRequest.days}</span>
+              </div>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-xs text-amber-800">
+                ⚠️ O saldo de férias será devolvido ao funcionário. Ele precisará fazer uma nova solicitação.
+              </p>
+            </div>
+            {error && (
+              <p className="text-sm text-[var(--color-error)]">{error}</p>
+            )}
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="ghost"
+                className="flex-1"
+                onClick={() => setCancellingRequest(null)}
+              >
+                Voltar
+              </Button>
+              <Button
+                variant="danger"
+                className="flex-1"
+                loading={processing !== null}
+                onClick={confirmCancel}
+              >
+                Confirmar Cancelamento
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
     </AdminErrorBoundary>
