@@ -7,8 +7,6 @@ import { Plus, Clock, Edit2, Trash2, Users, Save, X, Loader2, Check } from "luci
 import { Card, Button, Input, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
-import type { Profile } from "@/lib/types";
-import { isTenantAdmin } from "@/lib/auth";
 
 interface WorkSchedule {
   id: string;
@@ -77,6 +75,7 @@ export default function SchedulesPage() {
   const [assigning, setAssigning] = useState(false);
 
   const supabase = createClient();
+  const { showToast } = useToast();
 
   const fetchData = useCallback(async () => {
     try {
@@ -213,9 +212,9 @@ export default function SchedulesPage() {
       // Replace alert with styled error handling
       const errorMsg = err.message || "Erro desconhecido";
       if (errorMsg.includes("Unauthorized")) {
-        alert("Você não tem permissão. Verifique se está logado como admin.");
+        showToast("Você não tem permissão. Verifique se está logado como admin.", "error");
       } else {
-        alert("Erro ao salvar: " + errorMsg);
+        showToast("Erro ao salvar: " + errorMsg, "error");
       }
     }
 
@@ -237,7 +236,7 @@ export default function SchedulesPage() {
       await fetchData();
     } catch (err: any) {
       console.error("Error deleting:", err);
-      alert("Erro ao excluir: " + err.message);
+      showToast("Erro ao excluir: " + err.message, "error");
     }
 
     setSaving(false);
@@ -261,7 +260,7 @@ export default function SchedulesPage() {
       setAssignModalOpen(false);
     } catch (err: any) {
       console.error("Error assigning:", err);
-      alert("Erro ao atribuir: " + err.message);
+      showToast("Erro ao atribuir: " + err.message, "error");
     }
 
     setAssigning(false);
@@ -435,7 +434,7 @@ export default function SchedulesPage() {
                 onChange={(e) =>
                   setEditingSchedule({ ...editingSchedule, daily_hours: parseFloat(e.target.value) || 0 })
                 }
-                helperText="Ex: 8.00, 7.00, 6.50"
+                helperText="Ex: 8h28, 7h30 (formato: horas)"
               />
 
               <Input
