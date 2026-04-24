@@ -296,12 +296,13 @@ export default function SettingsPage() {
                 <Input
                   label="Antecedência mínima (dias)"
                   type="number"
-                  value={form.min_days_notice}
+                  value={Number(form.min_days_notice)}
                   onChange={(e) =>
                     setForm({ ...form, min_days_notice: parseInt(e.target.value) || 0 })
                   }
                   min={0}
                   max={365}
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   helperText="Quantos dias antes o pedido deve ser solicitado"
                 />
               </div>
