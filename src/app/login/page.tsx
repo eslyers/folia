@@ -99,12 +99,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md animate-slide-up">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--green-olive)] mb-4">
-            <Leaf className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-4xl font-bold text-[var(--brown-dark)] font-[family-name:var(--font-playfair)]">
-            FOLIA
-          </h1>
+          <img src="/logo.png" alt="FOLIA" className="h-16 mx-auto mb-4 object-contain" />
           <p className="text-[var(--brown-medium)] mt-2">
             Sistema de Controle de Férias e Folgas
           </p>
