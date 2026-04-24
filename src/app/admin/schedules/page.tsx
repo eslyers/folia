@@ -33,6 +33,7 @@ interface Employee {
   name: string;
   email: string;
   schedule_id?: string | null;
+  schedule?: { name: string } | null;
 }
 
 interface ScheduleForm {
@@ -111,10 +112,10 @@ export default function SchedulesPage() {
 
       setSchedules(schedulesData || []);
 
-      // Fetch employees for this tenant
+      // Fetch employees for this tenant with schedule info
       const { data: employeesData } = await supabase
         .from("profiles")
-        .select("id, name, email, schedule_id")
+        .select("id, name, email, schedule_id, schedule:work_schedules(name)")
         .eq("tenant_id", tenantId)
         .order("name");
 
@@ -566,6 +567,9 @@ export default function SchedulesPage() {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-[var(--color-brown-dark)]">{emp.name}</p>
                   <p className="text-xs text-[var(--color-brown-medium)]">{emp.email}</p>
+                  {emp.schedule && (
+                    <p className="text-xs text-[var(--color-green-olive)]">📅 {emp.schedule.name}</p>
+                  )}
                 </div>
                 {selectedUserIds.includes(emp.id) && (
                   <Check className="h-4 w-4 text-[var(--color-green-olive)]" />
