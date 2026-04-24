@@ -52,30 +52,31 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: entriesError.message }, { status: 500 });
     }
 
-    // Calculate stats
-    const uniqueEmployees = new Set((entries || []).map((e: any) => e.user_id));
+    // Calculate stats - get ALL employees for the tenant (not just those with time entries)
+    const { data: allEmployees } = await supabase
+      .from("profiles")
+      .select("id, schedule:work_schedules(id, name, daily_hours, monday, tuesday, wednesday, thursday, friday, saturday, sunday)")
+      .eq("tenant_id", tenantId)
+      .eq("role", "funcionario");
+
+    const employeeCount = (allEmployees || []).length;
     const totalHours = (entries || []).reduce((sum: number, e: any) => sum + (parseFloat(e.total_hours) || 0), 0);
     const totalOvertime = (entries || []).reduce((sum: number, e: any) => sum + (parseFloat(e.overtime_hours) || 0), 0);
     const pendingApproval = (entries || []).filter((e: any) => e.status === "open").length;
 
-    // Calculate total expected hours for the month
-    // Group entries by user to get unique users and their schedules
-    const userSchedules = new Map<string, any>();
-    (entries || []).forEach((e: any) => {
-      if (e.profile?.schedule && !userSchedules.has(e.user_id)) {
-        userSchedules.set(e.user_id, e.profile.schedule);
+    // Calculate total expected hours for the month for ALL employees
+    let totalExpected = 0;
+    (allEmployees || []).forEach((emp: any) => {
+      if (emp.schedule) {
+        totalExpected += calculateExpectedMonthlyHours(emp.schedule, year, month);
+      } else {
+        // Default 8 hours/day if no schedule assigned (~22 working days)
+        totalExpected += 8 * 22;
       }
     });
 
-    // Count work days in month for each user and calculate expected
-    let totalExpected = 0;
-    userSchedules.forEach((schedule) => {
-      const expectedMonthly = calculateExpectedMonthlyHours(schedule, year, month);
-      totalExpected += expectedMonthly;
-    });
-
     const stats = {
-      total_employees: uniqueEmployees.size,
+      total_employees: employeeCount,
       total_hours: Math.round(totalHours * 100) / 100,
       total_overtime: Math.round(totalOvertime * 100) / 100,
       pending_approval: pendingApproval,
