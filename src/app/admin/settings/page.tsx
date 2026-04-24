@@ -253,6 +253,10 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setForm({ ...form, vacation_days_per_year: parseInt(e.target.value) || 0 })
                   }
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value) || 0;
+                    setForm({ ...form, vacation_days_per_year: val });
+                  }}
                   min={0}
                   max={365}
                   className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -266,6 +270,10 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setForm({ ...form, carry_over_days: parseInt(e.target.value) || 0 })
                   }
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value) || 0;
+                    setForm({ ...form, carry_over_days: val });
+                  }}
                   min={0}
                   max={365}
                   className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -287,6 +295,10 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setForm({ ...form, max_consecutive_days: parseInt(e.target.value) || 0 })
                   }
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value) || 0;
+                    setForm({ ...form, max_consecutive_days: val });
+                  }}
                   min={1}
                   max={365}
                   className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -300,6 +312,10 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setForm({ ...form, min_days_notice: parseInt(e.target.value) || 0 })
                   }
+                  onBlur={(e) => {
+                    const val = parseInt(e.target.value) || 0;
+                    setForm({ ...form, min_days_notice: val });
+                  }}
                   min={0}
                   max={365}
                   className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
