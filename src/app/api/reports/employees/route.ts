@@ -5,63 +5,74 @@ export async function GET(request: Request) {
   try {
     const supabase = await createClient();
 
-    // Check admin auth
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+    // Check admin auth with Bearer token support
+    const authHeader = request.headers.get("Authorization");
+    let userId: string | null = null;
+    let profile: any = null;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !user) {
+        return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+      }
+      userId = user.id;
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+      }
+      userId = user.id;
     }
 
-    const { data: profile } = await supabase
+    // Get profile with tenant_id
+    const { data: profileData } = await supabase
       .from("profiles")
-      .select("role")
-      .eq("id", user.id)
+      .select("role, tenant_id")
+      .eq("id", userId)
       .single();
 
-    if (profile?.role !== "admin") {
+    profile = profileData;
+
+    if (!profile || !['admin', 'tenant_admin', 'master_admin'].includes(profile.role)) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
 
-    // Get query params for format
-    const { searchParams } = new URL(request.url);
-    const format = searchParams.get("format") || "csv"; // csv or json
+    const tenantId = profile.tenant_id;
 
-    // Fetch all profiles (employees)
+    // Fetch profiles for this tenant
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("*")
+      .eq("tenant_id", tenantId)
       .order("name");
 
     if (profilesError) throw profilesError;
 
-    // Fetch all leave requests
-    const { data: leaveRequests, error: requestsError } = await supabase
+    // Fetch leave requests for employees in this tenant
+    const employeeIds = (profiles || []).map((p: any) => p.id);
+    const { data: leaveRequests } = await supabase
       .from("leave_requests")
       .select("*")
+      .in("user_id", employeeIds.length > 0 ? employeeIds : ["00000000-0000-0000-0000-000000000000"])
       .order("created_at", { ascending: false });
 
-    if (requestsError) throw requestsError;
-
-    if (format === "json") {
-      return NextResponse.json({ employees: profiles, leave_requests: leaveRequests });
-    }
-
     // Build CSV
-    // Header row
     const csvRows: string[] = [];
     
-    // Task #8: CSV with nome, email, vacation_balance, hours_balance, total_leave_requests
+    // Header row
     csvRows.push("Nome,Email,Dias de Ferias,Saldo Horas,Total Pedidos");
 
     // For each profile, calculate total leave requests
-    for (const p of profiles) {
-      const empRequests = leaveRequests.filter((r) => r.user_id === p.id);
+    for (const p of (profiles || [])) {
+      const empRequests = (leaveRequests || []).filter((r: any) => r.user_id === p.id);
       const totalRequests = empRequests.length;
       
       const row = [
         escapeCsv(p.name),
         escapeCsv(p.email),
-        p.vacation_balance,
-        p.hours_balance,
+        p.vacation_balance || 0,
+        p.hours_balance || 0,
         totalRequests,
       ];
       csvRows.push(row.join(","));
@@ -72,8 +83,8 @@ export async function GET(request: Request) {
     csvRows.push("# Historico de Pedidos de Ferias");
     csvRows.push("Employee,Type,Start Date,End Date,Days,Status,Rejection Reason,Created");
 
-    for (const lr of leaveRequests) {
-      const profile = profiles.find((p) => p.id === lr.user_id);
+    for (const lr of (leaveRequests || [])) {
+      const profile = (profiles || []).find((p: any) => p.id === lr.user_id);
       const row = [
         escapeCsv(profile?.name || "Unknown"),
         lr.type,

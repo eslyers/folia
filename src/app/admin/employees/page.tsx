@@ -314,6 +314,36 @@ export default function EmployeesPage() {
     setDeleting(null);
   };
 
+  const handleExportCSV = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const response = await fetch("/api/reports/employees", {
+        headers: {
+          ...(token && { "Authorization": `Bearer ${token}` }),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao exportar");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `funcionarios-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: any) {
+      console.error("Error exporting:", err);
+      setError("Erro ao exportar CSV: " + err.message);
+    }
+  };
+
   const getVacationStats = (emp: any) => {
     const hireDate = emp.hire_date ? new Date(emp.hire_date) : null;
     if (!hireDate) return { yearsWorked: 0, vestingMonths: 0, hasVesting: false, needsAttention: false };
@@ -397,7 +427,7 @@ export default function EmployeesPage() {
         <div className="flex items-center justify-between mb-8">
           {/* Page title removed - Sidebar already shows current page */}
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => window.open("/api/reports/employees", "_blank")}>
+            <Button variant="outline" onClick={handleExportCSV}>
               <Download className="h-5 w-5 mr-2" />
               Baixar CSV
             </Button>
