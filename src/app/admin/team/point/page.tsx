@@ -83,7 +83,11 @@ export default function AdminTeamPointPage() {
 
       setProfile(adminProfile);
 
-      const response = await fetch(`/api/point/admin/overview?year=${year}&month=${month}`);
+      const response = await fetch(`/api/point/admin/overview?year=${year}&month=${month}`, {
+        headers: {
+          ...(session?.access_token && { "Authorization": `Bearer ${session.access_token}` }),
+        },
+      });
       const data = await response.json();
 
       if (response.ok) {
