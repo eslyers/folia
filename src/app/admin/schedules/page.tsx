@@ -100,19 +100,22 @@ export default function SchedulesPage() {
       }
 
       setProfile(adminProfile);
+      const tenantId = adminProfile.tenant_id;
 
-      // Fetch schedules
+      // Fetch schedules for this tenant
       const { data: schedulesData } = await supabase
         .from("work_schedules")
         .select("*")
+        .eq("tenant_id", tenantId)
         .order("name");
 
       setSchedules(schedulesData || []);
 
-      // Fetch employees
+      // Fetch employees for this tenant
       const { data: employeesData } = await supabase
         .from("profiles")
         .select("id, name, email, schedule_id")
+        .eq("tenant_id", tenantId)
         .order("name");
 
       setEmployees(employeesData || []);
