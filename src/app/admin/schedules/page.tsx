@@ -7,6 +7,8 @@ import { Plus, Clock, Edit2, Trash2, Users, Save, X, Loader2, Check } from "luci
 import { Card, Button, Input, Modal } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
+import type { Profile } from "@/lib/types";
+import { isTenantAdmin } from "@/lib/auth";
 
 interface WorkSchedule {
   id: string;
