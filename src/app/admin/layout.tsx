@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { ToastProvider } from "@/components/ui/Toast";
 import type { Profile } from "@/lib/types";
 import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
 
@@ -108,6 +109,7 @@ export default function AdminLayout({
   }
 
   return (
+    <ToastProvider>
     <div className="flex flex-col h-screen bg-gray-50">
       <Topbar 
         profile={profile} 
@@ -127,5 +129,6 @@ export default function AdminLayout({
         </main>
       </div>
     </div>
+    </ToastProvider>
   );
 }
