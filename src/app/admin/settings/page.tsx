@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [tenantId, setTenantId] = useState<string | null>(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -49,12 +50,14 @@ export default function SettingsPage() {
       }
 
       setProfile(adminProfile);
+      setTenantId(adminProfile.tenant_id);
 
-      // Fetch active policy
+      // Fetch active policy for this tenant
       const { data: activePolicy } = await (supabase as any)
         .from("policies")
         .select("*")
         .eq("is_active", true)
+        .eq("tenant_id", adminProfile.tenant_id)
         .single();
 
       if (activePolicy) {
@@ -97,6 +100,7 @@ export default function SettingsPage() {
             max_consecutive_days: form.max_consecutive_days,
             min_days_notice: form.min_days_notice,
             is_active: true,
+            tenant_id: tenantId,
           } as any)
           .select()
           .single();
@@ -114,7 +118,8 @@ export default function SettingsPage() {
             max_consecutive_days: form.max_consecutive_days,
             min_days_notice: form.min_days_notice,
           } as any)
-          .eq("id", policy.id);
+          .eq("id", policy.id)
+          .eq("tenant_id", tenantId);
 
         if (error) throw error;
 
