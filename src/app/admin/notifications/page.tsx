@@ -497,38 +497,44 @@ export default function NotificationsPage() {
 
               {/* Pagination Controls */}
               {logs.length > itemsPerPage && (
-                <div className="flex flex-col items-center gap-3 mt-6 pt-4 border-t border-[var(--border)]">
+                <div className="flex items-center justify-between gap-4 mt-6 pt-4 border-t border-[var(--border)]">
+                  {/* Items per page selector */}
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-[var(--color-brown-medium)]">Itens por página:</span>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
-                    >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={30}>30</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
+                    <span className="text-sm text-[var(--color-brown-medium)]">Exibir:</span>
+                    <div className="relative">
+                      <select
+                        value={itemsPerPage}
+                        onChange={(e) => {
+                          setItemsPerPage(Number(e.target.value));
+                          setCurrentPage(1);
+                        }}
+                        className="appearance-none bg-white border border-[var(--border)] rounded-lg px-4 py-2 pr-8 text-sm font-medium text-[var(--color-brown-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] focus:border-[var(--color-gold)] cursor-pointer hover:border-[var(--color-gold)] transition-all shadow-sm"
+                      >
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={30}>30</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                      <ChevronRight className="h-4 w-4 absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-brown-medium)] pointer-events-none rotate-90" />
+                    </div>
+                    <span className="text-sm text-[var(--color-brown-medium)]">itens</span>
                   </div>
 
+                  {/* Navigation */}
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
-                      className="px-3"
+                      className="px-3 h-9 border-[var(--border)] hover:border-[var(--color-gold)] hover:bg-[var(--color-gold)]/10"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
 
-                    <span className="text-sm text-[var(--color-brown-medium)] px-2">
-                      Página {currentPage} de {totalPages}
+                    <span className="text-sm font-medium text-[var(--color-brown-dark)] px-3">
+                      {currentPage} / {totalPages}
                     </span>
 
                     <Button
@@ -536,7 +542,7 @@ export default function NotificationsPage() {
                       size="sm"
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
-                      className="px-3"
+                      className="px-3 h-9 border-[var(--border)] hover:border-[var(--color-gold)] hover:bg-[var(--color-gold)]/10"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
