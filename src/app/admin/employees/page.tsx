@@ -74,7 +74,7 @@ export default function EmployeesPage() {
 
       let query = supabase
         .from("profiles")
-        .select("*")
+        .select("*, manager:profiles!manager_id(name), schedule:work_schedules(name)")
         .order("name");
 
       // Se não for master_admin, filtra pelo tenant do admin
@@ -83,6 +83,7 @@ export default function EmployeesPage() {
       }
 
       const { data: allEmployees, error: empError } = await query;
+
 
       console.log("[DEBUG] Employees query:", allEmployees?.length, "error:", empError);
       setEmployees(allEmployees || []);
