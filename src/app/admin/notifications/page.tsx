@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui";
 
 import { Play, Mail, CheckCircle, XCircle, AlertCircle, Bell, Send, X, ChevronLeft, ChevronRight } from "lucide-react";
@@ -106,6 +106,7 @@ export default function NotificationsPage() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showItemsDropdown, setShowItemsDropdown] = useState(false);
 
   // Pagination helpers
   const totalPages = Math.ceil(logs.length / itemsPerPage);
@@ -498,25 +499,42 @@ export default function NotificationsPage() {
               {/* Pagination Controls */}
               {logs.length > itemsPerPage && (
                 <div className="flex items-center justify-between gap-4 mt-6 pt-4 border-t border-[var(--border)]">
-                  {/* Items per page selector */}
+                  {/* Items per page selector - Custom Premium Dropdown */}
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-[var(--color-brown-medium)]">Exibir:</span>
                     <div className="relative">
-                      <select
-                        value={itemsPerPage}
-                        onChange={(e) => {
-                          setItemsPerPage(Number(e.target.value));
-                          setCurrentPage(1);
-                        }}
-                        className="appearance-none bg-white border border-[var(--border)] rounded-lg px-4 py-2 pr-8 text-sm font-medium text-[var(--color-brown-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] focus:border-[var(--color-gold)] cursor-pointer hover:border-[var(--color-gold)] transition-all shadow-sm"
+                      <button
+                        onClick={() => setShowItemsDropdown(!showItemsDropdown)}
+                        className="flex items-center gap-2 bg-white border border-[var(--color-gold)] rounded-lg px-4 py-2 text-sm font-medium text-[var(--color-brown-dark)] shadow-sm hover:shadow-md transition-all min-w-[80px] justify-between"
                       >
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                        <option value={30}>30</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </select>
-                      <ChevronRight className="h-4 w-4 absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-brown-medium)] pointer-events-none rotate-90" />
+                        <span>{itemsPerPage}</span>
+                        <ChevronRight className="h-4 w-4 text-[var(--color-gold)] rotate-90" />
+                      </button>
+                      
+                      {showItemsDropdown && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowItemsDropdown(false)} />
+                          <div className="absolute top-full left-0 mt-2 bg-white border border-[var(--color-gold)] rounded-xl shadow-xl z-20 overflow-hidden min-w-[100px]">
+                            {[10, 20, 30, 50, 100].map((num) => (
+                              <button
+                                key={num}
+                                onClick={() => {
+                                  setItemsPerPage(num);
+                                  setCurrentPage(1);
+                                  setShowItemsDropdown(false);
+                                }}
+                                className={`w-full px-4 py-2.5 text-sm text-left transition-all ${
+                                  num === itemsPerPage 
+                                    ? "bg-[var(--color-gold)] text-[var(--color-brown-dark)] font-semibold" 
+                                    : "text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)]"
+                                }`}
+                              >
+                                {num}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
                     </div>
                     <span className="text-sm text-[var(--color-brown-medium)]">itens</span>
                   </div>
