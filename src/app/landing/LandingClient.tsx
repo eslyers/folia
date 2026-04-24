@@ -717,10 +717,7 @@ export default function LandingClient() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                <span className="text-white font-bold text-lg">F</span>
-              </div>
-              <span className="text-xl font-semibold text-white font-[family-name:var(--font-playfair)]">FOLIA</span>
+              <img src="/logo.png" alt="FOLIA" className="h-10 object-contain" />
             </div>
             <p className="text-sm text-center">
               © {new Date().getFullYear()} FOLIA — Gestão de Férias, Ponto e RH para Empresas.
