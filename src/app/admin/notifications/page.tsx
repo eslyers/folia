@@ -434,7 +434,7 @@ export default function NotificationsPage() {
         </div>
 
         {/* Logs */}
-        <div className="bg-white rounded-xl border border-[var(--border)] shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-[var(--border)] shadow-sm">
           <div className="p-4 border-b border-[var(--border)] bg-gradient-to-r from-[var(--color-cream)] to-white">
             <h3 className="text-lg font-semibold text-[var(--color-brown-dark)] flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-[var(--color-gold)]" />
