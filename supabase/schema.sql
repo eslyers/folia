@@ -470,3 +470,74 @@ CREATE POLICY "Tenant admins can manage assignments" ON schedule_assignments
       AND profiles.role IN ('tenant_admin', 'master_admin')
     )
   );
+
+-- =====================================================
+-- TABLE: time_entries (for daily attendance tracking)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS time_entries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  clock_in TIMESTAMP WITH TIME ZONE,
+  clock_out TIMESTAMP WITH TIME ZONE,
+  lunch_start TIMESTAMP WITH TIME ZONE,
+  lunch_end TIMESTAMP WITH TIME ZONE,
+  total_hours NUMERIC(5,2),
+  overtime_hours NUMERIC(5,2),
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed', 'adjustment')),
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for time_entries
+CREATE INDEX IF NOT EXISTS idx_time_entries_tenant_id ON time_entries(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_time_entries_user_id ON time_entries(user_id);
+CREATE INDEX IF NOT EXISTS idx_time_entries_date ON time_entries(date);
+CREATE INDEX IF NOT EXISTS idx_time_entries_tenant_user_date ON time_entries(tenant_id, user_id, date);
+
+-- Trigger for updated_at
+CREATE TRIGGER time_entries_updated_at
+  BEFORE UPDATE ON time_entries
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- RLS for time_entries
+ALTER TABLE time_entries ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for time_entries
+CREATE POLICY "Tenant users can view own time entries" ON time_entries
+  FOR SELECT USING (auth.uid() = user_id AND tenant_id IN (SELECT tenant_id FROM profiles WHERE id = auth.uid()));
+
+CREATE POLICY "Tenant admins can view all time entries" ON time_entries
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.role IN ('tenant_admin', 'master_admin')
+      AND profiles.tenant_id = time_entries.tenant_id
+    )
+  );
+
+CREATE POLICY "Users can insert own time entries" ON time_entries
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Tenant admins can insert time entries" ON time_entries
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.role IN ('tenant_admin', 'master_admin')
+      AND profiles.tenant_id = time_entries.tenant_id
+    )
+  );
+
+CREATE POLICY "Tenant admins can update time entries" ON time_entries
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.role IN ('tenant_admin', 'master_admin')
+      AND profiles.tenant_id = time_entries.tenant_id
+    )
+  );
