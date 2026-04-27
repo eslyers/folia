@@ -13,6 +13,7 @@ import { clsx } from "clsx";
 
 interface WorkSchedule {
   id: string;
+  tenant_id: string;
   name: string;
   daily_hours: number;
   monday: boolean;
@@ -167,8 +168,7 @@ export default function SchedulesPage() {
   }, [selectedTenant, supabase]);
 
   const openNewModal = () => {
-    setEditingSchedule({
-      tenant_id: selectedTenant,
+    const newSchedule: ScheduleForm = {
       name: "",
       daily_hours: 8,
       monday: true,
@@ -182,13 +182,19 @@ export default function SchedulesPage() {
       start_work: "09:00",
       end_work: "18:00",
       lunch_duration_minutes: 60,
-    });
+    };
+    // Only set tenant_id if selectedTenant is a valid UUID
+    if (selectedTenant && selectedTenant !== "null") {
+      newSchedule.tenant_id = selectedTenant;
+    }
+    setEditingSchedule(newSchedule);
     setModalOpen(true);
   };
 
   const openEditModal = (schedule: WorkSchedule) => {
     setEditingSchedule({
       id: schedule.id,
+      tenant_id: schedule.tenant_id,
       name: schedule.name,
       daily_hours: schedule.daily_hours,
       monday: schedule.monday,
@@ -229,11 +235,19 @@ export default function SchedulesPage() {
         ...(session?.access_token && { "Authorization": `Bearer ${session.access_token}` }),
       };
 
+      // Prepare payload - only include tenant_id if it's a valid UUID
+      const payload: any = { ...editingSchedule };
+      if (payload.tenant_id && payload.tenant_id !== "null") {
+        // Keep valid tenant_id
+      } else {
+        delete payload.tenant_id;
+      }
+
       if (editingSchedule.id) {
         const response = await fetch(`/api/point/schedules/${editingSchedule.id}`, {
           method: "PUT",
           headers: authHeaders,
-          body: JSON.stringify(editingSchedule),
+          body: JSON.stringify(payload),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error);
@@ -241,7 +255,7 @@ export default function SchedulesPage() {
         const response = await fetch("/api/point/schedules", {
           method: "POST",
           headers: authHeaders,
-          body: JSON.stringify(editingSchedule),
+          body: JSON.stringify(payload),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error);
