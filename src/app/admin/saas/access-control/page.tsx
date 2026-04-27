@@ -145,15 +145,10 @@ export default function AccessControlPage() {
     }
 
     // Load features
-    const { data: featData, error: featFetchError } = await supabase
+    const { data: featData } = await supabase
       .from("tenant_features")
       .select("*")
       .eq("tenant_id", tenantId) as { data: TenantFeature[] | null; error: any };
-
-    if (featFetchError) {
-      console.error("[ERROR] Failed to load features:", featFetchError);
-    }
-    console.log("[DEBUG] Loaded features from DB:", featData?.map(f => ({ feature: f.feature, enabled: f.enabled, id: f.id })));
 
     const featList = featData || [];
     setFeatures(featList);
@@ -208,7 +203,6 @@ export default function AccessControlPage() {
       if (tenantError) throw tenantError;
 
       // Upsert features - only include real IDs (not fake "new-xxx" IDs)
-      console.log("[DEBUG] Saving features:", features.map(f => ({ feature: f.feature, enabled: f.enabled, id: f.id })));
       for (const feat of features) {
         const payload: any = {
           tenant_id: selectedTenantId,
@@ -221,7 +215,6 @@ export default function AccessControlPage() {
         if (!feat.id?.startsWith("new-")) {
           payload.id = feat.id;
         }
-        console.log("[DEBUG] Upserting feature:", payload.feature, "enabled:", payload.enabled, "id:", payload.id || "NEW");
         
         const { error: featError } = await (supabase as any)
           .from("tenant_features")
@@ -229,11 +222,7 @@ export default function AccessControlPage() {
             onConflict: "tenant_id,feature",
           });
 
-        if (featError) {
-          console.error(`[ERROR] Error saving feature ${feat.feature}:", featError`);
-        } else {
-          console.log("[DEBUG] Feature saved successfully:", feat.feature);
-        }
+        if (featError) console.error(`Error saving feature ${feat.feature}:`, featError);
       }
 
       // Log the action
