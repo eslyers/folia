@@ -190,7 +190,11 @@ export default function EmployeesPage() {
 
   const openNewModal = () => {
     // Auto-assign tenant from current admin's session
-    const defaultTenantId = profile?.tenant_id || "";
+    // For master admins, use first tenant if no tenant_id set
+    let defaultTenantId = profile?.tenant_id || "";
+    if (!defaultTenantId && isMasterAdmin(profile?.role as string) && tenants.length > 0) {
+      defaultTenantId = tenants[0].id;
+    }
     setEditingEmployee({
       name: "",
       email: "",
