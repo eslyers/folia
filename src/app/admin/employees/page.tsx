@@ -45,6 +45,8 @@ export default function EmployeesPage() {
   const [editingEmployee, setEditingEmployee] = useState<EmployeeForm | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string} | null>(null);
+  const [lastSelectedTenant, setLastSelectedTenant] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -189,9 +191,8 @@ export default function EmployeesPage() {
   }, [fetchData]);
 
   const openNewModal = () => {
-    // Auto-assign tenant from current admin's session
-    // For master admins, use first tenant if no tenant_id set
-    let defaultTenantId = profile?.tenant_id || "";
+    // Auto-assign tenant from last selected or current admin's session
+    let defaultTenantId = lastSelectedTenant || profile?.tenant_id || "";
     if (!defaultTenantId && isMasterAdmin(profile?.role as string) && tenants.length > 0) {
       defaultTenantId = tenants[0].id;
     }
@@ -325,10 +326,12 @@ export default function EmployeesPage() {
     setSaving(false);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este funcionário?")) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    const id = deleteConfirm.id;
 
     setDeleting(id);
+    setDeleteConfirm(null);
 
     try {
       const { error } = await supabase.from("profiles").delete().eq("id", id);
@@ -663,7 +666,7 @@ export default function EmployeesPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDelete(emp.id)}
+                                onClick={() => setDeleteConfirm({ id: emp.id, name: emp.name })}
                                 disabled={deleting === emp.id}
                               >
                                 <Trash2 className="h-4 w-4 text-red-500" />
@@ -833,7 +836,10 @@ export default function EmployeesPage() {
                 </label>
                 <select
                   value={editingEmployee.tenant_id || profile?.tenant_id || ""}
-                  onChange={(e) => setEditingEmployee({ ...editingEmployee, tenant_id: e.target.value })}
+                  onChange={(e) => { 
+                    setEditingEmployee({ ...editingEmployee, tenant_id: e.target.value });
+                    setLastSelectedTenant(e.target.value);
+                  }}
                   className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)]"
                 >
                   {tenants.length > 0 ? (
@@ -866,6 +872,46 @@ export default function EmployeesPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Confirmar Exclusão"
+      >
+        <div className="text-center py-4">
+          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+            <Trash2 className="h-8 w-8 text-red-500" />
+          </div>
+          <p className="text-[var(--color-brown-dark)] mb-2">
+            Tem certeza que deseja excluir o funcionário?
+          </p>
+          <p className="font-semibold text-[var(--color-brown-dark)]">
+            {deleteConfirm?.name}
+          </p>
+          <p className="text-sm text-[var(--color-brown-medium)] mt-2">
+            Esta ação não pode ser desfeita.
+          </p>
+        </div>
+        <div className="flex gap-3 mt-6">
+          <Button
+            variant="ghost"
+            onClick={() => setDeleteConfirm(null)}
+            className="flex-1"
+          >
+            Cancelar
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDelete}
+            disabled={deleting !== null}
+            className="flex-1"
+          >
+            {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            Excluir
+          </Button>
+        </div>
       </Modal>
     </div>
   );
