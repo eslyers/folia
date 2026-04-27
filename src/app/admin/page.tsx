@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AdminDashboard } from "./AdminDashboard";
+import { Select } from "@/components/ui";
 import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
 
 export default function AdminPage() {
@@ -132,21 +133,16 @@ function AdminContent() {
       {isMasterAdmin(profile?.role) && tenants.length > 0 && (
         <div className="bg-white border-b border-[var(--border)] px-6 py-4">
           <div className="max-w-7xl mx-auto flex items-center gap-4">
-            <label className="text-sm font-medium text-[var(--color-brown-dark)]">
-              Filtrar por empresa:
-            </label>
-            <select
+            <Select
+              label="Filtrar por empresa:"
               value={selectedTenantId}
               onChange={(e) => setSelectedTenantId(e.target.value)}
-              className="px-4 py-2 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
-            >
-              <option value="">Todas as empresas</option>
-              {tenants.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: "Todas as empresas" },
+                ...tenants.map((t) => ({ value: t.id, label: t.name }))
+              ]}
+              className="w-64"
+            />
           </div>
         </div>
       )}
