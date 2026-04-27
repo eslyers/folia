@@ -177,12 +177,18 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
     <>
       {/* Desktop sidebar - aligned with topbar */}
       {!isMobile && (
-        <aside className="w-[280px] h-full bg-[#F5F0E8] border-r border-stone-200 flex flex-col flex-shrink-0 transition-all duration-300">
+        <aside className={clsx(
+          "h-full bg-[#F5F0E8] border-r border-stone-200 flex flex-col flex-shrink-0 transition-all duration-300",
+          collapsed ? "w-[72px]" : "w-[280px]"
+        )}>
           {/* Logo area */}
-          <div className="flex flex-col items-center justify-center p-6 border-b border-stone-200">
-            <img src="/folia-logo.png" alt="FOLIA" className="w-36 h-36 object-contain" />
-          </div>
-          <div className="flex items-center justify-center p-2 border-b border-stone-200">
+          {!collapsed && (
+            <div className="flex flex-col items-center justify-center p-6 border-b border-stone-200">
+              <img src="/folia-logo.png" alt="FOLIA" className="w-36 h-36 object-contain" />
+            </div>
+          )}
+          {/* Collapse button */}
+          <div className={clsx("flex items-center border-b border-stone-200", collapsed ? "justify-center p-2" : "justify-center p-2")}>
             <button
               onClick={toggleCollapse}
               className="p-2 rounded-lg hover:bg-stone-200 text-stone-600 transition-colors"
