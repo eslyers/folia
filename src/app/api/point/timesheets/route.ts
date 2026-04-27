@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { logAction, createNotification } from "@/lib/logging";
 
 export async function GET(request: NextRequest) {
   try {
@@ -114,6 +115,10 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: "Erro ao aprovar horas extras" }, { status: 500 });
       }
 
+      // Logging + notification
+      await logAction("approve_all", "timesheets", { user_id, month: monthDate, approved_overtime_hours: totalOvertime }, session.user.id);
+      await createNotification(user_id, "Horas extras aprovadas", `✅ Suas horas extras (${totalOvertime}h) foram aprovadas para ${month}.`, "success");
+
       return NextResponse.json({ success: true, status: "approved", approved_overtime_hours: totalOvertime });
     }
 
@@ -138,6 +143,10 @@ export async function PUT(request: NextRequest) {
         console.error("[timesheets PUT] reject_all error:", error);
         return NextResponse.json({ error: "Erro ao rejeitar horas extras" }, { status: 500 });
       }
+
+      // Logging + notification
+      await logAction("reject_all", "timesheets", { user_id, month: monthDate }, session.user.id);
+      await createNotification(user_id, "Horas extras rejeitadas", `❌ Suas horas extras foram rejeitadas para ${month}.`, "warning");
 
       return NextResponse.json({ success: true, status: "rejected", approved_overtime_hours: 0 });
     }
@@ -199,6 +208,9 @@ export async function PUT(request: NextRequest) {
           console.error("[timesheets PUT] approve_day insert error:", error);
           return NextResponse.json({ error: "Erro ao aprovar entrada" }, { status: 500 });
         }
+
+        await logAction(action, "timesheets", { user_id, month: monthDate, entry_id }, session.user.id);
+        await createNotification(user_id, "Entrada aprovada", `✅ Entrada do dia aprovada para ${month}.`, "success");
       }
 
       return NextResponse.json({ success: true });
