@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logAction, createNotification } from "@/lib/logging";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -112,6 +113,35 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Log and notify
+    const notifyTenantId = profile.tenant_id || schedule.tenant_id;
+    await logAction(
+      "update",
+      "schedules",
+      { schedule_id: id, schedule_name: schedule.name, updates },
+      userId,
+      notifyTenantId
+    );
+    
+    // Notify tenant admins
+    const { data: tenantAdmins } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("tenant_id", notifyTenantId)
+      .in("role", ["tenant_admin", "master_admin"]);
+    
+    if (tenantAdmins) {
+      for (const admin of tenantAdmins) {
+        await createNotification(
+          admin.id,
+          "Escala Atualizada",
+          `Escala "${schedule.name}" foi atualizada.`,
+          "info",
+          notifyTenantId
+        );
+      }
+    }
+
     return NextResponse.json({ schedule });
 
   } catch (error) {
@@ -198,6 +228,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
 
     return NextResponse.json({ success: true });
+
+    // Log the deletion
+    await logAction(
+      "delete",
+      "schedules",
+      { schedule_id: id },
+      userId,
+      profile.tenant_id
+    );
 
   } catch (error) {
     console.error("[Schedules DELETE] Error:", error);

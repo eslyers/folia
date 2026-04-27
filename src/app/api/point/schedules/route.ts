@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { isTenantAdmin } from "@/lib/auth";
+import { logAction, createNotification } from "@/lib/logging";
 
+// GET - List schedules
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -172,6 +173,35 @@ export async function POST(request: Request) {
     }
 
     console.log("[Schedules POST] Created:", schedule);
+    
+    // Log the action
+    await logAction(
+      "create",
+      "schedules",
+      { schedule_id: schedule.id, schedule_name: name, tenant_id: finalTenantId },
+      userId,
+      finalTenantId
+    );
+    
+    // Notify relevant users (tenant admins)
+    const { data: tenantAdmins } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("tenant_id", finalTenantId)
+      .in("role", ["tenant_admin", "master_admin"]);
+    
+    if (tenantAdmins) {
+      for (const admin of tenantAdmins) {
+        await createNotification(
+          admin.id,
+          "Nova Escala Criada",
+          `Escala "${name}" foi criada e está disponível para atribuição.`,
+          "info",
+          finalTenantId
+        );
+      }
+    }
+    
     return NextResponse.json({ schedule });
 
   } catch (error) {
