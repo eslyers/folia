@@ -20,6 +20,38 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check tenant user limit BEFORE creating
+    if (tenant_id) {
+      const supabase = await createClient();
+      
+      // Get tenant settings
+      const { data: tenant, error: tenantError } = await supabase
+        .from("tenants")
+        .select("settings")
+        .eq("id", tenant_id)
+        .single();
+      
+      if (tenant?.settings?.max_users) {
+        const maxUsers = tenant.settings.max_users;
+        
+        // Count current employees in this tenant
+        const { count, error: countError } = await supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("tenant_id", tenant_id);
+        
+        if (count !== null && count >= maxUsers) {
+          return NextResponse.json(
+            { 
+              error: `Limite de funcionários atingido! Máximo permitido: ${maxUsers}. Entre em contato com o administrador do sistema para aumentar o limite.`,
+              code: "USER_LIMIT_REACHED"
+            },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     // Use service role key for admin operations
     const supabaseAdmin = createSupabaseAdmin(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
