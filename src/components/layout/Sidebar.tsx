@@ -182,7 +182,7 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
           collapsed ? "w-[72px]" : "w-[280px]"
         )}>
           {/* Logo area - always visible */}
-          <div className={clsx("flex items-center justify-center border-b border-[#d4d4d4]", collapsed ? "p-3" : "p-6")}>
+          <div className={clsx("flex items-center justify-center", collapsed ? "p-3" : "p-6")}>
             <img src="/folia-logo.png" alt="FOLIA" className={clsx("object-contain transition-all", collapsed ? "w-12 h-12" : "w-36 h-36")} />
           </div>
           <SidebarNav profile={profile} collapsed={collapsed} />
