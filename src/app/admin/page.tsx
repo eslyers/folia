@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AdminDashboard } from "./AdminDashboard";
-import { Select } from "@/components/ui";
+import { Building2, ChevronDown, X } from "lucide-react";
+import { clsx } from "clsx";
 import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
 
 export default function AdminPage() {
@@ -19,7 +20,12 @@ function AdminContent() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [tenants, setTenants] = useState<any[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
+  const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
   const supabase = createClient();
+
+  const currentTenantName = selectedTenantId 
+    ? tenants.find(t => t.id === selectedTenantId)?.name || ""
+    : "";
 
   // Fetch data based on selected tenant
   const fetchData = async (tenantId: string | null) => {
@@ -108,6 +114,20 @@ function AdminContent() {
     }
   }, [selectedTenantId]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.tenant-dropdown')) {
+        setTenantDropdownOpen(false);
+      }
+    };
+    if (tenantDropdownOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [tenantDropdownOpen]);
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--cream)" }}>
@@ -133,16 +153,63 @@ function AdminContent() {
       {isMasterAdmin(profile?.role) && tenants.length > 0 && (
         <div className="bg-white border-b border-[var(--border)] px-6 py-4">
           <div className="max-w-7xl mx-auto flex items-center gap-4">
-            <Select
-              label="Filtrar por empresa:"
-              value={selectedTenantId}
-              onChange={(e) => setSelectedTenantId(e.target.value)}
-              options={[
-                { value: "", label: "Todas as empresas" },
-                ...tenants.map((t) => ({ value: t.id, label: t.name }))
-              ]}
-              className="w-64"
-            />
+            <label className="text-sm font-medium text-[var(--color-brown-dark)]">
+              Filtrar por empresa:
+            </label>
+            <div className="relative">
+              <button
+                onClick={() => setTenantDropdownOpen(!tenantDropdownOpen)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--border)] bg-white hover:border-[#5C724A] transition-colors min-w-[200px]"
+              >
+                <Building2 className="h-4 w-4 text-[#5C724A]" />
+                <span className="flex-1 text-sm text-[var(--color-brown-dark)] text-left">
+                  {currentTenantName || "Todas as empresas"}
+                </span>
+                {selectedTenantId && (
+                  <span
+                    onClick={(e) => { e.stopPropagation(); setSelectedTenantId(""); }}
+                    className="p-0.5 rounded hover:bg-gray-100 text-gray-400"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </span>
+                )}
+                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${tenantDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown */}
+              {tenantDropdownOpen && (
+                <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Empresas</p>
+                  </div>
+                  <button
+                    onClick={() => { setSelectedTenantId(""); setTenantDropdownOpen(false); }}
+                    className={clsx(
+                      "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors",
+                      !selectedTenantId && "bg-[#5C724A]/5 text-[#5C724A]"
+                    )}
+                  >
+                    <Building2 className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-1">Todas as empresas</span>
+                    {!selectedTenantId && <span className="text-xs text-[#5C724A] font-medium">Atual</span>}
+                  </button>
+                  {tenants.map((tenant) => (
+                    <button
+                      key={tenant.id}
+                      onClick={() => { setSelectedTenantId(tenant.id); setTenantDropdownOpen(false); }}
+                      className={clsx(
+                        "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors",
+                        tenant.id === selectedTenantId && "bg-[#5C724A]/5 text-[#5C724A]"
+                      )}
+                    >
+                      <Building2 className="h-4 w-4 flex-shrink-0" />
+                      <span className="flex-1 truncate">{tenant.name}</span>
+                      {tenant.id === selectedTenantId && <span className="text-xs text-[#5C724A] font-medium">Atual</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
