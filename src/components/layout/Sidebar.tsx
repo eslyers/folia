@@ -149,6 +149,9 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  const toggleCollapse = () => setCollapsed(prev => !prev);
 
   useEffect(() => {
     if (mobileOpen !== undefined) setIsMobileOpen(mobileOpen);
@@ -174,12 +177,23 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
     <>
       {/* Desktop sidebar - aligned with topbar */}
       {!isMobile && (
-        <aside className="w-[280px] h-full bg-[#F5F0E8] border-r border-stone-200 flex flex-col flex-shrink-0">
+        <aside className="w-[280px] h-full bg-[#F5F0E8] border-r border-stone-200 flex flex-col flex-shrink-0 transition-all duration-300">
           {/* Logo area */}
           <div className="flex flex-col items-center justify-center p-6 border-b border-stone-200">
             <img src="/folia-logo.png" alt="FOLIA" className="w-36 h-36 object-contain" />
           </div>
-          <SidebarNav profile={profile} />
+          <div className="flex items-center justify-center p-2 border-b border-stone-200">
+            <button
+              onClick={toggleCollapse}
+              className="p-2 rounded-lg hover:bg-stone-200 text-stone-600 transition-colors"
+              title={collapsed ? "Expandir menu" : "Recolher menu"}
+            >
+              <svg className={`h-5 w-5 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+            </button>
+          </div>
+          <SidebarNav profile={profile} collapsed={collapsed} />
         </aside>
       )}
 
