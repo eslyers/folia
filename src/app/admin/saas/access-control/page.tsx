@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Card, Button, Input, Select } from "@/components/ui";
+import { Card, Button, Input } from "@/components/ui";
 import {
   Building2, Check, X, AlertCircle, Save, ChevronDown, Shield, Users,
   HardDrive, Calendar, Package, ToggleLeft, ToggleRight
 } from "lucide-react";
+import { clsx } from "clsx";
 import { isMasterAdmin } from "@/lib/auth";
 import { format } from "date-fns";
 
@@ -62,6 +63,8 @@ export default function AccessControlPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
+  const [planDropdownOpen, setPlanDropdownOpen] = useState(false);
 
   // Limits form
   const [maxUsers, setMaxUsers] = useState<number>(10);
@@ -110,6 +113,23 @@ export default function AccessControlPage() {
       loadTenantData(selectedTenantId);
     }
   }, [selectedTenantId]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.tenant-dropdown')) {
+        setTenantDropdownOpen(false);
+      }
+      if (!target.closest('.plan-dropdown')) {
+        setPlanDropdownOpen(false);
+      }
+    };
+    if (tenantDropdownOpen || planDropdownOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [tenantDropdownOpen, planDropdownOpen]);
 
   const loadTenantData = async (tenantId: string) => {
     const tenant = tenants.find(t => t.id === tenantId);
@@ -267,15 +287,36 @@ export default function AccessControlPage() {
               <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
                 Selecionar Empresa
               </label>
-              <select
-                value={selectedTenantId}
-                onChange={(e) => setSelectedTenantId(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] bg-white text-[var(--color-brown-dark)]"
-              >
-                {tenants.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
+              <div className="relative tenant-dropdown">
+                <button
+                  onClick={() => setTenantDropdownOpen(!tenantDropdownOpen)}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white hover:border-[#5C724A] transition-colors text-left"
+                >
+                  <Building2 className="h-4 w-4 text-[#5C724A]" />
+                  <span className="flex-1 text-sm text-[var(--color-brown-dark)]">
+                    {selectedTenant?.name || "Selecione uma empresa"}
+                  </span>
+                  <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${tenantDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {tenantDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 max-h-60 overflow-y-auto">
+                    {tenants.map((tenant) => (
+                      <button
+                        key={tenant.id}
+                        onClick={() => { setSelectedTenantId(tenant.id); setTenantDropdownOpen(false); }}
+                        className={clsx(
+                          "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors",
+                          tenant.id === selectedTenantId && "bg-[#5C724A]/5 text-[#5C724A]"
+                        )}
+                      >
+                        <Building2 className="h-4 w-4 flex-shrink-0" />
+                        <span className="flex-1 truncate">{tenant.name}</span>
+                        {tenant.id === selectedTenantId && <Check className="h-4 w-4 text-[#5C724A]" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             {selectedTenant && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-cream)]">
@@ -303,15 +344,36 @@ export default function AccessControlPage() {
                   <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
                     Plano
                   </label>
-                  <select
-                    value={currentPlan}
-                    onChange={(e) => setCurrentPlan(e.target.value)}
-                    className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] bg-white text-[var(--color-brown-dark)]"
-                  >
-                    {PLANS.map(p => (
-                      <option key={p.value} value={p.value}>{p.label}</option>
-                    ))}
-                  </select>
+                  <div className="relative plan-dropdown">
+                    <button
+                      onClick={() => setPlanDropdownOpen(!planDropdownOpen)}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white hover:border-[#5C724A] transition-colors text-left"
+                    >
+                      <Package className="h-4 w-4 text-[#5C724A]" />
+                      <span className="flex-1 text-sm text-[var(--color-brown-dark)]">
+                        {PLANS.find(p => p.value === currentPlan)?.label || "Selecione"}
+                      </span>
+                      <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${planDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {planDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                        {PLANS.map((plan) => (
+                          <button
+                            key={plan.value}
+                            onClick={() => { setCurrentPlan(plan.value); setPlanDropdownOpen(false); }}
+                            className={clsx(
+                              "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors",
+                              plan.value === currentPlan && "bg-[#5C724A]/5 text-[#5C724A]"
+                            )}
+                          >
+                            <Package className="h-4 w-4 flex-shrink-0" />
+                            <span className="flex-1">{plan.label}</span>
+                            {plan.value === currentPlan && <Check className="h-4 w-4 text-[#5C724A]" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
