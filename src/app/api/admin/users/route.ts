@@ -22,6 +22,7 @@ export async function POST(request: Request) {
 
     // Check tenant user limit BEFORE creating
     if (tenant_id) {
+      console.log("[DEBUG] Checking limit for tenant:", tenant_id);
       const supabase = await createClient();
       
       // Get tenant settings
@@ -31,8 +32,12 @@ export async function POST(request: Request) {
         .eq("id", tenant_id)
         .single();
       
+      console.log("[DEBUG] Tenant data:", tenant, "error:", tenantError);
+      console.log("[DEBUG] Tenant settings:", tenant?.settings);
+      
       if (tenant?.settings?.max_users) {
         const maxUsers = tenant.settings.max_users;
+        console.log("[DEBUG] Max users allowed:", maxUsers);
         
         // Count current employees in this tenant
         const { count, error: countError } = await supabase
@@ -40,7 +45,10 @@ export async function POST(request: Request) {
           .select("id", { count: "exact", head: true })
           .eq("tenant_id", tenant_id);
         
+        console.log("[DEBUG] Current count:", count, "error:", countError);
+        
         if (count !== null && count >= maxUsers) {
+          console.log("[DEBUG] LIMIT REACHED - blocking creation");
           return NextResponse.json(
             { 
               error: `Limite de funcionários atingido! Máximo permitido: ${maxUsers}. Entre em contato com o administrador do sistema para aumentar o limite.`,
@@ -48,8 +56,14 @@ export async function POST(request: Request) {
             },
             { status: 403 }
           );
+        } else {
+          console.log("[DEBUG] Within limit, proceeding with creation");
         }
+      } else {
+        console.log("[DEBUG] No max_users limit set for this tenant");
       }
+    } else {
+      console.log("[DEBUG] No tenant_id provided, skipping limit check");
     }
 
     // Use service role key for admin operations
