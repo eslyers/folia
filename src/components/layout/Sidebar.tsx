@@ -123,8 +123,8 @@ export function SidebarNav({ profile, collapsed = false }: SidebarNavProps) {
               className={clsx(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 active
-                  ? "bg-gradient-to-r from-[#5C724A] to-[#6B7D57] text-white shadow-sm"
-                  : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                  ? "bg-[#5C724A] text-white shadow-sm"
+                  : "text-stone-600 hover:bg-[#5C724A]/10 hover:text-[#5C724A]"
               )}
               title={collapsed ? item.label : undefined}
             >
@@ -181,17 +181,15 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
           "h-full bg-[#F5F0E8] border-r border-stone-200 flex flex-col flex-shrink-0 transition-all duration-300",
           collapsed ? "w-[72px]" : "w-[280px]"
         )}>
-          {/* Logo area */}
-          {!collapsed && (
-            <div className="flex flex-col items-center justify-center p-6 border-b border-stone-200">
-              <img src="/folia-logo.png" alt="FOLIA" className="w-36 h-36 object-contain" />
-            </div>
-          )}
+          {/* Logo area - always visible */}
+          <div className={clsx("flex items-center justify-center border-b border-stone-200", collapsed ? "p-3" : "p-6")}>
+            <img src="/folia-logo.png" alt="FOLIA" className={clsx("object-contain transition-all", collapsed ? "w-12 h-12" : "w-36 h-36")} />
+          </div>
           {/* Collapse button */}
-          <div className={clsx("flex items-center border-b border-stone-200", collapsed ? "justify-center p-2" : "justify-center p-2")}>
+          <div className="flex items-center justify-center p-2 border-b border-stone-200">
             <button
               onClick={toggleCollapse}
-              className="p-2 rounded-lg hover:bg-stone-200 text-stone-600 transition-colors"
+              className="p-2 rounded-lg hover:bg-[#5C724A]/20 text-[#5C724A] transition-colors"
               title={collapsed ? "Expandir menu" : "Recolher menu"}
             >
               <svg className={`h-5 w-5 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
