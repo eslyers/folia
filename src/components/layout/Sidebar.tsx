@@ -172,9 +172,13 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
 
   return (
     <>
-      {/* Desktop sidebar - 220px */}
+      {/* Desktop sidebar - full height, unified */}
       {!isMobile && (
-        <aside className="w-[220px] min-h-screen bg-stone-50 border-r border-stone-200 flex flex-col flex-shrink-0">
+        <aside className="w-[280px] min-h-screen bg-[#F5F0E8] border-r border-stone-200 flex flex-col flex-shrink-0">
+          {/* Logo area */}
+          <div className="flex flex-col items-center justify-center p-6 border-b border-stone-200">
+            <img src="/folia-logo.png" alt="FOLIA" className="w-36 h-36 object-contain" />
+          </div>
           <SidebarNav profile={profile} />
         </aside>
       )}
@@ -190,9 +194,9 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
           "fixed inset-y-0 left-0 z-50 w-[280px] bg-stone-50 border-r border-stone-200 flex flex-col transition-transform duration-300",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}>
-          <div className="flex items-center justify-between p-4 border-b border-stone-200">
-            <img src="/folia-logo.png" alt="FOLIA" className="w-24 h-24 object-contain" />
-            <button onClick={() => setIsMobileOpen(false)} className="p-2 rounded-lg hover:bg-stone-200 text-stone-600">
+          <div className="flex flex-col items-center justify-center p-6 border-b border-stone-200">
+            <img src="/folia-logo.png" alt="FOLIA" className="w-32 h-32 object-contain" />
+            <button onClick={() => setIsMobileOpen(false)} className="mt-2 p-2 rounded-lg hover:bg-stone-200 text-stone-600">
               ✕
             </button>
           </div>
