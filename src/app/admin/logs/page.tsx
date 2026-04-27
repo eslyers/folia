@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isMasterAdmin } from "@/lib/auth";
-import { Card, Button, Input } from "@/components/ui";
-import { Scroll, Download, Search, Filter, X, ChevronLeft, ChevronRight, LogIn, LogOut, Plus, Pencil, Trash2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Card, Button, Input, PremiumSelect, DatePicker } from "@/components/ui";
+import { Scroll, Download, Search, Filter, X, ChevronLeft, ChevronRight, LogIn, LogOut, Plus, Pencil, Trash2, CheckCircle, XCircle, Clock, ScrollText } from "lucide-react";
 
 interface LogEntry {
   id: string;
@@ -231,35 +231,36 @@ export default function LogsPage() {
                 className="w-full pl-9 pr-4 py-2 border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
               />
             </div>
-            <select
+            <PremiumSelect
               value={filterAction}
-              onChange={(e) => { setFilterAction(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-2 border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
-            >
-              <option value="">Todas ações</option>
-              <option value="login">Login</option>
-              <option value="logout">Logout</option>
-              <option value="create">Criar</option>
-              <option value="update">Atualizar</option>
-              <option value="delete">Excluir</option>
-              <option value="approve">Aprovar</option>
-              <option value="reject">Rejeitar</option>
-            </select>
-            <select
+              onChange={(val) => { setFilterAction(val); setCurrentPage(1); }}
+              placeholder="Todas ações"
+              icon={<LogIn className="h-4 w-4" />}
+              options={[
+                { value: "", label: "Todas ações" },
+                { value: "login", label: "Login" },
+                { value: "logout", label: "Logout" },
+                { value: "create", label: "Criar" },
+                { value: "update", label: "Atualizar" },
+                { value: "delete", label: "Excluir" },
+                { value: "approve", label: "Aprovar" },
+                { value: "reject", label: "Rejeitar" },
+              ]}
+            />
+            <PremiumSelect
               value={filterModule}
-              onChange={(e) => { setFilterModule(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-2 border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
-            >
-              <option value="">Todos módulos</option>
-              {Object.entries(MODULE_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
-            <input
-              type="date"
+              onChange={(val) => { setFilterModule(val); setCurrentPage(1); }}
+              placeholder="Todos módulos"
+              icon={<Clock className="h-4 w-4" />}
+              options={[
+                { value: "", label: "Todos módulos" },
+                ...Object.entries(MODULE_LABELS).map(([key, label]) => ({ value: key, label }))
+              ]}
+            />
+            <DatePicker
               value={filterDate}
-              onChange={(e) => { setFilterDate(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-2 border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
+              onChange={(val) => { setFilterDate(val); setCurrentPage(1); }}
+              placeholder="Data"
             />
           </div>
         </Card>
