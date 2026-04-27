@@ -219,9 +219,7 @@ export function Topbar({
           </button>
         )}
 
-        <Link href="/dashboard" className="flex items-center">
-          <img src="/folia-logo.png" alt="FOLIA" className="w-24 h-24 object-contain" />
-        </Link>
+        
       </div>
 
       {/* Spacer */}

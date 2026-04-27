@@ -172,9 +172,9 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
 
   return (
     <>
-      {/* Desktop sidebar - full height, unified */}
+      {/* Desktop sidebar - aligned with topbar */}
       {!isMobile && (
-        <aside className="w-[280px] min-h-screen bg-[#F5F0E8] border-r border-stone-200 flex flex-col flex-shrink-0">
+        <aside className="w-[280px] h-full bg-[#F5F0E8] border-r border-stone-200 flex flex-col flex-shrink-0">
           {/* Logo area */}
           <div className="flex flex-col items-center justify-center p-6 border-b border-stone-200">
             <img src="/folia-logo.png" alt="FOLIA" className="w-36 h-36 object-contain" />
