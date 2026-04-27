@@ -175,10 +175,10 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
 
   return (
     <>
-      {/* Desktop sidebar - aligned with topbar */}
+      {/* Desktop sidebar - goes to top */}
       {!isMobile && (
         <aside className={clsx(
-          "h-full bg-white border-r border-[#5C724A] flex flex-col flex-shrink-0 transition-all duration-300",
+          "h-screen bg-[#fafaf9] border-r border-[#5C724A] flex flex-col flex-shrink-0 transition-all duration-300",
           collapsed ? "w-[72px]" : "w-[280px]"
         )}>
           {/* Logo area - always visible */}

@@ -110,19 +110,19 @@ export default function AdminLayout({
 
   return (
     <ToastProvider>
-    <div className="flex flex-col h-screen bg-gray-50">
-      <Topbar 
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar 
         profile={profile} 
-        tenants={tenants}
-        currentTenant={currentTenant ?? undefined}
-        onTenantChange={handleTenantChange}
-        onMenuToggle={() => setSidebarOpen(prev => !prev)} 
+        mobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
       />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar 
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Topbar 
           profile={profile} 
-          mobileOpen={sidebarOpen}
-          onMobileClose={() => setSidebarOpen(false)}
+          tenants={tenants}
+          currentTenant={currentTenant ?? undefined}
+          onTenantChange={handleTenantChange}
+          onMenuToggle={() => setSidebarOpen(prev => !prev)} 
         />
         <main className="flex-1 overflow-auto">
           {children}
