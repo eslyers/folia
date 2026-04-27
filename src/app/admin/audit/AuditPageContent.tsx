@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-import { Card } from "@/components/ui";
-import { Search, Download, FileText, User, Settings, Calendar, Clock } from "lucide-react";
+import { Card, PremiumSelect } from "@/components/ui";
+import { Search, Download, FileText, User, Settings, Calendar, Clock, ScrollText } from "lucide-react";
 import { isTenantAdmin } from "@/lib/auth";
 
 interface AuditLog {
@@ -186,30 +186,24 @@ export default function AuditPageContent() {
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
               />
             </div>
-            <select
+            <PremiumSelect
               value={filterTable}
-              onChange={(e) => setFilterTable(e.target.value)}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
-            >
-              <option value="all">Todas as tabelas</option>
-              {uniqueTables.map((table) => (
-                <option key={table} value={table}>
-                  {table}
-                </option>
-              ))}
-            </select>
-            <select
+              onChange={setFilterTable}
+              icon={<FileText className="h-4 w-4" />}
+              options={[
+                { value: "all", label: "Todas as tabelas" },
+                ...uniqueTables.map((table) => ({ value: table, label: table }))
+              ]}
+            />
+            <PremiumSelect
               value={filterAction}
-              onChange={(e) => setFilterAction(e.target.value)}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
-            >
-              <option value="all">Todas as ações</option>
-              {uniqueActions.map((action) => (
-                <option key={action} value={action}>
-                  {action}
-                </option>
-              ))}
-            </select>
+              onChange={setFilterAction}
+              icon={<ScrollText className="h-4 w-4" />}
+              options={[
+                { value: "all", label: "Todas as ações" },
+                ...uniqueActions.map((action) => ({ value: action, label: action }))
+              ]}
+            />
           </div>
         </Card>
 
