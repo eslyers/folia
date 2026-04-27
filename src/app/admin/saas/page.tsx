@@ -80,6 +80,7 @@ export default function SaasAdminPage() {
   const [showCreateWebhook, setShowCreateWebhook] = useState(false);
   
   // Form state
+  const slugFromName = (name: string) => name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const [newTenant, setNewTenant] = useState({ name: "", domain: "", slug: "", logo_url: "" });
   const [editTenant, setEditTenant] = useState<Tenant | null>(null);
   const [newWebhook, setNewWebhook] = useState({ name: "", channel: "slack" as "slack" | "teams", webhook_url: "", events: [] as string[] });
@@ -1000,7 +1001,16 @@ export default function SaasAdminPage() {
             </label>
             <Input
               value={newTenant.name}
-              onChange={(e) => setNewTenant(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) => {
+                const newName = e.target.value;
+                setNewTenant(prev => ({
+                  ...prev,
+                  name: newName,
+                  slug: prev.slug === '' || prev.slug === slugFromName(prev.name)
+                    ? slugFromName(newName)
+                    : prev.slug
+                }));
+              }}
               placeholder="Magna Inc."
               required
             />
