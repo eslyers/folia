@@ -4,6 +4,7 @@ export { Card } from "./Card";
 export { NumberInput } from "./NumberInput";
 export { DatePicker } from "./DatePicker";
 export { Select } from "./Select";
+export { PremiumSelect } from "./PremiumSelect";
 export { Modal } from "./Modal";
 export { Skeleton } from "./Skeleton";
 export { Table } from "./Table";

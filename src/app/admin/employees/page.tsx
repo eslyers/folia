@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Users, Edit2, Trash2, Calendar, Save, Loader2, Clock, Download, Search, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Users, Edit2, Trash2, Calendar, Save, Loader2, Clock, Download, Search, ChevronUp, ChevronDown, User, Shield, Briefcase } from "lucide-react";
 
-import { Card, Button, Input } from "@/components/ui";
+import { Card, Button, Input, DatePicker, PremiumSelect } from "@/components/ui";
 import { Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { format, differenceInYears, differenceInMonths, addMonths } from "date-fns";
+import { clsx } from "clsx";
 import { ptBR } from "date-fns/locale";
 import { isTenantAdmin, isMasterAdmin, getRoleLabel } from "@/lib/auth";
 
@@ -743,52 +744,44 @@ export default function EmployeesPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1.5">
-                Gestor
-              </label>
-              <select
-                value={editingEmployee.manager_id}
-                onChange={(e) => setEditingEmployee({ ...editingEmployee, manager_id: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)]"
-              >
-                <option value="">Nenhum</option>
-                {employees
+            <PremiumSelect
+              label="Gestor"
+              value={editingEmployee.manager_id || ""}
+              onChange={(val) => setEditingEmployee({ ...editingEmployee, manager_id: val })}
+              placeholder="Nenhum"
+              icon={<User className="h-4 w-4" />}
+              hint="Apenas gestores e admins da empresa"
+              options={[
+                { value: "", label: "Nenhum" },
+                ...employees
                   .filter((e) => e.id !== editingEmployee.id && (e.role === "gestor" || e.role === "tenant_admin"))
-                  .map((e) => (
-                    <option key={e.id} value={e.id}>{e.name} ({e.role === "tenant_admin" ? "Admin" : "Gestor"})</option>
-                  ))}
-              </select>
-              <p className="text-xs text-[var(--color-brown-medium)] mt-1">
-                Apenas gestores e admins da empresa
-              </p>
-            </div>
+                  .map((e) => ({
+                    value: e.id,
+                    label: `${e.name} (${e.role === "tenant_admin" ? "Admin" : "Gestor"})`
+                  }))
+              ]}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1.5">
-                Escala de Trabalho
-              </label>
-              <select
-                value={editingEmployee.schedule_id}
-                onChange={(e) => setEditingEmployee({ ...editingEmployee, schedule_id: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)]"
-              >
-                <option value="">Padrão</option>
-                {schedules.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
+            <PremiumSelect
+              label="Escala de Trabalho"
+              value={editingEmployee.schedule_id || ""}
+              onChange={(val) => setEditingEmployee({ ...editingEmployee, schedule_id: val })}
+              placeholder="Padrão"
+              icon={<Clock className="h-4 w-4" />}
+              options={[
+                { value: "", label: "Padrão" },
+                ...schedules.map((s) => ({ value: s.id, label: s.name }))
+              ]}
+            />
 
             <div>
               <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1.5">
                 Data de Admissão
               </label>
-              <input
-                type="date"
-                value={editingEmployee.hire_date}
-                onChange={(e) => setEditingEmployee({ ...editingEmployee, hire_date: e.target.value })}
-                className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)]"
+              <DatePicker
+                value={editingEmployee.hire_date || ""}
+                onChange={(val) => setEditingEmployee({ ...editingEmployee, hire_date: val })}
+                placeholder="Selecione a data"
               />
               <p className="text-xs text-[var(--color-brown-medium)] mt-1">
                 Define o início do período aquisitivo de férias
@@ -813,44 +806,34 @@ export default function EmployeesPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1.5">
-                Tipo de Acesso
-              </label>
-              <select
-                value={editingEmployee.role}
-                onChange={(e) => setEditingEmployee({ ...editingEmployee, role: e.target.value as any })}
-                className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)]"
-              >
-                <option value="funcionario">Funcionário</option>
-                <option value="gestor">Gestor</option>
-                <option value="tenant_admin">Admin Empresa</option>
-              </select>
-            </div>
+            <PremiumSelect
+              label="Tipo de Acesso"
+              value={editingEmployee.role}
+              onChange={(val) => setEditingEmployee({ ...editingEmployee, role: val as any })}
+              icon={<Shield className="h-4 w-4" />}
+              options={[
+                { value: "funcionario", label: "Funcionário" },
+                { value: "gestor", label: "Gestor" },
+                { value: "tenant_admin", label: "Admin Empresa" }
+              ]}
+            />
 
             {/* Tenant selector - show for master_admin and if admin has a tenant */}
             {(tenants.length > 0 || profile?.tenant_id) && (
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1.5">
-                  Empresa
-                </label>
-                <select
-                  value={editingEmployee.tenant_id || profile?.tenant_id || ""}
-                  onChange={(e) => { 
-                    setEditingEmployee({ ...editingEmployee, tenant_id: e.target.value });
-                    setLastSelectedTenant(e.target.value);
-                  }}
-                  className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)]"
-                >
-                  {tenants.length > 0 ? (
-                    tenants.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))
-                  ) : (
-                    <option value={profile?.tenant_id}>{currentTenantName || "Empresa atual"}</option>
-                  )}
-                </select>
-              </div>
+              <PremiumSelect
+                label="Empresa"
+                value={editingEmployee.tenant_id || profile?.tenant_id || ""}
+                onChange={(val) => {
+                  setEditingEmployee({ ...editingEmployee, tenant_id: val });
+                  setLastSelectedTenant(val);
+                }}
+                icon={<Briefcase className="h-4 w-4" />}
+                options={
+                  tenants.length > 0
+                    ? tenants.map((t) => ({ value: t.id, label: t.name }))
+                    : [{ value: profile?.tenant_id || "", label: currentTenantName || "Empresa atual" }]
+                }
+              />
             )}
 
             <div className="flex gap-3 pt-4">
