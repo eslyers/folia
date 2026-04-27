@@ -39,8 +39,8 @@ interface NavItem {
 
 const MASTER_ADMIN_ITEMS: NavItem[] = [
   { label: "Visão Geral", href: "/admin", icon: LayoutDashboard, exact: true },
-  { label: "Empresas SaaS", href: "/admin/saas", icon: Building2 },
-  { label: "Controle Acesso", href: "/admin/saas/access-control", icon: Shield },
+  { label: "Empresas SaaS", href: "/admin/saas", icon: Building2, exact: true },
+  { label: "Controle Acesso", href: "/admin/saas/access-control", icon: Shield, exact: true },
   { label: "Funcionários Global", href: "/admin/employees", icon: Users },
   { label: "Gestão Acessos", href: "/admin/access", icon: UserCog },
   { label: "Escalas", href: "/admin/schedules", icon: Calendar },
