@@ -230,7 +230,7 @@ export default function EmployeesPage() {
     }
 
     // For master admins, tenant is required
-    if (isMasterAdmin(profile?.role) && !editingEmployee.tenant_id) {
+    if (isMasterAdmin(profile?.role as string) && !editingEmployee.tenant_id) {
       setError("Selecione uma empresa antes de criar o funcionário");
       return;
     }
