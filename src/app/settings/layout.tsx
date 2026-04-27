@@ -7,6 +7,12 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import type { Profile } from "@/lib/types";
 
+interface Tenant {
+  id: string;
+  name: string;
+  domain?: string;
+}
+
 export default function SettingsLayout({
   children,
 }: {
@@ -15,6 +21,8 @@ export default function SettingsLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const supabase = createClient();
@@ -40,11 +48,29 @@ export default function SettingsLayout({
       }
 
       setProfile(profileData);
+
+      // Fetch tenant info
+      if (profileData.tenant_id) {
+        const { data: tenantData } = await supabase
+          .from("tenants")
+          .select("id, name, domain")
+          .eq("id", profileData.tenant_id)
+          .single();
+        if (tenantData) {
+          setTenants([tenantData]);
+          setCurrentTenant(tenantData);
+        }
+      }
+
       setLoading(false);
     };
 
     checkUser();
   }, [pathname]);
+
+  const handleTenantChange = (tenant: Tenant) => {
+    setCurrentTenant(tenant);
+  };
 
   if (loading || !profile) {
     return (
@@ -81,9 +107,12 @@ export default function SettingsLayout({
       <div className="flex flex-col flex-1 overflow-hidden">
         <Topbar 
           profile={profile} 
+          tenants={tenants}
+          currentTenant={currentTenant ?? undefined}
+          onTenantChange={handleTenantChange}
           onMenuToggle={() => setSidebarOpen(prev => !prev)} 
         />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto bg-gray-100">
           {children}
         </main>
       </div>

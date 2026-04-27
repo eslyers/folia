@@ -223,7 +223,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-[var(--cream)] px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="mb-8 animate-fade-in-up">
         <h1 className="text-3xl font-bold text-gray-900">
@@ -470,5 +471,6 @@ export default function SettingsPage() {
             <p>Precisa de ajuda? Entre em contato com o administrador.</p>
           </div>
         </div>
+      </div>
   );
 }
