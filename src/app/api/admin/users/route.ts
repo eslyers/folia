@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
+import { logAction, createNotification } from "@/lib/logging";
 
 export async function POST(request: Request) {
   try {
@@ -211,6 +212,15 @@ export async function POST(request: Request) {
       console.log("[Admin API] No session found for notification");
     }
 
+    // Log action
+    await logAction(
+      "create",
+      "users",
+      { userId: authData.user.id, email, name, role, department, tenant_id: profileTenantId },
+      currentUserId || undefined,
+      profileTenantId || undefined
+    );
+
     return NextResponse.json({
       success: true,
       user: {
@@ -288,6 +298,13 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Get tenant_id for this user for logging
+    const { data: updatedProfile } = await supabase
+      .from("profiles")
+      .select("tenant_id")
+      .eq("id", id)
+      .single();
+
     // Create notification for admin who updated the employee
     const { data: updateSessionData } = await supabaseAdmin.auth.getSession();
     const updateUserId = updateSessionData?.session?.user?.id;
@@ -302,6 +319,15 @@ export async function PUT(request: Request) {
       });
     }
 
+    // Log action
+    await logAction(
+      "update",
+      "users",
+      { userId: id, name, role, department },
+      currentUserId || undefined,
+      updatedProfile?.tenant_id || undefined
+    );
+
     return NextResponse.json({ success: true });
 
   } catch (error) {
@@ -310,5 +336,78 @@ export async function PUT(request: Request) {
       { error: "Erro interno do servidor" },
       { status: 500 }
     );
+  }
+}
+
+// ─────────────────────────────────────────────
+// DELETE /api/admin/users
+// ─────────────────────────────────────────────
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "ID do usuário é obrigatório" }, { status: 400 });
+    }
+
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    // Get current user for logging
+    const authHeader = request.headers.get("Authorization");
+    let currentUserId: string | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const { data: userData } = await supabaseAdmin.auth.getUser(token);
+      currentUserId = userData?.user?.id || null;
+    }
+    if (!currentUserId) {
+      const { data: sessionData } = await supabaseAdmin.auth.getSession();
+      currentUserId = sessionData?.session?.user?.id || null;
+    }
+
+    // Get user info before deleting for logging
+    const supabase = await createClient();
+    const { data: profileToDelete } = await supabase
+      .from("profiles")
+      .select("name, email, tenant_id")
+      .eq("id", id)
+      .single();
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+
+    if (error) {
+      // Try direct DB delete as fallback
+      const { error: dbError } = await supabase.from("profiles").delete().eq("id", id);
+      if (dbError) {
+        return NextResponse.json({ error: "Erro ao excluir: " + error.message }, { status: 500 });
+      }
+    }
+
+    // Log action
+    await logAction("delete", "users", { userId: id, name: profileToDelete?.name, email: profileToDelete?.email }, currentUserId || undefined, profileToDelete?.tenant_id || undefined);
+
+    // Notify admins of tenant
+    if (profileToDelete?.tenant_id) {
+      const { data: tenantAdmins } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("tenant_id", profileToDelete.tenant_id)
+        .in("role", ["tenant_admin", "master_admin"]);
+
+      if (tenantAdmins) {
+        for (const admin of tenantAdmins) {
+          await createNotification(admin.id, "Funcionário excluído", `${profileToDelete.name} foi removido do sistema`, "warning", profileToDelete.tenant_id);
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[Admin API] DELETE Error:", error);
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
