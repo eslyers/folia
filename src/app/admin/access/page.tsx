@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Card, Button, Input, Modal } from "@/components/ui";
+import { Card, Button, Input, Modal, PremiumSelect } from "@/components/ui";
 import {
   Users, Check, X, AlertCircle, Save, Search, ChevronDown,
   Shield, UserCog, ToggleLeft, ToggleRight, ArrowRightLeft,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { isMasterAdmin } from "@/lib/auth";
 import { format } from "date-fns";
+import { clsx } from "clsx";
 
 interface Profile {
   id: string;
@@ -331,31 +332,31 @@ export default function AccessManagementPage() {
                 className="w-full pl-10 pr-4 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]"
               />
             </div>
-            <select
+            <PremiumSelect
               value={filterRole}
-              onChange={(e) => setFilterRole(e.target.value)}
-              className="px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] bg-white text-[var(--color-brown-dark)]"
-            >
-              <option value="all">Todos os Roles</option>
-              {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
-            <select
+              onChange={setFilterRole}
+              options={[
+                { value: "all", label: "Todos os Roles" },
+                ...ROLES.map(r => ({ value: r.value, label: r.label, icon: <Shield className="h-4 w-4" /> }))
+              ]}
+            />
+            <PremiumSelect
               value={filterTenant}
-              onChange={(e) => setFilterTenant(e.target.value)}
-              className="px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] bg-white text-[var(--color-brown-dark)]"
-            >
-              <option value="all">Todas as Empresas</option>
-              {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-            <select
+              onChange={setFilterTenant}
+              options={[
+                { value: "all", label: "Todas as Empresas" },
+                ...tenants.map(t => ({ value: t.id, label: t.name }))
+              ]}
+            />
+            <PremiumSelect
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] bg-white text-[var(--color-brown-dark)]"
-            >
-              <option value="all">Todos Status</option>
-              <option value="active">Ativos</option>
-              <option value="inactive">Inativos</option>
-            </select>
+              onChange={setFilterStatus}
+              options={[
+                { value: "all", label: "Todos Status" },
+                { value: "active", label: "Ativos" },
+                { value: "inactive", label: "Inativos" }
+              ]}
+            />
             <span className="py-2 text-sm text-[var(--color-brown-medium)] whitespace-nowrap">
               {filteredUsers.length} usuário{filteredUsers.length !== 1 ? "s" : ""}
             </span>
@@ -513,50 +514,37 @@ export default function AccessManagementPage() {
               <p className="text-sm font-medium text-[var(--color-brown-dark)]">{editingUser.email}</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
-                <Shield className="h-4 w-4 inline mr-1" />
-                Role
-              </label>
-              <select
-                value={editRole}
-                onChange={(e) => setEditRole(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] bg-white text-[var(--color-brown-dark)]"
-              >
-                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
-            </div>
+            <PremiumSelect
+              label="Role"
+              value={editRole}
+              onChange={setEditRole}
+              icon={<Shield className="h-4 w-4" />}
+              options={ROLES.map(r => ({ value: r.value, label: r.label }))}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
-                <ArrowRightLeft className="h-4 w-4 inline mr-1" />
-                Empresa
-              </label>
-              <select
-                value={editTenant}
-                onChange={(e) => setEditTenant(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] bg-white text-[var(--color-brown-dark)]"
-              >
-                <option value="">Nenhuma</option>
-                {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-            </div>
+            <PremiumSelect
+              label="Empresa"
+              value={editTenant}
+              onChange={setEditTenant}
+              icon={<ArrowRightLeft className="h-4 w-4" />}
+              options={[
+                { value: "", label: "Nenhuma" },
+                ...tenants.map(t => ({ value: t.id, label: t.name }))
+              ]}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
-                Manager
-              </label>
-              <select
-                value={editManager}
-                onChange={(e) => setEditManager(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] bg-white text-[var(--color-brown-dark)]"
-              >
-                <option value="">Nenhum</option>
-                {users
+            <PremiumSelect
+              label="Manager"
+              value={editManager || ""}
+              onChange={(val) => setEditManager(val)}
+              icon={<UserCog className="h-4 w-4" />}
+              options={[
+                { value: "", label: "Nenhum" },
+                ...users
                   .filter(u => u.id !== editingUser.id)
-                  .map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-            </div>
+                  .map(u => ({ value: u.id, label: u.name }))
+              ]}
+            />
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--color-cream)]">
               <span className="text-sm font-medium text-[var(--color-brown-dark)]">Usuário Ativo</span>
@@ -591,18 +579,13 @@ export default function AccessManagementPage() {
         size="sm"
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
-              Novo Role
-            </label>
-            <select
-              value={bulkRole}
-              onChange={(e) => setBulkRole(e.target.value)}
-              className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] bg-white text-[var(--color-brown-dark)]"
-            >
-              {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
-          </div>
+          <PremiumSelect
+            label="Novo Role"
+            value={bulkRole}
+            onChange={setBulkRole}
+            icon={<Shield className="h-4 w-4" />}
+            options={ROLES.map(r => ({ value: r.value, label: r.label }))}
+          />
           <div className="flex gap-3 pt-2">
             <Button variant="ghost" className="flex-1" onClick={() => setShowBulkRole(false)}>
               Cancelar
