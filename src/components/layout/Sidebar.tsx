@@ -191,10 +191,7 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}>
           <div className="flex items-center justify-between p-4 border-b border-stone-200">
-            <div className="flex items-center gap-2.5">
-              <img src="/folia-logo.png" alt="FOLIA" className="w-8 h-8 object-contain" />
-              <span className="text-lg font-bold text-stone-900">FOLIA</span>
-            </div>
+            <img src="/folia-logo.png" alt="FOLIA" className="w-24 h-24 object-contain" />
             <button onClick={() => setIsMobileOpen(false)} className="p-2 rounded-lg hover:bg-stone-200 text-stone-600">
               ✕
             </button>

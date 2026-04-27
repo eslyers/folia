@@ -215,7 +215,7 @@ export function Header({ profile, onMenuClick }: HeaderProps) {
           <img
             src="/folia-logo.png"
             alt="FOLIA"
-            className="h-12 w-auto object-contain"
+            className="h-24 w-auto object-contain"
             draggable={false}
           />
         </div>
