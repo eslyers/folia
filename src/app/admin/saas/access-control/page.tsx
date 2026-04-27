@@ -202,17 +202,23 @@ export default function AccessControlPage() {
 
       if (tenantError) throw tenantError;
 
-      // Upsert features
+      // Upsert features - only include real IDs (not fake "new-xxx" IDs)
       for (const feat of features) {
+        const payload: any = {
+          tenant_id: selectedTenantId,
+          feature: feat.feature,
+          enabled: feat.enabled,
+          max_value: feat.max_value,
+          expires_at: feat.expires_at || null,
+        };
+        // Only add id for existing records (not fake IDs starting with "new-")
+        if (!feat.id?.startsWith("new-")) {
+          payload.id = feat.id;
+        }
+        
         const { error: featError } = await (supabase as any)
           .from("tenant_features")
-          .upsert({
-            tenant_id: selectedTenantId,
-            feature: feat.feature,
-            enabled: feat.enabled,
-            max_value: feat.max_value,
-            expires_at: feat.expires_at || null,
-          }, {
+          .upsert(payload, {
             onConflict: "tenant_id,feature",
           });
 
@@ -233,6 +239,9 @@ export default function AccessControlPage() {
         });
 
       setSuccess("Configurações salvas com sucesso!");
+      
+      // Reload features to get real IDs from DB
+      await loadTenantData(selectedTenantId);
     } catch (e: any) {
       setError(e.message || "Erro ao salvar");
     } finally {
