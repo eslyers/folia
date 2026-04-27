@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Card, Button, Input } from "@/components/ui";
+import { Card, Button, Input, DatePicker } from "@/components/ui";
 import {
   Building2, Check, X, AlertCircle, Save, ChevronDown, Shield, Users,
   HardDrive, Calendar, Package, ToggleLeft, ToggleRight
@@ -379,11 +379,10 @@ export default function AccessControlPage() {
                   <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
                     Validade do Plano
                   </label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={planExpiration}
-                    onChange={(e) => setPlanExpiration(e.target.value)}
-                    className="w-full px-3 py-2 border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] text-[var(--color-brown-dark)]"
+                    onChange={setPlanExpiration}
+                    placeholder="Selecione a data"
                   />
                 </div>
                 <div className="flex items-end">
