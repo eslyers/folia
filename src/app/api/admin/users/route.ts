@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     // Check tenant user limit BEFORE creating
-    if (tenant_id) {
+    if (tenant_id && tenant_id.trim() !== "") {
       console.log("[DEBUG] Checking limit for tenant:", tenant_id);
       const supabase = await createClient();
       
@@ -33,9 +33,10 @@ export async function POST(request: Request) {
         .single();
       
       console.log("[DEBUG] Tenant data:", tenant, "error:", tenantError);
-      console.log("[DEBUG] Tenant settings:", tenant?.settings);
       
-      if (tenant?.settings?.max_users) {
+      if (tenantError) {
+        console.log("[DEBUG] Error fetching tenant:", tenantError);
+      } else if (tenant?.settings?.max_users) {
         const maxUsers = tenant.settings.max_users;
         console.log("[DEBUG] Max users allowed:", maxUsers);
         
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
         console.log("[DEBUG] No max_users limit set for this tenant");
       }
     } else {
-      console.log("[DEBUG] No tenant_id provided, skipping limit check");
+      console.log("[DEBUG] No tenant_id provided or invalid, skipping limit check");
     }
 
     // Use service role key for admin operations

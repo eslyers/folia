@@ -229,6 +229,12 @@ export default function EmployeesPage() {
       return;
     }
 
+    // For master admins, tenant is required
+    if (isMasterAdmin(profile?.role) && !editingEmployee.tenant_id) {
+      setError("Selecione uma empresa antes de criar o funcionário");
+      return;
+    }
+
     setSaving(true);
 
     try {
