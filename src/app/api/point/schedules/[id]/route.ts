@@ -93,13 +93,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (is_active !== undefined) updates.is_active = is_active;
 
     const supabase = await createClient();
-    const { data: schedule, error } = await supabase
+    
+    // Build query - for master_admin don't restrict by tenant_id
+    let query = supabase
       .from("work_schedules")
       .update(updates)
-      .eq("id", id)
-      .eq("tenant_id", profile.tenant_id)
-      .select()
-      .single();
+      .eq("id", id);
+    
+    // Only restrict by tenant_id if profile has one (not master_admin)
+    if (profile.tenant_id) {
+      query = query.eq("tenant_id", profile.tenant_id);
+    }
+    
+    const { data: schedule, error } = await query.select().single();
 
     if (error) {
       console.error("[Schedules PUT] Error:", error);
@@ -172,11 +178,19 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
 
     const supabase = await createClient();
-    const { error } = await supabase
+    
+    // Build query - for master_admin don't restrict by tenant_id
+    let query = supabase
       .from("work_schedules")
       .delete()
-      .eq("id", id)
-      .eq("tenant_id", profile.tenant_id);
+      .eq("id", id);
+    
+    // Only restrict by tenant_id if profile has one (not master_admin)
+    if (profile.tenant_id) {
+      query = query.eq("tenant_id", profile.tenant_id);
+    }
+    
+    const { error } = await query;
 
     if (error) {
       console.error("[Schedules DELETE] Error:", error);

@@ -13,17 +13,21 @@ export async function GET() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("tenant_id")
+      .select("tenant_id, role")
       .eq("id", session.user.id)
       .single();
 
-    const tenantId = profile?.tenant_id || "00000000-0000-0000-0000-000000000000";
-
-    const { data: schedules, error } = await supabase
+    // If tenant_admin, filter by tenant. master_admin sees all
+    let query = supabase
       .from("work_schedules")
       .select("*")
-      .eq("tenant_id", tenantId)
       .order("name");
+    
+    if (profile?.tenant_id) {
+      query = query.eq("tenant_id", profile.tenant_id);
+    }
+
+    const { data: schedules, error } = await query;
 
     if (error) {
       console.error("[Schedules GET] Error:", error);
@@ -103,8 +107,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Role check
-    if (!isTenantAdmin(profile.role)) {
+    // Role check - allow tenant_admin OR master_admin
+    if (!isTenantAdmin(profile.role) && profile.role !== 'master_admin') {
       console.log("[Schedules POST] Role check failed:", profile.role);
       return NextResponse.json({ error: "Forbidden - role: " + profile.role }, { status: 403 });
     }
@@ -113,6 +117,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       name,
+      tenant_id, // Allow tenant_id from request body for master_admin
       daily_hours = 8,
       monday = true,
       tuesday = true,
@@ -130,6 +135,15 @@ export async function POST(request: Request) {
 
     // Insert
     const supabase = await createClient();
+    
+    // For master_admin, use tenant_id from request body if provided
+    // For tenant_admin, use their own tenant_id
+    const finalTenantId = tenant_id || profile.tenant_id;
+    
+    if (!finalTenantId) {
+      return NextResponse.json({ error: "tenant_id é obrigatório" }, { status: 400 });
+    }
+    
     const { data: schedule, error: insertError } = await supabase
       .from("work_schedules")
       .insert({
@@ -147,7 +161,7 @@ export async function POST(request: Request) {
         end_work,
         lunch_duration_minutes,
         is_active,
-        tenant_id: profile.tenant_id,
+        tenant_id: finalTenantId,
       })
       .select()
       .single();
