@@ -213,7 +213,7 @@ export function Header({ profile, onMenuClick }: HeaderProps) {
         </div>
         <div className="lg:hidden flex items-center">
           <img
-            src="/folia-logo.jpg"
+            src="/folia-logo.png"
             alt="FOLIA"
             className="h-12 w-auto object-contain"
             draggable={false}

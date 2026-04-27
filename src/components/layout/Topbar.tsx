@@ -220,9 +220,7 @@ export function Topbar({
         )}
 
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-gradient-to-br from-[#5C724A] to-[#4A5F3C] rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-            <span className="text-white font-bold text-sm">F</span>
-          </div>
+          <img src="/folia-logo.png" alt="FOLIA" className="w-8 h-8 object-contain" />
           <span className="text-lg font-bold text-gray-900 tracking-tight">
             FOLIA
           </span>
