@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@/lib/supabase/admin";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { logAction, createNotification } from "@/lib/logging";
 
 // Disable edge runtime auth
 export const runtime = 'nodejs';
@@ -95,6 +96,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Log action
+    await logAction("create", "tenants", { tenantId: data.id, name, slug }, user.id);
+
+    // Notify master_admins
+    const { data: allAdmins } = await adminClient
+      .from("profiles")
+      .select("id")
+      .eq("role", "master_admin");
+    if (allAdmins) {
+      for (const admin of allAdmins) {
+        await createNotification(admin.id, "Empresa criada", `A empresa "${name}" foi adicionada ao sistema`, "success");
+      }
+    }
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error("[DEBUG] POST error:", error);
@@ -140,6 +155,20 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Log action
+    await logAction("update", "tenants", { tenantId: id, name, is_active }, user.id);
+
+    // Notify master_admins
+    const { data: allAdmins } = await adminClient
+      .from("profiles")
+      .select("id")
+      .eq("role", "master_admin");
+    if (allAdmins) {
+      for (const admin of allAdmins) {
+        await createNotification(admin.id, "Empresa atualizada", `A empresa "${name}" teve seus dados alterados`, "info");
+      }
+    }
+
     console.log("[DEBUG] PUT success:", data);
     return NextResponse.json({ data });
   } catch (error) {
@@ -174,6 +203,20 @@ export async function DELETE(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Log action
+    await logAction("delete", "tenants", { tenantId: id }, user.id);
+
+    // Notify master_admins
+    const { data: allAdmins } = await adminClient
+      .from("profiles")
+      .select("id")
+      .eq("role", "master_admin");
+    if (allAdmins) {
+      for (const admin of allAdmins) {
+        await createNotification(admin.id, "Empresa excluída", `Uma empresa foi removida do sistema (ID: ${id})`, "warning");
+      }
     }
 
     return NextResponse.json({ success: true });
