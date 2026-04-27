@@ -85,10 +85,11 @@ export default function EmployeesPage() {
       const { data: allEmployees, error: empError } = await query;
 
       // Buscar todos os perfis do tenant para mapear manager names
-      const { data: allProfiles } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .eq("tenant_id", adminProfile.tenant_id);
+      let profilesQuery = supabase.from("profiles").select("id, name");
+      if (adminProfile.tenant_id) {
+        profilesQuery = profilesQuery.eq("tenant_id", adminProfile.tenant_id);
+      }
+      const { data: allProfiles } = await profilesQuery;
 
       const profileMap = new Map(allProfiles?.map((p: any) => [p.id, p.name]) || []);
       
@@ -102,12 +103,16 @@ export default function EmployeesPage() {
       setEmployees(employeesWithManagers);
       setFilteredEmployees(employeesWithManagers);
 
-      const { data: tenantData } = await supabase
-        .from("tenants")
-        .select("name")
-        .eq("id", adminProfile.tenant_id)
-        .single() as { data: { name: string } | null };
-      setCurrentTenantName(tenantData?.name || "");
+      if (adminProfile.tenant_id) {
+        const { data: tenantData } = await supabase
+          .from("tenants")
+          .select("name")
+          .eq("id", adminProfile.tenant_id)
+          .single() as { data: { name: string } | null };
+        setCurrentTenantName(tenantData?.name || "");
+      } else {
+        setCurrentTenantName("");
+      }
 
       if (isMasterAdmin(adminProfile.role)) {
         const { data: allTenants } = await supabase
