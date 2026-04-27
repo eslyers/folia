@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logAction, createNotification } from "@/lib/logging";
 
 /**
  * GET /api/point/entries
@@ -251,6 +252,21 @@ export async function POST(request: NextRequest) {
     }
     result = updated;
   }
+
+  // Logging + notification
+  const actionLabel = action.replace("_", " ");
+  await logAction(
+    action,
+    "point_entries",
+    { action, user_id, date, entry_id: result?.id, status: result?.status },
+    user_id
+  );
+  await createNotification(
+    user_id,
+    "Registro de ponto",
+    `✅ ${actionLabel} registrado em ${date}`,
+    "success"
+  );
 
   return NextResponse.json({ entry: result });
 }
