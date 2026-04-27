@@ -178,15 +178,16 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
       {/* Desktop sidebar - goes to top */}
       {!isMobile && (
         <aside className={clsx(
-          "h-screen bg-[#fafaf9] border-r border-[#5C724A] flex flex-col flex-shrink-0 transition-all duration-300",
+          "h-screen bg-[#fafaf9] border-r border-[#d4d4d4] flex flex-col flex-shrink-0 transition-all duration-300",
           collapsed ? "w-[72px]" : "w-[280px]"
         )}>
           {/* Logo area - always visible */}
-          <div className={clsx("flex items-center justify-center border-b border-[#5C724A]", collapsed ? "p-3" : "p-6")}>
+          <div className={clsx("flex items-center justify-center border-b border-[#d4d4d4]", collapsed ? "p-3" : "p-6")}>
             <img src="/folia-logo.png" alt="FOLIA" className={clsx("object-contain transition-all", collapsed ? "w-12 h-12" : "w-36 h-36")} />
           </div>
-          {/* Collapse button */}
-          <div className="flex items-center justify-center p-2 border-b border-[#5C724A]">
+          <SidebarNav profile={profile} collapsed={collapsed} />
+          {/* Collapse button - at bottom */}
+          <div className="flex items-center justify-center p-3 border-t border-[#d4d4d4]">
             <button
               onClick={toggleCollapse}
               className="p-2 rounded-lg hover:bg-[#5C724A]/20 text-[#5C724A] transition-colors"
@@ -197,7 +198,6 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
               </svg>
             </button>
           </div>
-          <SidebarNav profile={profile} collapsed={collapsed} />
         </aside>
       )}
 
