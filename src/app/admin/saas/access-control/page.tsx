@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Card, Button, Input, DatePicker } from "@/components/ui";
+import { Card, Button, Input, DatePicker, NumberInput } from "@/components/ui";
 import {
   Building2, Check, X, AlertCircle, Save, ChevronDown, Shield, Users,
   HardDrive, Calendar, Package, ToggleLeft, ToggleRight
@@ -445,42 +445,30 @@ export default function AccessControlPage() {
                 Limites
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
-                    <Users className="h-4 w-4 inline mr-1" />
-                    Máximo de Usuários
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={maxUsers}
-                    onChange={(e) => setMaxUsers(parseInt(e.target.value) || 1)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
-                    <Calendar className="h-4 w-4 inline mr-1" />
-                    Máx. Pedidos/Mês
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={maxOrdersMonth}
-                    onChange={(e) => setMaxOrdersMonth(parseInt(e.target.value) || 1)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
-                    <HardDrive className="h-4 w-4 inline mr-1" />
-                    Storage (GB)
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={storageGb}
-                    onChange={(e) => setStorageGb(parseInt(e.target.value) || 1)}
-                  />
-                </div>
+                <NumberInput
+                  label="Máximo de Usuários"
+                  value={maxUsers}
+                  onChange={setMaxUsers}
+                  min={1}
+                  max={1000}
+                  icon={<Users className="h-4 w-4" />}
+                />
+                <NumberInput
+                  label="Máx. Pedidos/Mês"
+                  value={maxOrdersMonth}
+                  onChange={setMaxOrdersMonth}
+                  min={1}
+                  max={10000}
+                  icon={<Calendar className="h-4 w-4" />}
+                />
+                <NumberInput
+                  label="Storage (GB)"
+                  value={storageGb}
+                  onChange={setStorageGb}
+                  min={1}
+                  max={1000}
+                  icon={<HardDrive className="h-4 w-4" />}
+                />
               </div>
             </Card>
 

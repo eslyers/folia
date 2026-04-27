@@ -1,6 +1,9 @@
 export { Button } from "./Button";
 export { Input } from "./Input";
 export { Card } from "./Card";
+export { NumberInput } from "./NumberInput";
+export { DatePicker } from "./DatePicker";
+export { Select } from "./Select";
 export { Modal } from "./Modal";
 export { Select } from "./Select";
 export { Skeleton } from "./Skeleton";
