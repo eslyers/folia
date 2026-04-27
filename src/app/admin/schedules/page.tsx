@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Clock, Edit2, Trash2, Users, Save, X, Loader2, Check } from "lucide-react";
+import { Plus, Clock, Edit2, Trash2, Users, Save, X, Loader2, Check, Building2 } from "lucide-react";
 
-import { Card, Button, Input, Modal, DatePicker } from "@/components/ui";
+import { Card, Button, Input, Modal, DatePicker, PremiumSelect } from "@/components/ui";
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
-import { isTenantAdmin } from "@/lib/auth";
+import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
+import { clsx } from "clsx";
 
 interface WorkSchedule {
   id: string;
@@ -38,6 +39,7 @@ interface Employee {
 
 interface ScheduleForm {
   id?: string;
+  tenant_id?: string;
   name: string;
   daily_hours: number;
   monday: boolean;
@@ -69,6 +71,8 @@ export default function SchedulesPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [schedules, setSchedules] = useState<WorkSchedule[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [selectedTenant, setSelectedTenant] = useState<string>("");
   const [modalOpen, setModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<ScheduleForm | null>(null);
@@ -96,44 +100,75 @@ export default function SchedulesPage() {
         .single();
 
       const adminProfile = currentProfile as any;
-      if (!adminProfile || !isTenantAdmin(adminProfile.role)) {
+      if (!adminProfile || (!isTenantAdmin(adminProfile.role) && !isMasterAdmin(adminProfile.role))) {
         setTimeout(() => router.push("/dashboard"), 1500);
         return;
       }
 
       setProfile(adminProfile);
-      const tenantId = adminProfile.tenant_id;
 
-      // Fetch schedules for this tenant
-      const { data: schedulesData } = await supabase
-        .from("work_schedules")
-        .select("*")
-        .eq("tenant_id", tenantId)
-        .order("name");
+      // For master admin, load all tenants and set first as default
+      if (isMasterAdmin(adminProfile.role)) {
+        const { data: tenantsData } = await supabase
+          .from("tenants")
+          .select("id, name")
+          .order("name") as { data: Array<{ id: string; name: string }> | null };
+        const tenantsList = tenantsData || [];
+        setTenants(tenantsList);
+        // Set first tenant as default or use last selected
+        if (tenantsList.length > 0 && !selectedTenant) {
+          setSelectedTenant(tenantsList[0].id);
+        }
+      } else {
+        // For tenant admin, use their tenant
+        setSelectedTenant(adminProfile.tenant_id || "");
+      }
 
-      setSchedules(schedulesData || []);
-
-      // Fetch employees for this tenant with schedule info
-      const { data: employeesData } = await supabase
-        .from("profiles")
-        .select("id, name, email, schedule_id, schedule:work_schedules(name)")
-        .eq("tenant_id", tenantId)
-        .order("name");
-
-      setEmployees(employeesData || []);
       setLoading(false);
     } catch (err) {
       console.error("Error fetching data:", err);
       setLoading(false);
     }
-  }, [router, supabase]);
+  }, [router, supabase, selectedTenant]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  // Load schedules when selected tenant changes
+  useEffect(() => {
+    if (!selectedTenant) {
+      setSchedules([]);
+      setEmployees([]);
+      return;
+    }
+
+    const loadSchedulesData = async () => {
+      // Fetch schedules for selected tenant
+      const { data: schedulesData } = await supabase
+        .from("work_schedules")
+        .select("*")
+        .eq("tenant_id", selectedTenant)
+        .order("name");
+
+      setSchedules(schedulesData || []);
+
+      // Fetch employees for selected tenant with schedule info
+      const { data: employeesData } = await supabase
+        .from("profiles")
+        .select("id, name, email, schedule_id, schedule:work_schedules(name)")
+        .eq("tenant_id", selectedTenant)
+        .order("name");
+
+      setEmployees(employeesData || []);
+    };
+
+    loadSchedulesData();
+  }, [selectedTenant, supabase]);
+
   const openNewModal = () => {
     setEditingSchedule({
+      tenant_id: selectedTenant,
       name: "",
       daily_hours: 8,
       monday: true,
@@ -337,6 +372,19 @@ export default function SchedulesPage() {
             Nova Escala
           </Button>
         </div>
+
+        {/* Tenant Selector for Master Admin */}
+        {isMasterAdmin(profile?.role as string) && tenants.length > 0 && (
+          <div className="mb-6">
+            <PremiumSelect
+              label="Empresa"
+              value={selectedTenant}
+              onChange={setSelectedTenant}
+              icon={<Building2 className="h-4 w-4" />}
+              options={tenants.map(t => ({ value: t.id, label: t.name }))}
+            />
+          </div>
+        )}
 
         {/* Schedules Grid */}
         {schedules.length === 0 ? (
