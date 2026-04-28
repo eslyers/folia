@@ -119,8 +119,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       "update",
       "schedules",
       { schedule_id: id, schedule_name: schedule.name, updates },
-      userId,
-      notifyTenantId
+      userId ?? undefined,
+      notifyTenantId ?? undefined
     );
     
     // Notify tenant admins
@@ -234,8 +234,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       "delete",
       "schedules",
       { schedule_id: id },
-      userId,
-      profile.tenant_id
+      userId ?? undefined,
+      profile.tenant_id ?? undefined
     );
 
   } catch (error) {
