@@ -36,3 +36,6 @@ export function createClient() {
   
   return adminInstance;
 }
+
+// Alias for clarity
+export { createClient as createAdminClient };

@@ -1,8 +1,10 @@
 // Helper functions for logging and notifications
 import { createClient } from "@/lib/supabase/client";
+import { createClient as createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Log an action to system_logs table
+ * Uses admin client to bypass RLS since logs should always work
  */
 export async function logAction(
   action: string,
@@ -13,7 +15,8 @@ export async function logAction(
   ipAddress?: string
 ) {
   try {
-    const supabase = createClient();
+    // Use admin client to bypass RLS - logs should always work regardless of auth state
+    const supabase = createAdminClient();
     
     const detailsStr = typeof details === 'string' ? details : JSON.stringify(details);
     
