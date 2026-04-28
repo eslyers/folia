@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  Bell, 
-  Settings, 
-  LogOut, 
+import {
+  Bell,
+  Settings,
+  LogOut,
   Menu,
   ChevronDown,
   Sun,
@@ -45,11 +45,11 @@ interface TopbarProps {
   onTenantChange?: (tenant: Tenant) => void;
 }
 
-export function Topbar({ 
-  profile, 
-  tenants = [], 
+export function Topbar({
+  profile,
+  tenants = [],
   currentTenant,
-  pendingCount = 0, 
+  pendingCount = 0,
   onMenuToggle,
   onTenantChange,
 }: TopbarProps) {
@@ -78,24 +78,14 @@ export function Topbar({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Fetch notifications on mount and when profile changes
+  
+  // Fetch notifications on mount (remove polling - only fetch when needed)
   useEffect(() => {
-    console.log("[Topbar] useEffect triggered, profile.id:", profile?.id);
     if (profile?.id) {
-      console.log("[Topbar] Calling fetchNotifications");
       fetchNotifications();
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(fetchNotifications, 30000);
-      return () => clearInterval(interval);
     }
   }, [profile?.id]);
-
-  useEffect(() => {
-    if (notificationsOpen) {
-      fetchNotifications();
-    }
-  }, [notificationsOpen]);
-
+  
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -116,38 +106,38 @@ export function Topbar({
 
   const fetchNotifications = async () => {
     if (!profile?.id) {
-      console.log("[Topbar] No profile.id, skipping fetch");
+      
       return;
     }
+
     
-    console.log("[Topbar] Fetching notifications for user:", profile.id);
-    
+
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
       .eq("user_id", profile.id)
       .order("created_at", { ascending: false })
       .limit(10);
-    
+
     if (error) {
       console.error("[Topbar] Error fetching notifications:", error);
     } else {
-      console.log("[Topbar] Notifications fetched:", data?.length, "items");
+      
     }
-    
+
     setNotifications(data || []);
-    
+
     // Fetch unread count
     const { count, error: countError } = await supabase
       .from("notifications")
       .select("*", { count: 'exact', head: true })
       .eq("user_id", profile.id)
       .eq("is_read", false);
-    
+
     if (countError) {
       console.error("[Topbar] Error fetching unread count:", countError);
     }
-    
+
     setUnreadCount(count || 0);
   };
 
@@ -219,7 +209,7 @@ export function Topbar({
           </button>
         )}
 
-        
+
       </div>
 
       {/* Spacer */}
@@ -229,7 +219,7 @@ export function Topbar({
       <div className="flex items-center gap-1">
         {/* Notifications */}
         <div className="relative notifications-dropdown">
-          <button 
+          <button
             onClick={() => setNotificationsOpen(!notificationsOpen)}
             className="relative w-10 h-10 flex items-center justify-center rounded-xl hover:bg-stone-100 transition-colors"
             title="Notificações"
@@ -247,7 +237,7 @@ export function Topbar({
             <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                 <p className="text-sm font-semibold text-gray-900">Notificações</p>
-                <Link 
+                <Link
                   href="/admin/notifications"
                   onClick={() => setNotificationsOpen(false)}
                   className="text-xs text-[#5C724A] hover:underline"
@@ -262,7 +252,7 @@ export function Topbar({
                   </div>
                 ) : (
                   notifications.map((notif) => (
-                    <div 
+                    <div
                       key={notif.id}
                       className={clsx(
                         "px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors",
@@ -282,7 +272,7 @@ export function Topbar({
 
         {/* Theme selector dropdown */}
         <div className="relative theme-dropdown">
-          <button 
+          <button
             onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
             className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-stone-100 transition-colors"
             title="Trocar tema"
@@ -327,7 +317,7 @@ export function Topbar({
 
         {/* Company Selector */}
         <div className="relative group tenant-dropdown">
-          <button 
+          <button
             onClick={() => setTenantDropdownOpen(!tenantDropdownOpen)}
             className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors"
           >
@@ -383,14 +373,14 @@ export function Topbar({
             </div>
 
             <div className="py-1">
-              <Link 
-                href="/settings" 
+              <Link
+                href="/settings"
                 className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Settings className="h-4 w-4" />
                 Configurações
               </Link>
-              <button 
+              <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
               >
