@@ -1,5 +1,5 @@
 -- FOLIA - Sistema de Controle de Férias e Folgas
--- Supabase Schema Migration v1.3 (audit_log + reports)
+-- Supabase Schema Migration v1.4 (FIX: added tenants table + tenant_id in profiles)
 
 -- =====================================================
 -- EXTENSIONS
@@ -7,17 +7,47 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =====================================================
--- TABLES
+-- NEW TABLE: tenants (MULTI-TENANT SUPPORT)
 -- =====================================================
+CREATE TABLE IF NOT EXISTS tenants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  domain TEXT,
+  settings JSONB DEFAULT '{}',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- RLS for tenants
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+
+-- Allow authenticated users to view tenants
+CREATE POLICY "authenticated_users_can_view_tenants" ON tenants
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+-- Allow authenticated users to create tenants
+CREATE POLICY "authenticated_users_can_create_tenants" ON tenants
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow service role full access
+CREATE POLICY "service_role_all_tenants" ON tenants
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- Seed default tenant (will be used for single-tenant mode)
+INSERT INTO tenants (id, name, domain, is_active)
+VALUES ('00000000-0000-0000-0000-000000000001', 'Magna Inc.', 'magna.com', true)
+ON CONFLICT DO NOTHING;
 
 -- =====================================================
 -- TABLE 1: profiles (extensão do auth.users)
 -- =====================================================
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001' REFERENCES tenants(id) ON DELETE CASCADE,
   email TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'employee' CHECK (role IN ('admin', 'employee')),
+  role TEXT NOT NULL DEFAULT 'employee' CHECK (role IN ('admin', 'employee', 'tenant_admin', 'master_admin')),
   avatar_url TEXT,
   vacation_balance INTEGER NOT NULL DEFAULT 30,
   hours_balance INTEGER NOT NULL DEFAULT 0,
@@ -141,12 +171,16 @@ CREATE TRIGGER policies_updated_at
   BEFORE UPDATE ON policies
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+CREATE TRIGGER tenants_updated_at
+  BEFORE UPDATE ON tenants
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
 -- =====================================================
 -- ROW LEVEL SECURITY (RLS)
 -- =====================================================
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE leave_requests ENABLE ROW SECURITY;
+ALTER TABLE leave_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE policies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
@@ -156,8 +190,16 @@ RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM profiles 
-    WHERE id = user_id AND role = 'admin'
+    WHERE id = user_id AND role IN ('admin', 'master_admin', 'tenant_admin')
   );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Helper function to get user tenant
+CREATE OR REPLACE FUNCTION public.get_user_tenant(user_id UUID)
+RETURNS UUID AS $$
+BEGIN
+  RETURN (SELECT tenant_id FROM profiles WHERE id = user_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -166,35 +208,47 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE POLICY "users_view_own_profile" ON profiles
   FOR SELECT USING (auth.uid() = id);
 
--- Admin view all (uses SECURITY DEFINER function to avoid recursion)
+-- Admin view all within tenant
 CREATE POLICY "admins_view_all_profiles" ON profiles
-  FOR SELECT USING (public.is_admin(auth.uid()) OR auth.uid() = id);
+  FOR SELECT USING (
+    public.is_admin(auth.uid()) 
+    AND tenant_id = public.get_user_tenant(auth.uid())
+  );
 
 -- Users can update their own profile (except role)
 CREATE POLICY "users_update_own_profile" ON profiles
   FOR UPDATE USING (auth.uid() = id)
-  WITH CHECK (role = OLD.role);
+  WITH CHECK (role = OLD.role AND tenant_id = OLD.tenant_id);
 
--- Only admins can insert profiles
+-- Admins can insert profiles within their tenant
 CREATE POLICY "admins_insert_profiles" ON profiles
-  FOR INSERT WITH CHECK (public.is_admin(auth.uid()));
+  FOR INSERT WITH CHECK (
+    public.is_admin(auth.uid())
+    AND tenant_id = public.get_user_tenant(auth.uid())
+  );
 
 -- === LEAVE REQUESTS ===
 -- Users can view their own requests
 CREATE POLICY "users_view_own_requests" ON leave_requests
   FOR SELECT USING (auth.uid() = user_id);
 
--- Admins can view all requests
+-- Admins can view all requests within tenant
 CREATE POLICY "admins_view_all_requests" ON leave_requests
-  FOR SELECT USING (public.is_admin(auth.uid()));
+  FOR SELECT USING (
+    public.is_admin(auth.uid())
+    AND user_id IN (SELECT id FROM profiles WHERE tenant_id = public.get_user_tenant(auth.uid()))
+  );
 
 -- Users can create their own requests
 CREATE POLICY "users_create_own_requests" ON leave_requests
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Admins can update all requests
+-- Admins can update all requests within tenant
 CREATE POLICY "admins_update_all_requests" ON leave_requests
-  FOR UPDATE USING (public.is_admin(auth.uid()));
+  FOR UPDATE USING (
+    public.is_admin(auth.uid())
+    AND user_id IN (SELECT id FROM profiles WHERE tenant_id = public.get_user_tenant(auth.uid()))
+  );
 
 -- Users can cancel their own pending requests
 CREATE POLICY "users_cancel_own_pending_requests" ON leave_requests
@@ -220,9 +274,10 @@ CREATE POLICY "everyone_view_active_policies" ON policies
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, name, role, vacation_balance, hours_balance)
+  INSERT INTO public.profiles (id, tenant_id, email, name, role, vacation_balance, hours_balance)
   VALUES (
     NEW.id,
+    '00000000-0000-0000-0000-000000000001', -- default tenant
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
     'employee',
@@ -254,6 +309,7 @@ CREATE INDEX IF NOT EXISTS idx_leave_requests_dates ON leave_requests(start_date
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON profiles(role);
+CREATE INDEX IF NOT EXISTS idx_profiles_tenant_id ON profiles(tenant_id);
 
 -- =====================================================
 -- TABLE 5: hour_entries
@@ -288,13 +344,19 @@ CREATE POLICY "users_view_own_hour_entries" ON hour_entries
 CREATE POLICY "users_insert_own_hour_entries" ON hour_entries
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Admins can view all hour entries
+-- Admins can view all hour entries within tenant
 CREATE POLICY "admins_view_all_hour_entries" ON hour_entries
-  FOR SELECT USING (public.is_admin(auth.uid()));
+  FOR SELECT USING (
+    public.is_admin(auth.uid())
+    AND user_id IN (SELECT id FROM profiles WHERE tenant_id = public.get_user_tenant(auth.uid()))
+  );
 
--- Admins can insert hour entries for any user
+-- Admins can insert hour entries for any user within tenant
 CREATE POLICY "admins_insert_hour_entries" ON hour_entries
-  FOR INSERT WITH CHECK (public.is_admin(auth.uid()));
+  FOR INSERT WITH CHECK (
+    public.is_admin(auth.uid())
+    AND user_id IN (SELECT id FROM profiles WHERE tenant_id = public.get_user_tenant(auth.uid()))
+  );
 
 -- =====================================================
 -- TABLE 6: audit_log
@@ -302,6 +364,7 @@ CREATE POLICY "admins_insert_hour_entries" ON hour_entries
 CREATE TABLE IF NOT EXISTS audit_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
   action TEXT NOT NULL CHECK (action IN ('created', 'updated', 'approved', 'rejected', 'cancelled', 'balance_change')),
   table_name TEXT NOT NULL,
   record_id UUID,
@@ -318,9 +381,12 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
 
 ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 
--- Admins can view all audit logs
+-- Admins can view all audit logs within tenant
 CREATE POLICY "admins_view_audit_logs" ON audit_log
-  FOR SELECT USING (public.is_admin(auth.uid()));
+  FOR SELECT USING (
+    public.is_admin(auth.uid())
+    AND (tenant_id = public.get_user_tenant(auth.uid()) OR tenant_id IS NULL)
+  );
 
 -- Service role can insert
 CREATE POLICY "service_insert_audit_logs" ON audit_log
@@ -338,9 +404,14 @@ CREATE OR REPLACE FUNCTION log_audit_action(
   p_new_value JSONB DEFAULT NULL
 )
 RETURNS void AS $$
+DECLARE
+  v_tenant_id UUID;
 BEGIN
-  INSERT INTO audit_log (user_id, action, table_name, record_id, old_value, new_value)
-  VALUES (p_user_id, p_action, p_table_name, p_record_id, p_old_value, p_new_value);
+  -- Get tenant from user
+  v_tenant_id := public.get_user_tenant(p_user_id);
+  
+  INSERT INTO audit_log (user_id, tenant_id, action, table_name, record_id, old_value, new_value)
+  VALUES (p_user_id, v_tenant_id, p_action, p_table_name, p_record_id, p_old_value, p_new_value);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -402,11 +473,13 @@ BEGIN
   WHERE id = p_user_id;
 END;
 $$ LANGUAGE plpgsql;
+
 -- =====================================================
--- TABLE: work_schedules
+-- TABLE: work_schedules (FIXED: tenant_id now references tenants)
 -- =====================================================
 CREATE TABLE IF NOT EXISTS work_schedules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001' REFERENCES tenants(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   daily_hours INTEGER NOT NULL DEFAULT 8,
   monday BOOLEAN NOT NULL DEFAULT true,
@@ -421,19 +494,16 @@ CREATE TABLE IF NOT EXISTS work_schedules (
   end_work TEXT NOT NULL DEFAULT '18:00',
   lunch_duration_minutes INTEGER NOT NULL DEFAULT 60,
   is_active BOOLEAN NOT NULL DEFAULT true,
-  tenant_id UUID REFERENCES profiles(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- =====================================================
 -- Enable RLS
--- =====================================================
 ALTER TABLE work_schedules ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for work_schedules
-CREATE POLICY "Users can view their own schedules" ON work_schedules
-  FOR SELECT USING (auth.uid() = tenant_id OR tenant_id IS NULL);
+CREATE POLICY "Users can view schedules from their tenant" ON work_schedules
+  FOR SELECT USING (tenant_id = public.get_user_tenant(auth.uid()));
 
 CREATE POLICY "Tenant admins can manage schedules" ON work_schedules
   FOR ALL USING (
@@ -441,6 +511,7 @@ CREATE POLICY "Tenant admins can manage schedules" ON work_schedules
       SELECT 1 FROM profiles 
       WHERE profiles.id = auth.uid() 
       AND profiles.role IN ('tenant_admin', 'master_admin')
+      AND profiles.tenant_id = work_schedules.tenant_id
     )
   );
 
@@ -472,11 +543,11 @@ CREATE POLICY "Tenant admins can manage assignments" ON schedule_assignments
   );
 
 -- =====================================================
--- TABLE: time_entries (for daily attendance tracking)
+-- TABLE: time_entries (FIXED: tenant_id now references tenants)
 -- =====================================================
 CREATE TABLE IF NOT EXISTS time_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001' REFERENCES tenants(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   date DATE NOT NULL,
   clock_in TIMESTAMP WITH TIME ZONE,
@@ -506,8 +577,11 @@ CREATE TRIGGER time_entries_updated_at
 ALTER TABLE time_entries ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for time_entries
-CREATE POLICY "Tenant users can view own time entries" ON time_entries
-  FOR SELECT USING (auth.uid() = user_id AND tenant_id IN (SELECT tenant_id FROM profiles WHERE id = auth.uid()));
+CREATE POLICY "Users can view own time entries within tenant" ON time_entries
+  FOR SELECT USING (
+    auth.uid() = user_id 
+    AND tenant_id = public.get_user_tenant(auth.uid())
+  );
 
 CREATE POLICY "Tenant admins can view all time entries" ON time_entries
   FOR SELECT USING (
@@ -520,7 +594,10 @@ CREATE POLICY "Tenant admins can view all time entries" ON time_entries
   );
 
 CREATE POLICY "Users can insert own time entries" ON time_entries
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT WITH CHECK (
+    auth.uid() = user_id
+    AND tenant_id = public.get_user_tenant(auth.uid())
+  );
 
 CREATE POLICY "Tenant admins can insert time entries" ON time_entries
   FOR INSERT WITH CHECK (
@@ -548,7 +625,7 @@ CREATE POLICY "Tenant admins can update time entries" ON time_entries
 CREATE TABLE IF NOT EXISTS system_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  tenant_id UUID,
+  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
   action TEXT NOT NULL,
   module TEXT NOT NULL,
   details TEXT,
@@ -561,8 +638,11 @@ ALTER TABLE system_logs ENABLE ROW LEVEL SECURITY;
 -- Allow authenticated users to insert logs
 CREATE POLICY "allow_authenticated_insert_system_logs" ON system_logs FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
--- Allow authenticated users to view logs
-CREATE POLICY "allow_authenticated_select_system_logs" ON system_logs FOR SELECT USING (auth.role() = 'authenticated');
+-- Allow authenticated users to view logs within tenant
+CREATE POLICY "allow_authenticated_select_system_logs" ON system_logs FOR SELECT USING (
+  auth.role() = 'authenticated' 
+  AND (tenant_id = public.get_user_tenant(auth.uid()) OR tenant_id IS NULL)
+);
 
 -- Allow service role full access
 CREATE POLICY "service_role_all_system_logs" ON system_logs FOR ALL USING (auth.role() = 'service_role');
