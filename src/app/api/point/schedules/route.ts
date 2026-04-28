@@ -109,7 +109,7 @@ export async function POST(request: Request) {
     }
 
     // Role check - allow tenant_admin OR master_admin
-    if (!isTenantAdmin(profile.role) && profile.role !== 'master_admin') {
+    if (profile.role !== 'tenant_admin' && profile.role !== 'master_admin') {
       console.log("[Schedules POST] Role check failed:", profile.role);
       return NextResponse.json({ error: "Forbidden - role: " + profile.role }, { status: 403 });
     }
