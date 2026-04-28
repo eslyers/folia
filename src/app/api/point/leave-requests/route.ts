@@ -179,7 +179,7 @@ export async function PUT(request: NextRequest) {
   }
 
   // Determine new status and review fields based on action
-  let newStatus: string;
+  let newStatus: string | undefined;
   let updatePayload: Record<string, unknown> = {};
 
   switch (action) {
@@ -218,7 +218,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  log("PUT", request.url, "UPDATED", { id, action, newStatus, previousStatus: existing.status });
+  log("PUT", request.url, "UPDATED", { id, action, newStatus: newStatus || 'unknown', previousStatus: existing.status });
   return NextResponse.json({ leave_request: data });
 }
 
