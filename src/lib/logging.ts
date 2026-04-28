@@ -26,7 +26,7 @@ export async function logAction(
         module,
         details: detailsStr,
         ip_address: ipAddress || null,
-      });
+      } as any);
     
     if (error) {
       console.error("[logAction] Error:", error);
@@ -58,7 +58,7 @@ export async function createNotification(
         message,
         type,
         is_read: false,
-      });
+      } as any);
     
     if (error) {
       console.error("[createNotification] Error:", error);
