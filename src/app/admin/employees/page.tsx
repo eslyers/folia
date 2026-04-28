@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Users, Edit2, Trash2, Calendar, Save, Loader2, Clock, Download, Search, ChevronUp, ChevronDown, User, Shield, Briefcase } from "lucide-react";
 
@@ -102,7 +102,6 @@ export default function EmployeesPage() {
         manager: emp.manager_id ? { name: profileMap.get(emp.manager_id) || "-" } : null
       }));
 
-      console.log("[DEBUG] Employees query:", employeesWithManagers?.length, "error:", empError);
       setEmployees(employeesWithManagers);
       setFilteredEmployees(employeesWithManagers);
 

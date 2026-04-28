@@ -159,7 +159,6 @@ export default function SaasAdminPage() {
       const response = await fetch("/api/tenants");
       const result = await response.json();
 
-      console.log("[DEBUG] loadTenants response:", response.status, result);
 
       if (!response.ok) {
         setError("Erro ao carregar empresas: " + (result.error || response.statusText));
@@ -183,7 +182,6 @@ export default function SaasAdminPage() {
   };
 
   const handleCreateTenant = async () => {
-    console.log("[DEBUG] handleCreateTenant chamado", { name: newTenant.name, slug: newTenant.slug });
     if (!newTenant.name || !newTenant.slug) {
       setError("Nome e slug são obrigatórios");
       return;
@@ -992,7 +990,6 @@ export default function SaasAdminPage() {
       >
         <form 
           id="create-tenant-form"
-          onSubmit={(e) => { e.preventDefault(); console.log('[DEBUG] form onSubmit firing'); handleCreateTenant(); }}
           className="space-y-4"
         >
           <div>
@@ -1053,7 +1050,6 @@ export default function SaasAdminPage() {
             <button 
               type="button" 
               className="flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
-              onClick={() => { console.log('[DEBUG] Cancel clicked'); setShowCreateTenant(false); }}
             >
               Cancelar
             </button>

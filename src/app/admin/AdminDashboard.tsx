@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Component, ReactNode } from "react";
+import { useState, Component, ReactNode, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X, Users, Calendar as CalendarIcon, Clock, AlertCircle, CheckSquare, Square } from "lucide-react";
 import { Card, Button, Modal } from "@/components/ui";
@@ -65,8 +65,8 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
     direction: "asc",
   });
 
-  const pendingRequests = requests.filter((r) => r.status === "pending");
-  const approvedRequests = requests.filter((r) => r.status === "approved");
+  const pendingRequests = useMemo(() => requests.filter((r) => r.status === "pending"), [requests]);
+  const approvedRequests = useMemo(() => requests.filter((r) => r.status === "approved"), [requests]);
 
 
   const handleSort = (key: string) => {
@@ -77,12 +77,14 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
   };
 
 
-  const sortedProfiles = [...profiles].sort((a, b) => {
-    const aVal = a[sortConfig.key as keyof typeof a] ?? "";
-    const bVal = b[sortConfig.key as keyof typeof b] ?? "";
-    const comparison = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
-    return sortConfig.direction === "asc" ? comparison : -comparison;
-  });
+  const sortedProfiles = useMemo(() => {
+    return [...profiles].sort((a, b) => {
+      const aVal = a[sortConfig.key as keyof typeof a] ?? "";
+      const bVal = b[sortConfig.key as keyof typeof b] ?? "";
+      const comparison = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
+      return sortConfig.direction === "asc" ? comparison : -comparison;
+    });
+  }, [profiles, sortConfig]);
 
   const handleApprove = async (requestId: string, userId: string) => {
     setProcessing(requestId);
