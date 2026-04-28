@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logAction, createNotification } from "@/lib/logging";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -87,6 +88,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         assigned.push(uid);
       }
     }
+
+    // Log the bulk assignment action
+    await logAction(
+      "assign",
+      "schedules",
+      { schedule_id: id, assigned_users: assigned, effective_date: effectiveFrom },
+      userId ?? undefined,
+      profile.tenant_id ?? undefined
+    );
 
     if (errors.length > 0) {
       return NextResponse.json({ 

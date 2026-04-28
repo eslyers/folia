@@ -227,8 +227,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
-
     // Log the deletion
     await logAction(
       "delete",
@@ -237,6 +235,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       userId ?? undefined,
       profile.tenant_id ?? undefined
     );
+
+    return NextResponse.json({ success: true });
 
   } catch (error) {
     console.error("[Schedules DELETE] Error:", error);
