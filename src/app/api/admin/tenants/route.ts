@@ -84,7 +84,6 @@ export async function POST(request: NextRequest) {
     await logAction("create", "tenants", { tenantId: data.id, name, slug }, user.id);
 
     // Notify master_admins
-    const adminClient = createServiceClient();
     const { data: allAdmins } = await adminClient
       .from("profiles")
       .select("id")
@@ -137,7 +136,6 @@ export async function PUT(request: NextRequest) {
     await logAction("update", "tenants", { tenantId: id, name, is_active }, user.id);
 
     // Notify master_admins
-    const adminClient = createServiceClient();
     const { data: allAdmins } = await adminClient
       .from("profiles")
       .select("id")
@@ -186,7 +184,6 @@ export async function DELETE(request: NextRequest) {
     await logAction("delete", "tenants", { tenantId: id }, user.id);
 
     // Notify master_admins
-    const adminClient = createServiceClient();
     const { data: allAdmins } = await adminClient
       .from("profiles")
       .select("id")
