@@ -541,3 +541,34 @@ CREATE POLICY "Tenant admins can update time entries" ON time_entries
       AND profiles.tenant_id = time_entries.tenant_id
     )
   );
+
+-- =====================================================
+-- TABLE 7: system_logs (application activity logging)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS system_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  tenant_id UUID,
+  action TEXT NOT NULL,
+  module TEXT NOT NULL,
+  details TEXT,
+  ip_address TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE system_logs ENABLE ROW LEVEL SECURITY;
+
+-- Allow authenticated users to insert logs
+CREATE POLICY "allow_authenticated_insert_system_logs" ON system_logs FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- Allow authenticated users to view logs
+CREATE POLICY "allow_authenticated_select_system_logs" ON system_logs FOR SELECT USING (auth.role() = 'authenticated');
+
+-- Allow service role full access
+CREATE POLICY "service_role_all_system_logs" ON system_logs FOR ALL USING (auth.role() = 'service_role');
+
+CREATE INDEX IF NOT EXISTS idx_system_logs_user_id ON system_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_system_logs_tenant_id ON system_logs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_system_logs_action ON system_logs(action);
+CREATE INDEX IF NOT EXISTS idx_system_logs_module ON system_logs(module);
+CREATE INDEX IF NOT EXISTS idx_system_logs_created_at ON system_logs(created_at DESC);
