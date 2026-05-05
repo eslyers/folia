@@ -103,8 +103,6 @@ export default function EmployeesPage() {
       if (filterTenantId) {
         profilesQuery = profilesQuery.eq("tenant_id", filterTenantId);
       }
-        profilesQuery = profilesQuery.eq("tenant_id", adminProfile.tenant_id);
-      }
       const { data: allProfiles } = await profilesQuery;
 
       const profileMap = new Map(allProfiles?.map((p: any) => [p.id, p.name]) || []);
