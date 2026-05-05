@@ -26,6 +26,12 @@ import { useTenant } from "@/contexts/TenantContext";
 import { getRoleLabel } from "@/lib/auth";
 import type { Profile } from "@/lib/types";
 
+interface Tenant {
+  id: string;
+  name: string;
+  domain?: string;
+}
+
 interface TopbarProps {
   profile: Profile;
   onMenuToggle?: () => void;
@@ -96,17 +102,11 @@ export function Topbar({
 
   const handleTenantSelect = (tenant: Tenant) => {
     setTenantDropdownOpen(false);
-    // Update context - this will trigger all listeners
     setCurrentTenant(tenant);
   };
 
   const userInitial = profile.name?.charAt(0).toUpperCase() ?? "U";
   const roleLabel = getRoleLabel(profile.role);
-
-  const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -146,7 +146,7 @@ export function Topbar({
 
         <div className="w-px h-8 bg-gray-200 mx-2" />
 
-        {/* Company Selector - reads from TenantContext */}
+        {/* Company Selector */}
         <div className="relative group tenant-dropdown">
           <button
             onClick={() => setTenantDropdownOpen(!tenantDropdownOpen)}
