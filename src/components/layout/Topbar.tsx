@@ -60,6 +60,7 @@ export function Topbar({
   const [theme, setTheme] = useState<"light" | "dark" | "golden" | "forest" | "ocean">("light");
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isMobile, setIsMobile] = useState(false);
@@ -95,6 +96,9 @@ export function Topbar({
       }
       if (!target.closest('.tenant-dropdown')) {
         setTenantDropdownOpen(false);
+      }
+      if (!target.closest('.user-dropdown')) {
+        setUserDropdownOpen(false);
       }
       if (!target.closest('.theme-dropdown')) {
         setThemeDropdownOpen(false);
@@ -358,37 +362,43 @@ export function Topbar({
         </div>
 
         {/* User menu */}
-        <div className="relative group">
-          <button className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors">
+        <div className="relative user-dropdown">
+          <button
+            onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+            className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors"
+          >
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#5C724A] to-[#4A5F3C] text-white flex items-center justify-center text-sm font-semibold shadow-sm">
               {userInitial}
             </div>
           </button>
 
           {/* Dropdown */}
-          <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <p className="text-sm font-semibold text-gray-900">{profile.name}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{profile.email}</p>
-            </div>
+          {userDropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+              <div className="px-4 py-3 border-b border-gray-100">
+                <p className="text-sm font-semibold text-gray-900">{profile.name}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{profile.email}</p>
+              </div>
 
-            <div className="py-1">
-              <Link
-                href="/settings"
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                <Settings className="h-4 w-4" />
-                Configurações
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                Sair
-              </button>
+              <div className="py-1">
+                <Link
+                  href="/settings"
+                  onClick={() => setUserDropdownOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <Settings className="h-4 w-4" />
+                  Configurações
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sair
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </header>
