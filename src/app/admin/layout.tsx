@@ -108,7 +108,6 @@ export default function AdminLayout({
     );
   }
 
-
   return (
     <TenantProvider initialTenants={tenants} initialCurrentTenant={currentTenant}>
     <ToastProvider>
