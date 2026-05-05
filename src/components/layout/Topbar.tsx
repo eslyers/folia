@@ -177,8 +177,12 @@ export function Topbar({
 
   const handleTenantSelect = (tenant: Tenant) => {
     setTenantDropdownOpen(false);
+    console.log("[DEBUG] handleTenantSelect called with tenant:", JSON.stringify(tenant));
     if (onTenantChange) {
+      console.log("[DEBUG] calling onTenantChange");
       onTenantChange(tenant);
+    } else {
+      console.log("[DEBUG] onTenantChange is not defined!");
     }
   };
 
