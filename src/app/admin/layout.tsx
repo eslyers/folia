@@ -101,6 +101,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+    </div>
     </ToastProvider>
   );
 }
