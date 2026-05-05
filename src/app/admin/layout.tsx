@@ -3,20 +3,23 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { TenantProvider } from "@/contexts/TenantContext";
+import { TenantProvider, useTenant } from "@/contexts/TenantContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { ToastProvider } from "@/components/ui/Toast";
 import type { Profile } from "@/lib/types";
 import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+interface Tenant {
+  id: string;
+  name: string;
+  domain?: string;
+}
+
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { currentTenant, setCurrentTenant, tenants } = useTenant();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -49,6 +52,10 @@ export default function AdminLayout({
     checkUser();
   }, [pathname]);
 
+  const handleTenantChange = (tenant: Tenant) => {
+    setCurrentTenant(tenant);
+  };
+
   if (loading || !profile) {
     return (
       <div style={{ 
@@ -75,7 +82,6 @@ export default function AdminLayout({
   }
 
   return (
-    <TenantProvider>
     <ToastProvider>
     <div className="flex h-screen bg-gray-50">
       <Sidebar 
@@ -85,15 +91,24 @@ export default function AdminLayout({
       />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Topbar 
-          profile={profile}
+          profile={profile} 
+          tenants={tenants}
+          currentTenant={currentTenant ?? undefined}
+          onTenantChange={handleTenantChange}
           onMenuToggle={() => setSidebarOpen(prev => !prev)} 
         />
         <main className="flex-1 overflow-auto">
           {children}
         </main>
       </div>
-    </div>
     </ToastProvider>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <TenantProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
     </TenantProvider>
   );
 }
