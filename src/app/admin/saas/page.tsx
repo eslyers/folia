@@ -171,9 +171,35 @@ export default function SaasAdminPage() {
       // Load stats for each tenant
       const stats: Record<string, TenantStats> = {};
       for (const tenant of tenantList) {
-        const { data: statData } = await (supabase as any)
-          .rpc("get_tenant_stats", { p_tenant_id: tenant.id });
-        stats[tenant.id] = statData || { employee_count: 0, pending_requests: 0, approved_requests: 0, total_requests: 0 };
+        // Direct query approach - count profiles for this tenant
+        const { count: empCount } = await (supabase as any)
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("tenant_id", tenant.id);
+        
+        const { count: pendingReq } = await (supabase as any)
+          .from("leave_requests")
+          .select("*", { count: "exact", head: true })
+          .eq("tenant_id", tenant.id)
+          .eq("status", "pending");
+        
+        const { count: approvedReq } = await (supabase as any)
+          .from("leave_requests")
+          .select("*", { count: "exact", head: true })
+          .eq("tenant_id", tenant.id)
+          .eq("status", "approved");
+        
+        const { count: totalReq } = await (supabase as any)
+          .from("leave_requests")
+          .select("*", { count: "exact", head: true })
+          .eq("tenant_id", tenant.id);
+        
+        stats[tenant.id] = { 
+          employee_count: empCount || 0, 
+          pending_requests: pendingReq || 0, 
+          approved_requests: approvedReq || 0, 
+          total_requests: totalReq || 0 
+        };
       }
       setTenantStats(stats);
     } catch {
