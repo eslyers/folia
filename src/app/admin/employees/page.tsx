@@ -88,13 +88,8 @@ export default function EmployeesPage() {
         filterTenantId = adminProfile.tenant_id;
       }
 
-      // If no tenant selected and we're master admin, show empty list
-      if (isMasterAdmin(adminProfile.role) && !filterTenantId) {
-        setEmployees([]);
-        setFilteredEmployees([]);
-        setLoading(false);
-        return;
-      }
+      // If master admin has no tenant selected, we'll show ALL employees (no filter)
+      // The filter will be applied in the UI or not at all
 
       let query = supabase
         .from("profiles")
