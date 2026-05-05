@@ -58,7 +58,8 @@ export default function AccessControlPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
-  const [tenants, setTenants] = useState<Tenant[]>(contextTenants);
+  // Use tenants from context
+  const tenants = contextTenants;
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [features, setFeatures] = useState<TenantFeature[]>([]);
@@ -130,15 +131,17 @@ export default function AccessControlPage() {
 
   const loadTenantData = async (tenantId: string) => {
     const tenant = contextTenants.find(t => t.id === tenantId);
-    setSelectedTenant(tenant || null);
+    // Cast to any to avoid type mismatch with local Tenant interface
+    setSelectedTenant(tenant as any || null);
 
     // Load settings
-    if (tenant?.settings) {
-      setMaxUsers(tenant.settings.max_users || 10);
-      setMaxOrdersMonth(tenant.settings.max_orders_month || 100);
-      setStorageGb(tenant.settings.storage_gb || 5);
-      setPlanExpiration(tenant.settings.plan_expiration || "");
-      setCurrentPlan(tenant.settings.plan || "basic");
+    const tenantAny = tenant as any;
+    if (tenantAny?.settings) {
+      setMaxUsers(tenantAny.settings.max_users || 10);
+      setMaxOrdersMonth(tenantAny.settings.max_orders_month || 100);
+      setStorageGb(tenantAny.settings.storage_gb || 5);
+      setPlanExpiration(tenantAny.settings.plan_expiration || "");
+      setCurrentPlan(tenantAny.settings.plan || "basic");
     }
 
     // Load features
