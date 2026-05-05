@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 interface Tenant {
   id: string;
@@ -13,6 +13,7 @@ interface TenantContextValue {
   setCurrentTenant: (tenant: Tenant | null) => void;
   tenants: Tenant[];
   setTenants: (tenants: Tenant[]) => void;
+  isLoading: boolean;
 }
 
 const TenantContext = createContext<TenantContextValue | null>(null);
@@ -28,9 +29,18 @@ export function TenantProvider({
 }) {
   const [currentTenant, setCurrentTenant] = useState<Tenant | null>(initialCurrentTenant);
   const [tenants, setTenants] = useState<Tenant[]>(initialTenants);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Sync currentTenant when initialCurrentTenant changes from parent (AdminLayout)
+  useEffect(() => {
+    if (initialCurrentTenant) {
+      setCurrentTenant(initialCurrentTenant);
+    }
+    setIsLoading(false);
+  }, [initialCurrentTenant]);
 
   return (
-    <TenantContext.Provider value={{ currentTenant, setCurrentTenant, tenants, setTenants }}>
+    <TenantContext.Provider value={{ currentTenant, setCurrentTenant, tenants, setTenants, isLoading }}>
       {children}
     </TenantContext.Provider>
   );

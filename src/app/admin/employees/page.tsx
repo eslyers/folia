@@ -206,7 +206,7 @@ export default function EmployeesPage() {
     if (profile && isMasterAdmin(profile.role)) {
       fetchData();
     }
-  }, [currentTenant]);
+  }, [currentTenant?.id]);
 
   const openNewModal = () => {
     // Auto-assign tenant from last selected or current admin's session
