@@ -214,17 +214,13 @@ export default function EmployeesPage() {
     }
   };
 
+  // Single useEffect - only fetch when currentTenant changes
   useEffect(() => {
-    fetchData();
-  }, [fetchData, currentTenant?.id]);
-
-  // Re-fetch when selected tenant changes
-  useEffect(() => {
-    console.log("[DEBUG] useEffect - currentTenant changed, currentTenant:", JSON.stringify(currentTenant), "profile role:", profile?.role);
-      if (profile && isMasterAdmin(profile.role)) {
+    console.log("[DEBUG] useEffect - currentTenant:", JSON.stringify(currentTenant), "profile:", profile?.role);
+    if (profile && isMasterAdmin(profile.role)) {
       fetchData();
     }
-  }, [currentTenant?.id]);
+  }, [currentTenant?.id, profile?.role]);
 
   const openNewModal = () => {
     // Auto-assign tenant from last selected or current admin's session
