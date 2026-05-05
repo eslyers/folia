@@ -103,7 +103,7 @@ export default function EmployeesPage() {
       }
 
       const { data: allEmployees, error: empError } = await query;
-      console.log("[DEBUG] Query result - employees:", allEmployees?.length, "error:", empError);
+      console.log("[DEBUG] Query result - employees:", allEmployees?.length, "filterTenantId:", filterTenantId, "currentTenant:", JSON.stringify(currentTenant), "error:", empError);
 
       // Buscar todos os perfis do tenant para mapear manager names
       let profilesQuery = supabase.from("profiles").select("id, name");
@@ -211,7 +211,8 @@ export default function EmployeesPage() {
 
   // Re-fetch when selected tenant changes
   useEffect(() => {
-    if (profile && isMasterAdmin(profile.role)) {
+    console.log("[DEBUG] useEffect - currentTenant changed, currentTenant:", JSON.stringify(currentTenant), "profile role:", profile?.role);
+      if (profile && isMasterAdmin(profile.role)) {
       fetchData();
     }
   }, [currentTenant?.id]);
