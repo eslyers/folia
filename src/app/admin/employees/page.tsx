@@ -79,12 +79,21 @@ export default function EmployeesPage() {
       setProfile(adminProfile);
 
       // Determine which tenant to filter by
+      // Master admin MUST have a tenant selected to view employees
       let filterTenantId: string | null = null;
       if (isMasterAdmin(adminProfile.role)) {
-        // Master admin: use the currently selected tenant from context
-        filterTenantId = currentTenant?.id || adminProfile.tenant_id || null;
+        // Master admin: use the currently selected tenant from context ONLY
+        filterTenantId = currentTenant?.id || null;
       } else if (adminProfile.tenant_id) {
         filterTenantId = adminProfile.tenant_id;
+      }
+
+      // If no tenant selected and we're master admin, show empty list
+      if (isMasterAdmin(adminProfile.role) && !filterTenantId) {
+        setEmployees([]);
+        setFilteredEmployees([]);
+        setLoading(false);
+        return;
       }
 
       let query = supabase
