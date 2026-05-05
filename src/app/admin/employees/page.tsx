@@ -121,6 +121,7 @@ export default function EmployeesPage() {
       }));
 
       setFilteredEmployees(employeesWithManagers);
+      setEmployees(employeesWithManagers);
 
       if (filterTenantId) {
         const { data: tenantData } = await supabase
