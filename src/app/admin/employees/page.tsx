@@ -84,8 +84,10 @@ export default function EmployeesPage() {
       if (isMasterAdmin(adminProfile.role)) {
         // Master admin: use the currently selected tenant from context ONLY
         filterTenantId = currentTenant?.id || null;
+        console.log("[DEBUG] Master admin - currentTenant:", JSON.stringify(currentTenant), "filterTenantId:", filterTenantId);
       } else if (adminProfile.tenant_id) {
         filterTenantId = adminProfile.tenant_id;
+        console.log("[DEBUG] Non-master admin - adminProfile.tenant_id:", adminProfile.tenant_id);
       }
 
       // If master admin has no tenant selected, we'll show ALL employees (no filter)
@@ -101,6 +103,7 @@ export default function EmployeesPage() {
       }
 
       const { data: allEmployees, error: empError } = await query;
+      console.log("[DEBUG] Query result - employees:", allEmployees?.length, "error:", empError);
 
       // Buscar todos os perfis do tenant para mapear manager names
       let profilesQuery = supabase.from("profiles").select("id, name");
