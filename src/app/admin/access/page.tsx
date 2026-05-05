@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTenant } from "@/contexts/TenantContext";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card, Button, Input, Modal, PremiumSelect } from "@/components/ui";
@@ -44,6 +45,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AccessManagementPage() {
+  const { currentTenant, setCurrentTenant, tenants: contextTenants } = useTenant();
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
@@ -95,19 +97,16 @@ export default function AccessManagementPage() {
   };
 
   const loadData = async () => {
-    const [{ data: usersData }, { data: tenantsData }] = await Promise.all([
-      (supabase as any)
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      (supabase as any)
-        .from("tenants")
-        .select("id, name")
-        .order("name"),
-    ]);
+    // Load all users for now, filtering happens in filteredUsers
+    const { data: usersData } = await (supabase as any)
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     setUsers(usersData || []);
-    setTenants(tenantsData || []);
+
+    // Set tenants from context
+    setTenants(contextTenants);
   };
 
   const getTenantName = (tenantId: string) => {
@@ -126,7 +125,20 @@ export default function AccessManagementPage() {
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
       u.email?.toLowerCase().includes(search.toLowerCase());
     const matchRole = filterRole === "all" || u.role === filterRole;
-    const matchTenant = filterTenant === "all" || u.tenant_id === filterTenant;
+    // For master admin, always filter by selected tenant from Topbar
+    const matchTenant = (() => {
+      if (filterTenant !== "all") return u.tenant_id === filterTenant;
+      // If master admin has a tenant selected, filter by it (exclude null tenant_id)
+      if (profile && contextTenants.length > 0) {
+        // Show only users that belong to selected tenant (not null tenant_id)
+        if (currentTenant?.id) {
+          return u.tenant_id === currentTenant.id;
+        }
+        // If no tenant selected, show users WITH tenant_id (exclude null)
+        return u.tenant_id !== null;
+      }
+      return true;
+    })();
     const matchStatus = filterStatus === "all" ||
       (filterStatus === "active" && u.is_active) ||
       (filterStatus === "inactive" && !u.is_active);

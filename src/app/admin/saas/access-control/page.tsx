@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTenant } from "@/contexts/TenantContext";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card, Button, Input, DatePicker, NumberInput } from "@/components/ui";
@@ -52,11 +53,12 @@ const FEATURES = [
 ];
 
 export default function AccessControlPage() {
+  const { currentTenant, setCurrentTenant, tenants: contextTenants } = useTenant();
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>(contextTenants);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [features, setFeatures] = useState<TenantFeature[]>([]);
@@ -93,20 +95,15 @@ export default function AccessControlPage() {
     }
 
     setProfile(profileData);
-    await loadTenants();
     setLoading(false);
   };
 
-  const loadTenants = async () => {
-    const { data } = await supabase
-      .from("tenants")
-      .select("*")
-      .order("name") as { data: Tenant[] | null };
-    setTenants(data || []);
-    if (data && data.length > 0) {
-      setSelectedTenantId(data[0].id);
+  useEffect(() => {
+    if (currentTenant?.id) {
+      setSelectedTenantId(currentTenant.id);
+      loadTenantData(currentTenant.id);
     }
-  };
+  }, [currentTenant?.id]);
 
   useEffect(() => {
     if (selectedTenantId) {
@@ -132,7 +129,7 @@ export default function AccessControlPage() {
   }, [tenantDropdownOpen, planDropdownOpen]);
 
   const loadTenantData = async (tenantId: string) => {
-    const tenant = tenants.find(t => t.id === tenantId);
+    const tenant = contextTenants.find(t => t.id === tenantId);
     setSelectedTenant(tenant || null);
 
     // Load settings
@@ -176,6 +173,15 @@ export default function AccessControlPage() {
         f.feature === featureKey ? { ...f, enabled: !f.enabled } : f
       )
     );
+  };
+
+    const handleTenantSelect = (tenantId: string) => {
+    setTenantDropdownOpen(false);
+    const tenant = contextTenants.find(t => t.id === tenantId);
+    if (tenant) {
+      setCurrentTenant(tenant);
+    }
+    setSelectedTenantId(tenantId);
   };
 
   const handleSave = async () => {
