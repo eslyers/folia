@@ -10,12 +10,6 @@ import { ToastProvider } from "@/components/ui/Toast";
 import type { Profile } from "@/lib/types";
 import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
 
-interface Tenant {
-  id: string;
-  name: string;
-  domain?: string;
-}
-
 export default function AdminLayout({
   children,
 }: {
@@ -24,8 +18,6 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const supabase = createClient();
@@ -51,37 +43,11 @@ export default function AdminLayout({
       }
 
       setProfile(profileData);
-
-      // Fetch tenants
-      if (isMasterAdmin(profileData.role)) {
-        // Master admin sees all tenants
-        const { data: allTenants } = await supabase
-          .from("tenants")
-          .select("id, name, domain")
-          .order("name");
-        setTenants(allTenants || []);
-      } else if (profileData.tenant_id) {
-        // Regular admin sees only their tenant
-        const { data: tenantData } = await supabase
-          .from("tenants")
-          .select("id, name, domain")
-          .eq("id", profileData.tenant_id)
-          .single();
-        if (tenantData) {
-          setTenants([tenantData]);
-          setCurrentTenant(tenantData);
-        }
-      }
-
       setLoading(false);
     };
 
     checkUser();
   }, [pathname]);
-
-  const handleTenantChange = (tenant: Tenant) => {
-    setCurrentTenant(tenant);
-  };
 
   if (loading || !profile) {
     return (
@@ -109,7 +75,7 @@ export default function AdminLayout({
   }
 
   return (
-    <TenantProvider initialTenants={tenants} initialCurrentTenant={currentTenant}>
+    <TenantProvider>
     <ToastProvider>
     <div className="flex h-screen bg-gray-50">
       <Sidebar 
@@ -119,10 +85,7 @@ export default function AdminLayout({
       />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Topbar 
-          profile={profile} 
-          tenants={tenants}
-          currentTenant={currentTenant ?? undefined}
-          onTenantChange={handleTenantChange}
+          profile={profile}
           onMenuToggle={() => setSidebarOpen(prev => !prev)} 
         />
         <main className="flex-1 overflow-auto">

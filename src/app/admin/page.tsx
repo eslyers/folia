@@ -1,44 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTenant } from "@/contexts/TenantContext";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { AdminDashboard } from "./AdminDashboard";
-import { Building2, ChevronDown, X } from "lucide-react";
+import { Building2, X, ChevronDown } from "lucide-react";
 import { clsx } from "clsx";
+import { AdminDashboard } from "./AdminDashboard";
+import { useTenant } from "@/contexts/TenantContext";
 import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
 
 export default function AdminPage() {
-  return <AdminContent />;
-}
-
-function AdminContent() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+  const { currentTenant, setCurrentTenant, tenants, isLoading: tenantLoading } = useTenant();
+
   const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
-  const [tenants, setTenants] = useState<any[]>([]);
-  const [selectedTenantId, setSelectedTenantId] = useState<string>("");
-  const { currentTenant } = useTenant();
   const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
-  const supabase = createClient();
 
-  const currentTenantName = selectedTenantId 
-    ? tenants.find(t => t.id === selectedTenantId)?.name || ""
-    : "";
-
-  // Fetch data based on selected tenant
   const fetchData = async (tenantId: string | null) => {
-    // Fetch leave requests WITHOUT tenant filter (leave_requests table doesn't have tenant_id column)
+    // Fetch leave requests
     const { data: requests } = await supabase
       .from("leave_requests")
       .select("*")
       .order("created_at", { ascending: false });
 
-
-    // Fetch profiles filtered by tenant (profiles table has tenant_id)
+    // Fetch profiles filtered by tenant
     let profilesQuery = supabase
       .from("profiles")
       .select("*")
@@ -48,9 +37,6 @@ function AdminContent() {
       profilesQuery = profilesQuery.eq("tenant_id", tenantId);
     }
     const { data: allProfiles } = await profilesQuery;
-
-    console.log("[ADMIN] Requests fetched:", requests?.length);
-    console.log("[ADMIN] Profiles fetched:", allProfiles?.length);
 
     setLeaveRequests(requests || []);
     setProfiles(allProfiles || []);
@@ -65,7 +51,6 @@ function AdminContent() {
         return;
       }
 
-      // Fetch profile
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
@@ -78,53 +63,32 @@ function AdminContent() {
       }
 
       setProfile(profileData);
-
-      const adminRole = (profileData as any)?.role;
-      const adminTenantId = (profileData as any)?.tenant_id;
-      console.log("[ADMIN] Admin tenant_id:", adminTenantId);
-      console.log("[ADMIN] Admin role:", adminRole);
-
-      // Set default tenant for non-master admins
-      if (!isMasterAdmin(adminRole) && adminTenantId) {
-        setSelectedTenantId(adminTenantId);
-        await fetchData(adminTenantId);
-      } else if (isMasterAdmin(adminRole)) {
-        // Fetch all tenants for master_admin
-        const { data: allTenants } = await supabase
-          .from("tenants")
-          .select("id, name")
-          .order("name");
-        setTenants(allTenants || []);
-        // Fetch all data (no filter)
-        await fetchData(null);
-      }
-
       setLoading(false);
     };
 
     checkUser();
   }, []);
 
-  // Re-fetch when tenant selection changes
-  // Sync with TenantContext - when Topbar changes tenant, update local state
+  // Listen for tenant changes from Topbar
   useEffect(() => {
-    if (currentTenant?.id) {
-      setSelectedTenantId(currentTenant.id);
-      if (profile && isMasterAdmin(profile.role)) {
-        fetchData(currentTenant.id);
-      }
+    if (profile && currentTenant?.id) {
+      fetchData(currentTenant.id);
     }
-  }, [currentTenant?.id]);
+  }, [currentTenant?.id, profile]);
 
+  // Initial data fetch
   useEffect(() => {
-    if (profile && selectedTenantId) {
-      // For master_admin, fetchData is called on tenant change
-      // For tenant_admin, we already fetched with their tenant on mount
-      if (isMasterAdmin(profile.role)) {
-        fetchData(selectedTenantId || null);
+    if (profile && !currentTenant?.id && isMasterAdmin(profile.role)) {
+      // Master admin with no tenant selected - show empty
+      setProfiles([]);
+      setLeaveRequests([]);
+    } else if (profile) {
+      const tenantToFetch = currentTenant?.id || profile.tenant_id;
+      if (tenantToFetch) {
+        fetchData(tenantToFetch);
       }
     }
-  }, [selectedTenantId]);
+  }, [profile, currentTenant?.id]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -140,18 +104,18 @@ function AdminContent() {
     }
   }, [tenantDropdownOpen]);
 
-  if (loading) {
+  if (loading || tenantLoading || !profile) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--cream)" }}>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--color-cream)" }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ 
-            width: "48px", 
-            height: "48px", 
-            border: "4px solid var(--color-gold)", 
-            borderTop: "4px solid transparent", 
-            borderRadius: "50%", 
+          <div style={{
+            width: "48px",
+            height: "48px",
+            border: "4px solid var(--color-gold)",
+            borderTop: "4px solid transparent",
+            borderRadius: "50%",
             animation: "spin 1s linear infinite",
-            margin: "0 auto 16px"
+            margin: "0 auto 16px",
           }} />
           <p style={{ color: "var(--brown-medium)" }}>Carregando...</p>
         </div>
@@ -175,11 +139,11 @@ function AdminContent() {
               >
                 <Building2 className="h-4 w-4 text-[#5C724A]" />
                 <span className="flex-1 text-sm text-[var(--color-brown-dark)] text-left">
-                  {currentTenantName || "Todas as empresas"}
+                  {currentTenant?.name || "Todas as empresas"}
                 </span>
-                {selectedTenantId && (
+                {currentTenant && (
                   <span
-                    onClick={(e) => { e.stopPropagation(); setSelectedTenantId(""); }}
+                    onClick={(e) => { e.stopPropagation(); setCurrentTenant(null); }}
                     className="p-0.5 rounded hover:bg-gray-100 text-gray-400"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -195,28 +159,29 @@ function AdminContent() {
                     <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Empresas</p>
                   </div>
                   <button
-                    onClick={() => { setSelectedTenantId(""); setTenantDropdownOpen(false); }}
+                    onClick={() => { setCurrentTenant(null); setTenantDropdownOpen(false); }}
                     className={clsx(
                       "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors",
-                      !selectedTenantId && "bg-[#5C724A]/5 text-[#5C724A]"
+                      !currentTenant && "bg-[#5C724A]/5 text-[#5C724A]"
                     )}
                   >
-                    <Building2 className="h-4 w-4 flex-shrink-0" />
                     <span className="flex-1">Todas as empresas</span>
-                    {!selectedTenantId && <span className="text-xs text-[#5C724A] font-medium">Atual</span>}
+                    {!currentTenant && <span className="text-xs text-[#5C724A] font-medium">Atual</span>}
                   </button>
                   {tenants.map((tenant) => (
                     <button
                       key={tenant.id}
-                      onClick={() => { setSelectedTenantId(tenant.id); setTenantDropdownOpen(false); }}
+                      onClick={() => { setCurrentTenant(tenant); setTenantDropdownOpen(false); }}
                       className={clsx(
                         "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors",
-                        tenant.id === selectedTenantId && "bg-[#5C724A]/5 text-[#5C724A]"
+                        currentTenant?.id === tenant.id && "bg-[#5C724A]/5 text-[#5C724A]"
                       )}
                     >
                       <Building2 className="h-4 w-4 flex-shrink-0" />
                       <span className="flex-1 truncate">{tenant.name}</span>
-                      {tenant.id === selectedTenantId && <span className="text-xs text-[#5C724A] font-medium">Atual</span>}
+                      {currentTenant?.id === tenant.id && (
+                        <span className="text-xs text-[#5C724A] font-medium">Atual</span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -225,13 +190,16 @@ function AdminContent() {
           </div>
         </div>
       )}
-      
-      <AdminDashboard 
-        profile={profile} 
-        leaveRequests={leaveRequests} 
-        profiles={profiles}
-        selectedTenantId={selectedTenantId}
-      />
+
+      {/* Dashboard */}
+      <div className="p-6">
+        <AdminDashboard 
+          profile={profile} 
+          leaveRequests={leaveRequests} 
+          profiles={profiles}
+          selectedTenantId={currentTenant?.id}
+        />
+      </div>
     </div>
   );
 }
