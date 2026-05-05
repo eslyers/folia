@@ -55,8 +55,14 @@ export default function EmployeesPage() {
   const supabase = createClient();
 
   const { currentTenant } = useTenant();
+  
+  // Debug: log currentTenant whenever it changes
+  console.log("[DEBUG] render - currentTenant:", JSON.stringify(currentTenant));
 
   const fetchData = useCallback(async () => {
+    // Read currentTenant fresh from context to avoid stale closures
+    const { currentTenant: freshCurrentTenant } = useTenant();
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
@@ -83,8 +89,8 @@ export default function EmployeesPage() {
       let filterTenantId: string | null = null;
       if (isMasterAdmin(adminProfile.role)) {
         // Master admin: use the currently selected tenant from context ONLY
-        filterTenantId = currentTenant?.id || null;
-        console.log("[DEBUG] Master admin - currentTenant:", JSON.stringify(currentTenant), "filterTenantId:", filterTenantId);
+        filterTenantId = freshCurrentTenant?.id || null;
+        console.log("[DEBUG] Master admin - freshCurrentTenant:", JSON.stringify(freshCurrentTenant), "filterTenantId:", filterTenantId);
       } else if (adminProfile.tenant_id) {
         filterTenantId = adminProfile.tenant_id;
         console.log("[DEBUG] Non-master admin - adminProfile.tenant_id:", adminProfile.tenant_id);
