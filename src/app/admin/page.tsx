@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTenant } from "@/contexts/TenantContext";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AdminDashboard } from "./AdminDashboard";
@@ -20,6 +21,7 @@ function AdminContent() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [tenants, setTenants] = useState<any[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
+  const { currentTenant } = useTenant();
   const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
   const supabase = createClient();
 
@@ -104,6 +106,16 @@ function AdminContent() {
   }, []);
 
   // Re-fetch when tenant selection changes
+  // Sync with TenantContext - when Topbar changes tenant, update local state
+  useEffect(() => {
+    if (currentTenant?.id) {
+      setSelectedTenantId(currentTenant.id);
+      if (profile && isMasterAdmin(profile.role)) {
+        fetchData(currentTenant.id);
+      }
+    }
+  }, [currentTenant?.id]);
+
   useEffect(() => {
     if (profile && selectedTenantId) {
       // For master_admin, fetchData is called on tenant change
