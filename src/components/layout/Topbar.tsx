@@ -332,8 +332,8 @@ export function Topbar({
           </button>
 
           {/* Tenant Dropdown */}
-          {tenants.length > 0 && (
-            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+          {tenantDropdownOpen && tenants.length > 0 && (
+            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
               <div className="px-4 py-2 border-b border-gray-100">
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Empresas</p>
               </div>
@@ -366,7 +366,7 @@ export function Topbar({
           </button>
 
           {/* Dropdown */}
-          <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+          <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
             <div className="px-4 py-3 border-b border-gray-100">
               <p className="text-sm font-semibold text-gray-900">{profile.name}</p>
               <p className="text-xs text-gray-500 mt-0.5">{profile.email}</p>
