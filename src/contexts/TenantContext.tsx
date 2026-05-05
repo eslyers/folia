@@ -1,0 +1,45 @@
+"use client";
+
+import { createContext, useContext, useState, ReactNode } from "react";
+
+interface Tenant {
+  id: string;
+  name: string;
+  domain?: string;
+}
+
+interface TenantContextValue {
+  currentTenant: Tenant | null;
+  setCurrentTenant: (tenant: Tenant | null) => void;
+  tenants: Tenant[];
+  setTenants: (tenants: Tenant[]) => void;
+}
+
+const TenantContext = createContext<TenantContextValue | null>(null);
+
+export function TenantProvider({
+  children,
+  initialTenants = [],
+  initialCurrentTenant = null,
+}: {
+  children: ReactNode;
+  initialTenants?: Tenant[];
+  initialCurrentTenant?: Tenant | null;
+}) {
+  const [currentTenant, setCurrentTenant] = useState<Tenant | null>(initialCurrentTenant);
+  const [tenants, setTenants] = useState<Tenant[]>(initialTenants);
+
+  return (
+    <TenantContext.Provider value={{ currentTenant, setCurrentTenant, tenants, setTenants }}>
+      {children}
+    </TenantContext.Provider>
+  );
+}
+
+export function useTenant() {
+  const context = useContext(TenantContext);
+  if (!context) {
+    throw new Error("useTenant must be used within TenantProvider");
+  }
+  return context;
+}

@@ -11,6 +11,7 @@ import type { Profile } from "@/lib/types";
 import { format, differenceInYears, differenceInMonths, addMonths } from "date-fns";
 import { clsx } from "clsx";
 import { ptBR } from "date-fns/locale";
+import { useTenant } from "@/contexts/TenantContext";
 import { isTenantAdmin, isMasterAdmin, getRoleLabel } from "@/lib/auth";
 
 interface EmployeeForm {
@@ -53,6 +54,8 @@ export default function EmployeesPage() {
 
   const supabase = createClient();
 
+  const { currentTenant } = useTenant();
+
   const fetchData = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -75,21 +78,31 @@ export default function EmployeesPage() {
 
       setProfile(adminProfile);
 
+      // Determine which tenant to filter by
+      let filterTenantId: string | null = null;
+      if (isMasterAdmin(adminProfile.role)) {
+        // Master admin: use the currently selected tenant from context
+        filterTenantId = currentTenant?.id || adminProfile.tenant_id || null;
+      } else if (adminProfile.tenant_id) {
+        filterTenantId = adminProfile.tenant_id;
+      }
+
       let query = supabase
         .from("profiles")
         .select("*, schedule:work_schedules(name)")
         .order("name");
-
-      // Se não for master_admin, filtra pelo tenant do admin
-      if (!isMasterAdmin(adminProfile.role) && adminProfile.tenant_id) {
-        query = query.eq("tenant_id", adminProfile.tenant_id);
+      // Apply tenant filter
+      if (filterTenantId) {
+        query = query.eq("tenant_id", filterTenantId);
       }
 
       const { data: allEmployees, error: empError } = await query;
 
       // Buscar todos os perfis do tenant para mapear manager names
       let profilesQuery = supabase.from("profiles").select("id, name");
-      if (adminProfile.tenant_id) {
+      if (filterTenantId) {
+        profilesQuery = profilesQuery.eq("tenant_id", filterTenantId);
+      }
         profilesQuery = profilesQuery.eq("tenant_id", adminProfile.tenant_id);
       }
       const { data: allProfiles } = await profilesQuery;
@@ -102,19 +115,19 @@ export default function EmployeesPage() {
         manager: emp.manager_id ? { name: profileMap.get(emp.manager_id) || "-" } : null
       }));
 
-      setEmployees(employeesWithManagers);
       setFilteredEmployees(employeesWithManagers);
 
-      if (adminProfile.tenant_id) {
+      if (filterTenantId) {
         const { data: tenantData } = await supabase
           .from("tenants")
           .select("name")
-          .eq("id", adminProfile.tenant_id)
+          .eq("id", filterTenantId)
           .single() as { data: { name: string } | null };
         setCurrentTenantName(tenantData?.name || "");
       } else {
         setCurrentTenantName("");
       }
+
 
       if (isMasterAdmin(adminProfile.role)) {
         const { data: allTenants } = await supabase
@@ -189,6 +202,13 @@ export default function EmployeesPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Re-fetch when selected tenant changes
+  useEffect(() => {
+    if (profile && isMasterAdmin(profile.role)) {
+      fetchData();
+    }
+  }, [currentTenant]);
 
   const openNewModal = () => {
     // Auto-assign tenant from last selected or current admin's session

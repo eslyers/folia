@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { TenantProvider } from "@/contexts/TenantContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -80,7 +81,6 @@ export default function AdminLayout({
 
   const handleTenantChange = (tenant: Tenant) => {
     setCurrentTenant(tenant);
-    // Could also update profile.tenant_id and refresh data
   };
 
   if (loading || !profile) {
@@ -108,7 +108,9 @@ export default function AdminLayout({
     );
   }
 
+
   return (
+    <TenantProvider initialTenants={tenants} initialCurrentTenant={currentTenant}>
     <ToastProvider>
     <div className="flex h-screen bg-gray-50">
       <Sidebar 
@@ -130,5 +132,6 @@ export default function AdminLayout({
       </div>
     </div>
     </ToastProvider>
+    </TenantProvider>
   );
 }
