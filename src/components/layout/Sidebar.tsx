@@ -71,8 +71,9 @@ const TENANT_ADMIN_ITEMS: NavItem[] = [
 const GESTOR_ITEMS: NavItem[] = [
   { label: "Minha Equipe", href: "/admin/team/overview", icon: Users },
   { label: "Ponto", href: "/admin/team/point", icon: Clock },
+  { label: "Fechamento", href: "/admin/timesheets", icon: BarChart3 },
+  { label: "Aprovações", href: "/admin/approved", icon: CheckCircle },
   { label: "Meus Pedidos", href: "/admin/my-requests", icon: ClipboardCheck },
-  { label: "Configurações", href: "/admin/settings", icon: Settings },
 ];
 
 const FUNCIONARIO_ITEMS: NavItem[] = [
