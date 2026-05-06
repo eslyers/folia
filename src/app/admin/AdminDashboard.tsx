@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Component, ReactNode, useMemo } from "react";
+import { useState, useEffect, Component, ReactNode, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X, Users, Calendar as CalendarIcon, Clock, AlertCircle, CheckSquare, Square } from "lucide-react";
 import { Card, Button, Modal } from "@/components/ui";
