@@ -332,7 +332,7 @@ export function Topbar({
             <Building2 className="h-5 w-5 text-[#5C724A]" />
             <div className="text-left hidden sm:block">
               <p className="text-sm font-semibold text-stone-900 leading-tight max-w-[150px] truncate">
-                {currentTenant?.name || profile.tenant_id || "Selecione empresa"}
+                {currentTenant?.name || (profile.tenant_id && (tenants.find(t => t.id === profile.tenant_id)?.name || profile.tenant_id)) || "Selecione empresa"}
               </p>
               <p className="text-xs text-stone-500 leading-tight">{roleLabel}</p>
             </div>
