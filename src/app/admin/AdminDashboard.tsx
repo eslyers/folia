@@ -53,6 +53,11 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
   const router = useRouter();
   const supabase = createClient();
   const [requests, setRequests] = useState(leaveRequests);
+  
+  // Sync internal state when props change (when tenant filter changes)
+  useEffect(() => {
+    setRequests(leaveRequests);
+  }, [leaveRequests]);
   const [processing, setProcessing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
