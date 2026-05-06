@@ -165,7 +165,7 @@ export default function EmployeesPage() {
       console.error("Error fetching data:", err);
       setLoading(false);
     }
-  }, [router, supabase]);
+  }, [router, supabase, currentTenant]);
 
   // Filter and sort employees
   useEffect(() => {
