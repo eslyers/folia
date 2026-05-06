@@ -69,7 +69,7 @@ const TENANT_ADMIN_ITEMS: NavItem[] = [
 ];
 
 const GESTOR_ITEMS: NavItem[] = [
-  { label: "Minha Equipe", href: "/admin/employees", icon: Users },
+  { label: "Minha Equipe", href: "/admin/team/overview", icon: Users },
   { label: "Ponto", href: "/admin/team/point", icon: Clock },
   { label: "Meus Pedidos", href: "/admin/my-requests", icon: ClipboardCheck },
   { label: "Configurações", href: "/admin/settings", icon: Settings },
