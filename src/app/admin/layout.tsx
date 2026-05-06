@@ -40,7 +40,10 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         .eq("id", user.id)
         .single() as { data: Profile | null };
 
+      console.log("[AdminLayout] user:", user.id, "role:", profileData?.role);
+
       if (!profileData || !canManageTeam(profileData.role)) {
+        console.log("[AdminLayout] Redirecting - canManageTeam:", canManageTeam(profileData?.role), "role:", profileData?.role);
         router.push("/dashboard");
         return;
       }
