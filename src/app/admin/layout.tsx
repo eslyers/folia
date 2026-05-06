@@ -8,7 +8,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { ToastProvider } from "@/components/ui/Toast";
 import type { Profile } from "@/lib/types";
-import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
+import { isTenantAdmin, isMasterAdmin, isGestor, canManageTeam } from "@/lib/auth";
 
 interface Tenant {
   id: string;
@@ -40,7 +40,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         .eq("id", user.id)
         .single() as { data: Profile | null };
 
-      if (!profileData || !isTenantAdmin(profileData.role)) {
+      if (!profileData || !canManageTeam(profileData.role)) {
         router.push("/dashboard");
         return;
       }
