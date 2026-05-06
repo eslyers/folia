@@ -3,8 +3,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Building2, X, ChevronDown, Check, Search, Calendar } from "lucide-react";
-import { Card, Button } from "@/components/ui";
+import { Building2, X, ChevronDown, Check, Search, Calendar, Filter } from "lucide-react";
+import { Card, Button, PremiumSelect } from "@/components/ui";
 import { useTenant } from "@/contexts/TenantContext";
 import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
 import { format } from "date-fns";
@@ -253,17 +253,13 @@ export default function ApprovedRequestsPage() {
               </div>
 
               {/* Type Filter */}
-              <select
+              <PremiumSelect
+                icon={<Filter className="h-4 w-4" />}
                 value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)] text-sm"
-              >
-                {typeOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setTypeFilter(val)}
+                options={typeOptions}
+                placeholder="Tipo de solicitação"
+              />
 
               {/* Count */}
               <span className="text-sm text-[var(--color-brown-medium)]">
