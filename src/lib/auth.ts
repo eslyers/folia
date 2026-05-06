@@ -110,6 +110,7 @@ export function getNavItemsForRole(role: string): NavItem[] {
     { label: "Ponto", href: "/admin/team/point", icon: "Clock" },
     { label: "Fechamento Mensal", href: "/admin/timesheets", icon: "BarChart3" },
     { label: "Histórico", href: "/admin/audit", icon: "BarChart3" },
+    { label: "Aprovações", href: "/admin/approved", icon: "CheckCircle", roles: ["master_admin", "tenant_admin"] },
     { label: "Configurações", href: "/admin/settings", icon: "Settings", roles: ["master_admin", "tenant_admin"] },
   ];
 
