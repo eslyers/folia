@@ -231,7 +231,7 @@ export default function TeamOverviewPage() {
           <Calendar 
             leaveRequests={requests.filter(r => r.status === "approved" || r.status === "pending")} 
             profiles={profiles} 
-            size="full" 
+            size="normal" 
           />
         </Card>
 
@@ -282,10 +282,11 @@ export default function TeamOverviewPage() {
                   
                   <div className="flex gap-2 ml-4">
                     <Button
-                      variant="success"
+                      variant="primary"
                       size="sm"
                       loading={processing === request.id}
                       onClick={() => handleApprove(request.id, request.user_id)}
+                      className="bg-green-600 hover:bg-green-700"
                     >
                       <Check className="h-4 w-4" />
                     </Button>
