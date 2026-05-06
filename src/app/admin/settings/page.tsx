@@ -7,7 +7,7 @@ import { Save, Settings, AlertTriangle, Info, Loader2, Shield } from "lucide-rea
 import { Card, Button, Input } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile, Policy } from "@/lib/types";
-import { isTenantAdmin } from "@/lib/auth";
+import { isTenantAdmin, canManageTeam } from "@/lib/auth";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -44,7 +44,7 @@ export default function SettingsPage() {
         .single();
 
       const adminProfile = currentProfile as any;
-      if (!adminProfile || !isTenantAdmin(adminProfile.role)) {
+      if (!adminProfile || !canManageTeam(adminProfile.role)) {
         setTimeout(() => router.push("/dashboard"), 1500);
         return;
       }
