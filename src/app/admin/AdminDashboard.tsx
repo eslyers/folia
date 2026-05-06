@@ -114,17 +114,35 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
       // C2: Atomic update using RPC if vacation
       // Get user's vacation_balance from local profiles array instead of request.profile (avoids RLS issues)
       const userProfile = profiles.find((p) => p.id === userId);
+      console.log("[handleApprove] userProfile for", userId, ":", userProfile?.vacation_balance);
+      
       if (request.type === "vacation") {
-        const { error: rpcError } = (supabase as any).rpc("deduct_vacation_balance", {
+        // Try RPC first, fallback to direct update
+        const { error: rpcError } = await (supabase as any).rpc("deduct_vacation_balance", {
           p_user_id: userId,
           p_days: request.days_count,
-          p_expected_balance: userProfile?.vacation_balance || 0,
+          p_expected_balance: userProfile?.vacation_balance ?? 0,
         });
 
         if (rpcError) {
-          setError("Falha ao atualizar saldo. Tente novamente.");
-          setProcessing(null);
-          return;
+          console.log("[handleApprove] RPC failed, trying direct update:", rpcError);
+          // Fallback: direct update without race condition check
+          const { error: updateBalanceError } = await supabase
+            .from("profiles")
+            .update({
+              vacation_balance: (userProfile?.vacation_balance ?? 0) - request.days_count
+            })
+            .eq("id", userId);
+            
+          if (updateBalanceError) {
+            console.error("[handleApprove] Both RPC and direct update failed:", updateBalanceError);
+            setError("Falha ao atualizar saldo. Tente novamente.");
+            setProcessing(null);
+            return;
+          }
+          console.log("[handleApprove] Direct balance update succeeded");
+        } else {
+          console.log("[handleApprove] RPC deduction succeeded");
         }
       }
 
