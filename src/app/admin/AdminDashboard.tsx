@@ -571,10 +571,20 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
           {/* Approved Requests */}
           <div>
             <Card className="p-6">
-              <h2 className="text-xl font-semibold text-[var(--color-brown-dark)] mb-4 flex items-center gap-2">
-                <Check className="h-5 w-5 text-[var(--color-success)]" />
-                Aprovados Recentes
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-[var(--color-brown-dark)] flex items-center gap-2">
+                  <Check className="h-5 w-5 text-[var(--color-success)]" />
+                  Aprovados Recentes
+                </h2>
+                {approvedRequests.length > 10 && (
+                  <a 
+                    href="/admin/approved" 
+                    className="text-sm text-[#5C724A] hover:underline font-medium"
+                  >
+                    Ver todos ({approvedRequests.length})
+                  </a>
+                )}
+              </div>
 
               {approvedRequests.length === 0 ? (
                 <div className="text-center py-8 text-[var(--color-brown-medium)]">
@@ -592,7 +602,9 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
                           <p className="font-medium text-[var(--color-brown-dark)] text-sm">
                             {getUserName(request.user_id)}
                           </p>
-                          <span className="inline-flex items-center rounded-full border border-transparent bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5">Aprovado</span>
+                          <span className="inline-flex items-center rounded-full border border-transparent bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5">
+                            {LEAVE_TYPE_LABELS[request.type] || request.type}
+                          </span>
                         </div>
                         <p className="text-xs text-[var(--color-brown-medium)]">
                           {format(new Date(request.start_date), "dd/MM")} - {format(new Date(request.end_date), "dd/MM")}
