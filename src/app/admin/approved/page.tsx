@@ -8,7 +8,7 @@ import { Card, Button } from "@/components/ui";
 import { useTenant } from "@/contexts/TenantContext";
 import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
 import { format } from "date-fns";
-import { LEAVE_TYPE_LABELS } from "@/lib/types";
+import { LEAVE_TYPE_LABELS, STATUS_LABELS, LeaveType } from "@/lib/types";
 import { clsx } from "clsx";
 
 export default function ApprovedRequestsPage() {
@@ -309,7 +309,7 @@ export default function ApprovedRequestsPage() {
                             request.type === "hours" && "bg-yellow-100 text-yellow-800",
                             request.type === "other" && "bg-gray-100 text-gray-800"
                           )}>
-                            {LEAVE_TYPE_LABELS[request.type] || request.type}
+                            {(LEAVE_TYPE_LABELS[request.type as LeaveType] || request.type)}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-[var(--color-brown-dark)]">
