@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AdminDashboard } from "./AdminDashboard";
-import { isTenantAdmin } from "@/lib/auth";
+import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
+import { useTenant } from "@/contexts/TenantContext";
 
 export default function AdminClient() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function AdminClient() {
   const [profile, setProfile] = useState<any>(null);
   const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
+  const { currentTenant } = useTenant();
   const supabase = createClient();
 
   useEffect(() => {
@@ -49,11 +51,21 @@ export default function AdminClient() {
 
         setProfile(profileData);
 
-        // Fetch ALL leave requests (admin should see all)
-        const { data: requests, error: requestsError } = await supabase
+        // Build query for leave requests - filter by tenant if selected
+        let requestsQuery = supabase
           .from("leave_requests")
           .select("*")
           .order("created_at", { ascending: false });
+        
+        // Master admin with tenant selected: filter by tenant
+        if (isMasterAdmin(profileData.role) && currentTenant?.id) {
+          requestsQuery = requestsQuery.eq("tenant_id", currentTenant.id);
+        } else if (profileData.tenant_id) {
+          // Non-master admin: filter by their tenant
+          requestsQuery = requestsQuery.eq("tenant_id", profileData.tenant_id);
+        }
+        
+        const { data: requests, error: requestsError } = await requestsQuery;
 
         if (requestsError) {
           return;
@@ -61,11 +73,19 @@ export default function AdminClient() {
 
         setLeaveRequests(requests || []);
 
-        // Fetch all profiles for the dropdown
-        const { data: allProfiles, error: profilesError } = await supabase
+        // Fetch profiles - filter by tenant if selected
+        let profilesQuery = supabase
           .from("profiles")
           .select("*")
           .order("name");
+        
+        if (isMasterAdmin(profileData.role) && currentTenant?.id) {
+          profilesQuery = profilesQuery.eq("tenant_id", currentTenant.id);
+        } else if (profileData.tenant_id) {
+          profilesQuery = profilesQuery.eq("tenant_id", profileData.tenant_id);
+        }
+
+        const { data: allProfiles, error: profilesError } = await profilesQuery;
 
         if (profilesError) {
         }
@@ -77,7 +97,7 @@ export default function AdminClient() {
     }
 
     fetchAdminData();
-  }, [router, supabase]);
+  }, [router, supabase, currentTenant]);
 
   if (loading) {
     return (
