@@ -701,7 +701,7 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
                       <td className="text-center py-3 px-4">
                         <button 
                           onClick={() => setVacationHistoryEmployee(p)}
-                          className="hover:opacity-80 transition-opacity"
+                          className="hover:opacity-80 transition-opacity cursor-pointer"
                           title="Ver histórico de férias"
                         >
                           <span className="text-lg font-semibold text-[var(--color-gold)]">
@@ -885,13 +885,13 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
                   onClick={() => setVacationHistoryFilter("consumes")}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${vacationHistoryFilter === "consumes" ? "bg-[#5C724A] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                 >
-                  Consome Férias
+                  Férias
                 </button>
                 <button
                   onClick={() => setVacationHistoryFilter("non-consumes")}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${vacationHistoryFilter === "non-consumes" ? "bg-[#5C724A] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                 >
-                  Não Consome
+                  Folgas e Outros
                 </button>
               </div>
             </div>
