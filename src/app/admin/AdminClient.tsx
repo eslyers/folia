@@ -50,6 +50,8 @@ export default function AdminClient() {
         }
 
         setProfile(profileData);
+        console.log("[AdminClient] Profile:", profileData.role, "tenant_id:", profileData.tenant_id);
+        console.log("[AdminClient] currentTenant:", JSON.stringify(currentTenant));
 
         // Build query for leave requests - filter by tenant if selected
         let requestsQuery = supabase
@@ -66,6 +68,7 @@ export default function AdminClient() {
         }
         
         const { data: requests, error: requestsError } = await requestsQuery;
+        console.log("[AdminClient] Requests fetched:", requests?.length, "error:", requestsError);
 
         if (requestsError) {
           return;
