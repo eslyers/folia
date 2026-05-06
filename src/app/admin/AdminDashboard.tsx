@@ -6,7 +6,7 @@ import { Check, X, Users, Calendar as CalendarIcon, Clock, AlertCircle, CheckSqu
 import { Card, Button, Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { LEAVE_TYPE_LABELS, STATUS_LABELS } from "@/lib/types";
-import type { Profile, LeaveRequest } from "@/lib/types";
+import type { Profile, LeaveRequest, LeaveType, LeaveStatus } from "@/lib/types";
 import { format } from "date-fns";
 import { getRoleLabel } from "@/lib/auth";
 import { ptBR } from "date-fns/locale";
@@ -69,6 +69,10 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
     key: "name",
     direction: "asc",
   });
+  
+  // Modal de histórico de férias
+  const [vacationHistoryEmployee, setVacationHistoryEmployee] = useState<any>(null);
+  const [vacationHistoryFilter, setVacationHistoryFilter] = useState<"all" | "consumes" | "non-consumes">("all");
 
   const pendingRequests = useMemo(() => requests.filter((r) => r.status === "pending"), [requests]);
   const approvedRequests = useMemo(() => requests.filter((r) => r.status === "approved"), [requests]);
@@ -695,10 +699,16 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
                         </div>
                       </td>
                       <td className="text-center py-3 px-4">
-                        <span className="text-lg font-semibold text-[var(--color-gold)]">
-                          {p.vacation_balance}
-                        </span>
-                        <span className="text-xs text-[var(--color-brown-medium)]"> dias</span>
+                        <button 
+                          onClick={() => setVacationHistoryEmployee(p)}
+                          className="hover:opacity-80 transition-opacity"
+                          title="Ver histórico de férias"
+                        >
+                          <span className="text-lg font-semibold text-[var(--color-gold)]">
+                            {p.vacation_balance}
+                          </span>
+                          <span className="text-xs text-[var(--color-brown-medium)] ml-1"> dias</span>
+                        </button>
                       </td>
                       <td className="text-center py-3 px-4">
                         <span className="text-lg font-semibold text-[var(--color-green-olive)]">
@@ -840,6 +850,124 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
           </div>
         )}
       </Modal>
+
+      {/* Modal de Histórico de Férias */}
+      {vacationHistoryEmployee && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-[var(--border)]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-[var(--color-brown-dark)]">
+                    Histórico de Férias - {vacationHistoryEmployee.name}
+                  </h3>
+                  <p className="text-sm text-[var(--color-brown-medium)] mt-1">
+                    Saldo atual: <span className="font-semibold text-[var(--color-gold)]">{vacationHistoryEmployee.vacation_balance} dias</span>
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setVacationHistoryEmployee(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+              
+              {/* Filtros */}
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => setVacationHistoryFilter("all")}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${vacationHistoryFilter === "all" ? "bg-[#5C724A] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                >
+                  Todos
+                </button>
+                <button
+                  onClick={() => setVacationHistoryFilter("consumes")}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${vacationHistoryFilter === "consumes" ? "bg-[#5C724A] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                >
+                  Consome Férias
+                </button>
+                <button
+                  onClick={() => setVacationHistoryFilter("non-consumes")}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${vacationHistoryFilter === "non-consumes" ? "bg-[#5C724A] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                >
+                  Não Consome
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              {(() => {
+                const userRequests = requests.filter(r => r.user_id === vacationHistoryEmployee.id);
+                const filtered = userRequests.filter(r => {
+                  if (vacationHistoryFilter === "all") return true;
+                  if (vacationHistoryFilter === "consumes") return r.type === "vacation";
+                  if (vacationHistoryFilter === "non-consumes") return r.type !== "vacation";
+                  return true;
+                }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                
+                if (filtered.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-[var(--color-brown-medium)]">
+                      <p>Nenhuma solicitação encontrada</p>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div className="space-y-3">
+                    {filtered.map(req => (
+                      <div key={req.id} className="p-4 bg-[var(--color-cream)] rounded-lg">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`inline-flex items-center rounded-full text-xs font-semibold px-2.5 py-0.5 ${
+                                req.type === "vacation" ? "bg-blue-100 text-blue-800" :
+                                req.type === "day_off" ? "bg-purple-100 text-purple-800" :
+                                req.type === "sick" ? "bg-red-100 text-red-800" :
+                                req.type === "hours" ? "bg-yellow-100 text-yellow-800" :
+                                "bg-gray-100 text-gray-800"
+                              }`}>
+                                {LEAVE_TYPE_LABELS[req.type as LeaveType] || req.type}
+                              </span>
+                              <span className={`inline-flex items-center rounded-full text-xs font-semibold px-2.5 py-0.5 ${
+                                req.status === "approved" ? "bg-green-100 text-green-800" :
+                                req.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                                req.status === "rejected" ? "bg-red-100 text-red-800" :
+                                req.status === "cancelled" ? "bg-gray-100 text-gray-800" :
+                                "bg-gray-100 text-gray-800"
+                              }`}>
+                                {STATUS_LABELS[req.status as LeaveStatus] || req.status}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[var(--color-brown-dark)] mb-1">
+                              {format(new Date(req.start_date), "dd/MM/yyyy")} - {format(new Date(req.end_date), "dd/MM/yyyy")}
+                            </p>
+                            {req.notes && (
+                              <p className="text-xs text-[var(--color-brown-medium)] mt-1">
+                                "{req.notes}"
+                              </p>
+                            )}
+                            <p className="text-xs text-[var(--color-brown-medium)] mt-1">
+                              Solicitado em {format(new Date(req.created_at), "dd/MM/yyyy HH:mm")}
+                            </p>
+                          </div>
+                          <div className="text-right ml-4">
+                            <span className="text-lg font-semibold text-[var(--color-brown-dark)]">
+                              {req.days_count}
+                            </span>
+                            <span className="text-xs text-[var(--color-brown-medium)]"> dias</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
     </AdminErrorBoundary>
   );
