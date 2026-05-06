@@ -20,6 +20,7 @@ import {
   Bell,
   Scroll,
   UserCircle,
+  CheckCircle,
 } from "lucide-react";
 import { clsx } from "clsx";
 import type { Profile } from "@/lib/types";
@@ -50,6 +51,7 @@ const MASTER_ADMIN_ITEMS: NavItem[] = [
   { label: "Logs Sistema", href: "/admin/logs", icon: Scroll },
   { label: "Gestão Financeira", href: "/admin/finance", icon: DollarSign },
   { label: "Notificações", href: "/admin/notifications", icon: Bell },
+  { label: "Aprovações", href: "/admin/approved", icon: CheckCircle },
   { label: "Configurações", href: "/admin/settings", icon: Settings },
   { label: "Meu Perfil", href: "/settings", icon: UserCircle },
 ];
@@ -62,6 +64,7 @@ const TENANT_ADMIN_ITEMS: NavItem[] = [
   { label: "Fechamento", href: "/admin/timesheets", icon: BarChart3 },
   { label: "Histórico", href: "/admin/audit", icon: ScrollText },
   { label: "Notificações", href: "/admin/notifications", icon: Bell },
+  { label: "Aprovações", href: "/admin/approved", icon: CheckCircle },
   { label: "Configurações", href: "/admin/settings", icon: Settings },
 ];
 
