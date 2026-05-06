@@ -42,8 +42,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
       console.log("[AdminLayout] user:", user.id, "role:", profileData?.role);
 
-      if (!profileData || !canManageTeam(profileData.role)) {
-        console.log("[AdminLayout] Redirecting - canManageTeam:", canManageTeam(profileData?.role), "role:", profileData?.role);
+      if (!profileData || !profileData.role || !canManageTeam(profileData.role)) {
+        console.log("[AdminLayout] Redirecting - canManageTeam:", profileData?.role ? canManageTeam(profileData.role) : false, "role:", profileData?.role);
         router.push("/dashboard");
         return;
       }
