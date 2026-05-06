@@ -21,11 +21,21 @@ export default function AdminPage() {
   const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
 
   const fetchData = async (tenantId: string | null) => {
-    // Fetch leave requests
-    const { data: requests } = await supabase
+    console.log("[AdminPage] fetchData called with tenantId:", tenantId);
+    
+    // Build leave requests query with tenant filter
+    let requestsQuery = supabase
       .from("leave_requests")
       .select("*")
       .order("created_at", { ascending: false });
+    
+    // Filter by tenant if specified
+    if (tenantId) {
+      requestsQuery = requestsQuery.eq("tenant_id", tenantId);
+    }
+    
+    const { data: requests } = await requestsQuery;
+    console.log("[AdminPage] Requests fetched:", requests?.length);
 
     // Fetch profiles filtered by tenant
     let profilesQuery = supabase
