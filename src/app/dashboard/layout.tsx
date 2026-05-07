@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { TenantProvider, useTenant } from "@/contexts/TenantContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import type { Profile } from "@/lib/types";
@@ -12,12 +13,21 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  return (
+    <TenantProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </TenantProvider>
+  );
+}
+
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const supabase = createClient();
+  const { currentTenant, tenants } = useTenant();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -81,6 +91,8 @@ export default function DashboardLayout({
       <div className="flex flex-col flex-1 overflow-hidden">
         <Topbar 
           profile={profile} 
+          currentTenant={currentTenant ?? undefined}
+          tenants={tenants}
           onMenuToggle={() => setSidebarOpen(prev => !prev)} 
         />
         <main className="flex-1 overflow-auto">

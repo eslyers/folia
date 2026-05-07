@@ -79,7 +79,7 @@ const GESTOR_ITEMS: NavItem[] = [
 const FUNCIONARIO_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
   { label: "Ponto", href: "/dashboard/point", icon: Clock },
-  { label: "Meus Pedidos", href: "/admin/my-requests", icon: ClipboardCheck },
+  { label: "Meus Pedidos", href: "/dashboard/my-requests", icon: ClipboardCheck },
   { label: "Configurações", href: "/settings", icon: Settings },
 ];
 
