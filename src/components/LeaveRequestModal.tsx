@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Modal, Button, Input, Select } from "@/components/ui";
+import { Modal, Button, DatePicker, PremiumSelect } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { LEAVE_TYPE_LABELS } from "@/lib/types";
 import type { LeaveType, Policy } from "@/lib/types";
@@ -252,33 +252,29 @@ export function LeaveRequestModal({
           </div>
         )}
 
-        <Select
+        <PremiumSelect
           label="Tipo de Afastamento"
           options={leaveTypeOptions}
           value={formData.type}
-          onChange={(e) =>
-            setFormData({ ...formData, type: e.target.value as LeaveType })
-          }
-          required
+          onChange={(value) => setFormData({ ...formData, type: value as LeaveType })}
+          placeholder="Selecione"
         />
 
         <div className="grid grid-cols-2 gap-4">
-          <Input
+          <DatePicker
             label="Data Início"
-            type="date"
             value={formData.start_date}
-            onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-            min={format(new Date(), "yyyy-MM-dd")}
-            required
+            onChange={(date) => setFormData({ ...formData, start_date: date })}
+            minDate={format(new Date(), "yyyy-MM-dd")}
+            placeholder="dd/mm/aaaa"
           />
 
-          <Input
+          <DatePicker
             label="Data Fim"
-            type="date"
             value={formData.end_date}
-            onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-            min={formData.start_date || format(new Date(), "yyyy-MM-dd")}
-            required
+            onChange={(date) => setFormData({ ...formData, end_date: date })}
+            minDate={formData.start_date || format(new Date(), "yyyy-MM-dd")}
+            placeholder="dd/mm/aaaa"
           />
         </div>
 
