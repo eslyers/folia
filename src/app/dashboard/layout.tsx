@@ -95,7 +95,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           tenants={tenants}
           onMenuToggle={() => setSidebarOpen(prev => !prev)} 
         />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto bg-gray-100">
           {children}
         </main>
       </div>
