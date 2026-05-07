@@ -80,7 +80,7 @@ const FUNCIONARIO_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard/team", icon: LayoutDashboard, exact: true },
   { label: "Ponto", href: "/dashboard/point", icon: Clock },
   // Para funcionário, esta tela (resumo + calendário + lista) funciona como "Meus Pedidos"
-  { label: "Meus Pedidos", href: "/dashboard", icon: ClipboardCheck },
+  { label: "Meus Pedidos", href: "/dashboard", icon: ClipboardCheck, exact: true },
   { label: "Configurações", href: "/settings", icon: Settings },
 ];
 
