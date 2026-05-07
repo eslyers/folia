@@ -3,16 +3,25 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { TenantProvider } from "@/contexts/TenantContext";
+import { TenantProvider, useTenant } from "@/contexts/TenantContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import type { Profile } from "@/lib/types";
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <TenantProvider>
+      <SettingsLayoutContent />
+    </TenantProvider>
+  );
+}
+
+function SettingsLayoutContent() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { currentTenant, tenants } = useTenant();
   const supabase = createClient();
 
   useEffect(() => {
@@ -39,7 +48,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     };
 
     checkUser();
-  }, []);
+  }, [router, supabase]);
 
   if (loading || !profile) {
     return (
@@ -61,7 +70,6 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   }
 
   return (
-    <TenantProvider>
       <div className="flex h-screen bg-gray-50">
         <Sidebar
           profile={profile}
@@ -71,6 +79,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         <div className="flex flex-col flex-1 overflow-hidden">
           <Topbar
             profile={profile}
+            currentTenant={currentTenant}
+            tenants={tenants}
             onMenuToggle={() => setSidebarOpen(prev => !prev)}
           />
           <main className="flex-1 overflow-auto bg-gray-100">
@@ -78,6 +88,5 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
           </main>
         </div>
       </div>
-    </TenantProvider>
   );
 }
