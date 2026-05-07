@@ -11,12 +11,12 @@ import type { Profile } from "@/lib/types";
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   return (
     <TenantProvider>
-      <SettingsLayoutContent />
+      <SettingsLayoutContent>{children}</SettingsLayoutContent>
     </TenantProvider>
   );
 }
 
-function SettingsLayoutContent() {
+function SettingsLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,7 +79,7 @@ function SettingsLayoutContent() {
         <div className="flex flex-col flex-1 overflow-hidden">
           <Topbar
             profile={profile}
-            currentTenant={currentTenant}
+            currentTenant={currentTenant ?? undefined}
             tenants={tenants}
             onMenuToggle={() => setSidebarOpen(prev => !prev)}
           />
