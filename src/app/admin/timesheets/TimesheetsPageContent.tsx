@@ -8,7 +8,7 @@ import { Card, Button } from "@/components/ui";
 import { Modal } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
-import { isTenantAdmin, canManageTeam } from "@/lib/auth";
+import { isTenantAdmin, canManageTeam, getHomeRoute } from "@/lib/auth";
 import { format, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -89,7 +89,7 @@ export default function TimesheetsPageContent() {
 
       const adminProfile = currentProfile as any;
       if (!adminProfile || !canManageTeam(adminProfile.role)) {
-        setTimeout(() => router.push("/dashboard"), 1500);
+        setTimeout(() => router.push(getHomeRoute(adminProfile?.role)), 1500);
         return;
       }
       setProfile(adminProfile);

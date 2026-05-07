@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { isMasterAdmin } from "@/lib/auth";
+import { isMasterAdmin, getHomeRoute } from "@/lib/auth";
 import { Card, Button, Input, PremiumSelect, DatePicker } from "@/components/ui";
 import { Scroll, Download, Search, Filter, X, ChevronLeft, ChevronRight, LogIn, LogOut, Plus, Pencil, Trash2, CheckCircle, XCircle, Clock, ScrollText } from "lucide-react";
 
@@ -92,7 +92,7 @@ export default function LogsPage() {
       .eq("id", user.id)
       .single() as { data: any };
     if (!profileData || !isMasterAdmin(profileData.role)) {
-      router.push("/dashboard");
+      router.push(getHomeRoute(profileData?.role));
       return;
     }
     setProfile(profileData);

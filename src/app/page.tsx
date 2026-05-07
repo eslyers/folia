@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getHomeRoute } from "@/lib/auth";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -13,9 +14,9 @@ export default async function Home() {
       .single();
 
     if (profile?.role === "master_admin" || profile?.role === "tenant_admin") {
-      redirect("/admin");
+      redirect(getHomeRoute(profile.role));
     } else {
-      redirect("/dashboard");
+      redirect(getHomeRoute(profile?.role));
     }
   }
 

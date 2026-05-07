@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AdminDashboard } from "./AdminDashboard";
-import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
+import { isTenantAdmin, isMasterAdmin, getHomeRoute } from "@/lib/auth";
 import { useTenant } from "@/contexts/TenantContext";
 
 export default function AdminClient() {
@@ -45,7 +45,7 @@ export default function AdminClient() {
         }
         
         if (!profileData || !isTenantAdmin((profileData as any).role)) {
-          setTimeout(() => router.push("/dashboard"), 1500);
+          setTimeout(() => router.push(getHomeRoute((profileData as any)?.role)), 1500);
           return;
         }
 

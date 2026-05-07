@@ -134,3 +134,29 @@ export const ROLE_LABELS: Record<string, string> = {
 export function getRoleLabel(role: string): string {
   return ROLE_LABELS[role] || role;
 }
+
+// =====================================================
+// HOME ROUTE HELPERS (RBAC)
+// =====================================================
+
+/**
+ * Canonical “home” route per role.
+ * Used for redirects when a user lacks permission for a page.
+ */
+export function getHomeRoute(role?: string | null): string {
+  switch (role) {
+    case "master_admin":
+    case "tenant_admin":
+    // legacy
+    case "admin":
+      return "/admin";
+    case "gestor":
+      return "/admin/my-requests";
+    case "funcionario":
+    // legacy
+    case "employee":
+      return "/dashboard/team";
+    default:
+      return "/landing";
+  }
+}

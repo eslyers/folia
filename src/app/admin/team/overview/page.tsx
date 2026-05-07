@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Card, Button } from "@/components/ui";
 import { useTenant } from "@/contexts/TenantContext";
-import { isGestor, isTenantAdmin } from "@/lib/auth";
+import { isGestor, isTenantAdmin, getHomeRoute } from "@/lib/auth";
 import { format } from "date-fns";
 import { LEAVE_TYPE_LABELS, LeaveType } from "@/lib/types";
 import { Calendar } from "@/components/calendar/Calendar";
@@ -36,12 +36,12 @@ export default function TeamOverviewPage() {
       .single();
 
     if (!profileData) {
-      router.push("/dashboard");
+      router.push(getHomeRoute(undefined));
       return;
     }
 
     if (!isGestor(profileData.role) && !isTenantAdmin(profileData.role)) {
-      router.push("/dashboard");
+      router.push(getHomeRoute(profileData?.role));
       return;
     }
 

@@ -7,7 +7,7 @@ import { Building2, X, ChevronDown } from "lucide-react";
 import { clsx } from "clsx";
 import { AdminDashboard } from "./AdminDashboard";
 import { useTenant } from "@/contexts/TenantContext";
-import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
+import { isTenantAdmin, isMasterAdmin, getHomeRoute } from "@/lib/auth";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -68,7 +68,7 @@ export default function AdminPage() {
         .single();
 
       if (!profileData || !isTenantAdmin((profileData as any).role)) {
-        router.push("/dashboard");
+        router.push(getHomeRoute((profileData as any)?.role));
         return;
       }
 

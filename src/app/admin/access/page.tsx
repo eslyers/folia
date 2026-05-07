@@ -10,7 +10,7 @@ import {
   Shield, UserCog, ToggleLeft, ToggleRight, ArrowRightLeft,
   CheckSquare, Square, Loader2
 } from "lucide-react";
-import { isMasterAdmin } from "@/lib/auth";
+import { isMasterAdmin, getHomeRoute } from "@/lib/auth";
 import { format } from "date-fns";
 import { clsx } from "clsx";
 
@@ -87,7 +87,7 @@ export default function AccessManagementPage() {
       .single() as { data: any };
 
     if (!profileData || !isMasterAdmin(profileData.role)) {
-      router.push("/dashboard");
+      router.push(getHomeRoute(profileData?.role));
       return;
     }
 

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Building2, X, ChevronDown, Check, Search, Calendar, Filter } from "lucide-react";
 import { Card, Button, PremiumSelect } from "@/components/ui";
 import { useTenant } from "@/contexts/TenantContext";
-import { isTenantAdmin, isMasterAdmin, canManageTeam } from "@/lib/auth";
+import { isTenantAdmin, isMasterAdmin, canManageTeam, getHomeRoute } from "@/lib/auth";
 import { format } from "date-fns";
 import { LEAVE_TYPE_LABELS, STATUS_LABELS, LeaveType } from "@/lib/types";
 import { clsx } from "clsx";
@@ -67,7 +67,7 @@ export default function ApprovedRequestsPage() {
         .single();
 
       if (!profileData || !canManageTeam(profileData.role)) {
-        router.push("/dashboard");
+        router.push(getHomeRoute(profileData?.role));
         return;
       }
 

@@ -10,7 +10,7 @@ import {
   HardDrive, Calendar, Package, ToggleLeft, ToggleRight
 } from "lucide-react";
 import { clsx } from "clsx";
-import { isMasterAdmin } from "@/lib/auth";
+import { isMasterAdmin, getHomeRoute } from "@/lib/auth";
 import { format } from "date-fns";
 
 interface Tenant {
@@ -91,7 +91,7 @@ export default function AccessControlPage() {
       .single() as { data: any };
 
     if (!profileData || !isMasterAdmin(profileData.role)) {
-      router.push("/dashboard");
+      router.push(getHomeRoute(profileData?.role));
       return;
     }
 

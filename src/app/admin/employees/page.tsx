@@ -12,7 +12,7 @@ import { format, differenceInYears, differenceInMonths, addMonths } from "date-f
 import { clsx } from "clsx";
 import { ptBR } from "date-fns/locale";
 import { useTenant } from "@/contexts/TenantContext";
-import { isTenantAdmin, isMasterAdmin, getRoleLabel } from "@/lib/auth";
+import { isTenantAdmin, isMasterAdmin, getRoleLabel, getHomeRoute } from "@/lib/auth";
 
 interface EmployeeForm {
   id?: string;
@@ -76,7 +76,7 @@ export default function EmployeesPage() {
 
       const adminProfile = currentProfile as any;
       if (!adminProfile || !isTenantAdmin(adminProfile.role)) {
-        setTimeout(() => router.push("/dashboard"), 1500);
+        setTimeout(() => router.push(getHomeRoute(adminProfile?.role)), 1500);
         return;
       }
 

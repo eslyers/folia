@@ -8,7 +8,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { ToastProvider } from "@/components/ui/Toast";
 import type { Profile } from "@/lib/types";
-import { isTenantAdmin, isMasterAdmin, isGestor, canManageTeam } from "@/lib/auth";
+import { isTenantAdmin, isMasterAdmin, isGestor, canManageTeam, getHomeRoute } from "@/lib/auth";
 
 interface Tenant {
   id: string;
@@ -44,7 +44,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
       if (!profileData || !profileData.role || !canManageTeam(profileData.role)) {
         console.log("[AdminLayout] Redirecting - canManageTeam:", profileData?.role ? canManageTeam(profileData.role) : false, "role:", profileData?.role);
-        router.push("/dashboard");
+        router.push(getHomeRoute(profileData?.role));
         return;
       }
 

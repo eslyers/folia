@@ -8,7 +8,7 @@ import { Card, Button, Input, Modal, DatePicker, PremiumSelect } from "@/compone
 import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
-import { isTenantAdmin, isMasterAdmin } from "@/lib/auth";
+import { isTenantAdmin, isMasterAdmin, getHomeRoute } from "@/lib/auth";
 import { clsx } from "clsx";
 
 interface WorkSchedule {
@@ -102,7 +102,7 @@ export default function SchedulesPage() {
 
       const adminProfile = currentProfile as any;
       if (!adminProfile || (!isTenantAdmin(adminProfile.role) && !isMasterAdmin(adminProfile.role))) {
-        setTimeout(() => router.push("/dashboard"), 1500);
+        setTimeout(() => router.push(getHomeRoute(adminProfile?.role)), 1500);
         return;
       }
 

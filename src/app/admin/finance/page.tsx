@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { isMasterAdmin } from "@/lib/auth";
+import { isMasterAdmin, getHomeRoute } from "@/lib/auth";
 import { Card, Button, Input, Modal } from "@/components/ui";
 import {
   DollarSign,
@@ -124,7 +124,7 @@ export default function FinancePage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/login"); return; }
     const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single() as { data: any };
-    if (!profileData || !isMasterAdmin(profileData.role)) { router.push("/dashboard"); return; }
+    if (!profileData || !isMasterAdmin(profileData.role)) { router.push(getHomeRoute(profileData?.role)); return; }
     setProfile(profileData);
     await loadData();
     setLoading(false);
