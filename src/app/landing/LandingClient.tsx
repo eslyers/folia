@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import {
-  Check,
-  ArrowRight,
-  Zap,
-  Users,
   Calendar,
+  Users,
   BarChart3,
   Bell,
   Cloud,
@@ -15,13 +13,17 @@ import {
   Shield,
   TrendingUp,
   ChevronDown,
-  Menu,
-  X,
   Star,
   Building2,
   Headphones,
   Globe,
-  CreditCard,
+} from "lucide-react";
+import {
+  Check,
+  ArrowRight,
+  Zap,
+  Menu,
+  X,
 } from "lucide-react";
 
 // Schema.org structured data
@@ -218,6 +220,22 @@ export default function LandingClient() {
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  // Critical CSS inline
+  useEffect(() => {
+    const criticalCSS = `
+      .hero { padding-top: 8rem; padding-bottom: 5rem; }
+      .logo { width: 40px; height: 40px; }
+      .dashboard-preview { background: linear-gradient(to bottom right, var(--color-cream), white); padding: 1.5rem; }
+      .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+      .stat-card { background: white; border-radius: 0.75rem; padding: 1rem; border: 1px solid var(--border); box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
+      @media (max-width: 640px) { .stats-grid { grid-template-columns: 1fr; } }
+    `;
+    const style = document.createElement('style');
+    style.textContent = criticalCSS;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
@@ -247,7 +265,7 @@ export default function LandingClient() {
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="FOLIA" className="h-10 object-contain" />
+              <Image src="/logo.png" alt="FOLIA" width={40} height={40} className="h-10 object-contain" priority />
             </div>
 
             {/* Desktop Nav */}
@@ -712,7 +730,7 @@ export default function LandingClient() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="FOLIA" className="h-10 object-contain" />
+              <Image src="/logo.png" alt="FOLIA" width={40} height={40} className="h-10 object-contain" priority />
             </div>
             <p className="text-sm text-center">
               © {new Date().getFullYear()} FOLIA — Gestão de Férias, Ponto e RH para Empresas.
