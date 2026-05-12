@@ -1017,6 +1017,7 @@ export default function SaasAdminPage() {
         <form 
           id="create-tenant-form"
           className="space-y-4"
+          onSubmit={(e) => { e.preventDefault(); handleCreateTenant(); }}
         >
           <div>
             <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1">
