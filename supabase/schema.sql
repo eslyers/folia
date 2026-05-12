@@ -1,23 +1,54 @@
--- FOLIA - Sistema de Controle de Férias e Folgas
--- Supabase Schema Migration v1.3 (audit_log + reports)
+-- FOLIA - Schema Consolidado v2.0 (pós-migrations 001-017)
+-- Multi-Tenant SaaS com RBAC 4 níveis
+-- Roles: master_admin > tenant_admin > gestor > funcionario
 
--- =====================================================
--- EXTENSIONS
--- =====================================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =====================================================
--- TABLES
+-- HELPER: update_updated_at
 -- =====================================================
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
 
 -- =====================================================
--- TABLE 1: profiles (extensão do auth.users)
+-- TABLE: tenants
+-- =====================================================
+CREATE TABLE IF NOT EXISTS tenants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  domain TEXT UNIQUE,
+  slug TEXT UNIQUE NOT NULL,
+  logo_url TEXT,
+  settings JSONB DEFAULT '{}',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TRIGGER tenants_updated_at BEFORE UPDATE ON tenants FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE INDEX IF NOT EXISTS idx_tenants_slug ON tenants(slug);
+CREATE INDEX IF NOT EXISTS idx_tenants_domain ON tenants(domain);
+CREATE INDEX IF NOT EXISTS idx_tenants_is_active ON tenants(is_active);
+
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "authenticated_can_view_active_tenants" ON tenants FOR SELECT USING (is_active = true);
+CREATE POLICY "service_role_manage_tenants" ON tenants FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+INSERT INTO tenants (id, name, slug, settings, is_active)
+VALUES ('00000000-0000-0000-0000-000000000000','Empresa Padrão','default','{"timezone":"America/Sao_Paulo","locale":"pt-BR"}',true)
+ON CONFLICT (id) DO NOTHING;
+
+-- =====================================================
+-- TABLE: profiles
 -- =====================================================
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'employee' CHECK (role IN ('admin', 'employee')),
+  role TEXT NOT NULL DEFAULT 'funcionario'
+    CHECK (role IN ('master_admin','tenant_admin','gestor','funcionario','admin','employee')),
   avatar_url TEXT,
   vacation_balance INTEGER NOT NULL DEFAULT 30,
   hours_balance INTEGER NOT NULL DEFAULT 0,
@@ -26,23 +57,65 @@ CREATE TABLE IF NOT EXISTS profiles (
   phone TEXT,
   emergency_contact TEXT,
   hire_date DATE,
+  tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES tenants(id),
+  manager_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  schedule_id UUID,
+  is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TRIGGER profiles_updated_at BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE INDEX IF NOT EXISTS idx_profiles_role ON profiles(role);
+CREATE INDEX IF NOT EXISTS idx_profiles_tenant_id ON profiles(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_manager_id ON profiles(manager_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_is_active ON profiles(is_active);
+
 -- =====================================================
--- TABLE 2: leave_requests
+-- TABLE: work_schedules
+-- =====================================================
+CREATE TABLE IF NOT EXISTS work_schedules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES tenants(id),
+  name TEXT NOT NULL,
+  daily_hours NUMERIC(4,2) NOT NULL DEFAULT 8,
+  monday BOOLEAN NOT NULL DEFAULT true,
+  tuesday BOOLEAN NOT NULL DEFAULT true,
+  wednesday BOOLEAN NOT NULL DEFAULT true,
+  thursday BOOLEAN NOT NULL DEFAULT true,
+  friday BOOLEAN NOT NULL DEFAULT true,
+  saturday BOOLEAN NOT NULL DEFAULT false,
+  sunday BOOLEAN NOT NULL DEFAULT false,
+  tolerance_minutes INTEGER NOT NULL DEFAULT 5,
+  start_work TIME DEFAULT '09:00',
+  end_work TIME DEFAULT '18:00',
+  lunch_duration_minutes INTEGER DEFAULT 60,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TRIGGER work_schedules_updated_at BEFORE UPDATE ON work_schedules FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE INDEX IF NOT EXISTS idx_work_schedules_tenant_id ON work_schedules(tenant_id);
+ALTER TABLE work_schedules ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_role_work_schedules" ON work_schedules FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+ALTER TABLE profiles ADD CONSTRAINT fk_profiles_schedule FOREIGN KEY (schedule_id) REFERENCES work_schedules(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED;
+
+-- =====================================================
+-- TABLE: leave_requests
 -- =====================================================
 CREATE TABLE IF NOT EXISTS leave_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('vacation', 'day_off', 'hours', 'sick', 'other')),
+  tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES tenants(id),
+  type TEXT NOT NULL CHECK (type IN ('vacation','day_off','hours','sick','other')),
   start_date DATE NOT NULL,
   end_date DATE NOT NULL,
   days_count INTEGER NOT NULL,
   hours_count INTEGER DEFAULT 0,
   notes TEXT,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','cancelled')),
   rejection_reason TEXT,
   reviewed_by UUID REFERENCES profiles(id),
   reviewed_at TIMESTAMP WITH TIME ZONE,
@@ -52,11 +125,17 @@ CREATE TABLE IF NOT EXISTS leave_requests (
   CONSTRAINT valid_days CHECK (days_count > 0)
 );
 
+CREATE TRIGGER leave_requests_updated_at BEFORE UPDATE ON leave_requests FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE INDEX IF NOT EXISTS idx_leave_requests_user_id ON leave_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_leave_requests_tenant_id ON leave_requests(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_leave_requests_status ON leave_requests(status);
+
 -- =====================================================
--- TABLE 3: policies
+-- TABLE: policies
 -- =====================================================
 CREATE TABLE IF NOT EXISTS policies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES tenants(id),
   name TEXT NOT NULL,
   vacation_days_per_year INTEGER NOT NULL DEFAULT 30,
   carry_over_days INTEGER NOT NULL DEFAULT 5,
@@ -67,416 +146,69 @@ CREATE TABLE IF NOT EXISTS policies (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TRIGGER policies_updated_at BEFORE UPDATE ON policies FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+ALTER TABLE policies ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_role_policies" ON policies FOR ALL TO service_role USING (true) WITH CHECK (true);
+
 -- =====================================================
--- TABLE 4: notifications
+-- TABLE: notifications
 -- =====================================================
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   message TEXT NOT NULL,
-  type TEXT NOT NULL DEFAULT 'info' CHECK (type IN ('info', 'success', 'warning', 'error')),
+  type TEXT NOT NULL DEFAULT 'info' CHECK (type IN ('info','success','warning','error')),
   is_read BOOLEAN DEFAULT false,
   link TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Notification Logs Table
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_role_notifications" ON notifications FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- =====================================================
+-- TABLE: notification_logs
+-- =====================================================
 CREATE TABLE IF NOT EXISTS notification_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
   type TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('sent', 'failed', 'pending')),
+  status TEXT NOT NULL CHECK (status IN ('sent','failed','pending')),
   message TEXT NOT NULL,
   email_sent BOOLEAN DEFAULT false,
   error TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable RLS for notification_logs
+CREATE INDEX IF NOT EXISTS idx_notification_logs_tenant_id ON notification_logs(tenant_id);
 ALTER TABLE notification_logs ENABLE ROW LEVEL SECURITY;
-
--- Policy: anyone authenticated can view notification logs
-CREATE POLICY "Allow authenticated users to view notification_logs"
-  ON notification_logs FOR SELECT
-  TO authenticated
-  USING (true);
-
--- Policy: anyone authenticated can insert notification logs
-CREATE POLICY "Allow authenticated users to insert notification_logs"
-  ON notification_logs FOR INSERT
-  TO authenticated
-  WITH CHECK (true);
-
--- Policy: service role can do anything (for API routes)
-CREATE POLICY "Service role full access to notification_logs"
-  ON notification_logs FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
+CREATE POLICY "service_role_notification_logs" ON notification_logs FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "auth_view_notification_logs" ON notification_logs FOR SELECT TO authenticated USING (true);
 
 -- =====================================================
--- TRIGGERS
--- =====================================================
-
--- Function to auto-update updated_at
-CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Triggers for updated_at
-CREATE TRIGGER profiles_updated_at
-  BEFORE UPDATE ON profiles
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER leave_requests_updated_at
-  BEFORE UPDATE ON leave_requests
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER policies_updated_at
-  BEFORE UPDATE ON policies
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
--- =====================================================
--- ROW LEVEL SECURITY (RLS)
--- =====================================================
-
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE leave_requests ENABLE ROW SECURITY;
-ALTER TABLE policies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-
--- Helper function to check admin role (avoids recursion by using SECURITY DEFINER)
-CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID)
-RETURNS BOOLEAN AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE id = user_id AND role = 'admin'
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- === PROFILES ===
--- Users can view their own profile
-CREATE POLICY "users_view_own_profile" ON profiles
-  FOR SELECT USING (auth.uid() = id);
-
--- Admin view all (uses SECURITY DEFINER function to avoid recursion)
-CREATE POLICY "admins_view_all_profiles" ON profiles
-  FOR SELECT USING (public.is_admin(auth.uid()) OR auth.uid() = id);
-
--- Users can update their own profile (except role)
-CREATE POLICY "users_update_own_profile" ON profiles
-  FOR UPDATE USING (auth.uid() = id)
-  WITH CHECK (role = OLD.role);
-
--- Only admins can insert profiles
-CREATE POLICY "admins_insert_profiles" ON profiles
-  FOR INSERT WITH CHECK (public.is_admin(auth.uid()));
-
--- === LEAVE REQUESTS ===
--- Users can view their own requests
-CREATE POLICY "users_view_own_requests" ON leave_requests
-  FOR SELECT USING (auth.uid() = user_id);
-
--- Admins can view all requests
-CREATE POLICY "admins_view_all_requests" ON leave_requests
-  FOR SELECT USING (public.is_admin(auth.uid()));
-
--- Users can create their own requests
-CREATE POLICY "users_create_own_requests" ON leave_requests
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
--- Admins can update all requests
-CREATE POLICY "admins_update_all_requests" ON leave_requests
-  FOR UPDATE USING (public.is_admin(auth.uid()));
-
--- Users can cancel their own pending requests
-CREATE POLICY "users_cancel_own_pending_requests" ON leave_requests
-  FOR UPDATE USING (
-    auth.uid() = user_id AND status = 'pending'
-  )
-  WITH CHECK (status = 'cancelled');
-
--- === NOTIFICATIONS ===
-CREATE POLICY "users_view_own_notifications" ON notifications
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "users_can_create_notifications" ON notifications
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-
-CREATE POLICY "users_update_own_notifications" ON notifications
-  FOR UPDATE USING (auth.uid() = user_id);
-
--- === POLICIES ===
-CREATE POLICY "everyone_view_active_policies" ON policies
-  FOR SELECT USING (is_active = true);
-
--- =====================================================
--- AUTO-CREATE PROFILE ON SIGNUP
--- =====================================================
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, name, role, vacation_balance, hours_balance)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
-    'employee',
-    30,
-    0
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- =====================================================
--- SEED DEFAULT POLICY
--- =====================================================
-INSERT INTO policies (name, vacation_days_per_year, carry_over_days, max_consecutive_days, min_days_notice)
-VALUES ('Política Padrão CLT', 30, 5, 30, 7)
-ON CONFLICT DO NOTHING;
-
--- =====================================================
--- INDEXES
--- =====================================================
-CREATE INDEX IF NOT EXISTS idx_leave_requests_user_id ON leave_requests(user_id);
-CREATE INDEX IF NOT EXISTS idx_leave_requests_status ON leave_requests(status);
-CREATE INDEX IF NOT EXISTS idx_leave_requests_dates ON leave_requests(start_date, end_date);
-CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
-CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
-CREATE INDEX IF NOT EXISTS idx_profiles_role ON profiles(role);
-
--- =====================================================
--- TABLE 5: hour_entries
+-- TABLE: hour_entries
 -- =====================================================
 CREATE TABLE IF NOT EXISTS hour_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   date DATE NOT NULL,
   hours INTEGER NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('extra', 'compensated')),
+  type TEXT NOT NULL CHECK (type IN ('extra','compensated')),
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Index for hour_entries
 CREATE INDEX IF NOT EXISTS idx_hour_entries_user_id ON hour_entries(user_id);
-CREATE INDEX IF NOT EXISTS idx_hour_entries_date ON hour_entries(date);
-
--- Trigger for hour_entries updated_at
-CREATE TRIGGER hour_entries_updated_at
-  BEFORE INSERT ON hour_entries
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
--- RLS for hour_entries
 ALTER TABLE hour_entries ENABLE ROW LEVEL SECURITY;
-
--- Users can view their own hour entries
-CREATE POLICY "users_view_own_hour_entries" ON hour_entries
-  FOR SELECT USING (auth.uid() = user_id);
-
--- Users can insert their own hour entries
-CREATE POLICY "users_insert_own_hour_entries" ON hour_entries
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
--- Admins can view all hour entries
-CREATE POLICY "admins_view_all_hour_entries" ON hour_entries
-  FOR SELECT USING (public.is_admin(auth.uid()));
-
--- Admins can insert hour entries for any user
-CREATE POLICY "admins_insert_hour_entries" ON hour_entries
-  FOR INSERT WITH CHECK (public.is_admin(auth.uid()));
+CREATE POLICY "service_role_hour_entries" ON hour_entries FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- =====================================================
--- TABLE 6: audit_log
--- =====================================================
-CREATE TABLE IF NOT EXISTS audit_log (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  action TEXT NOT NULL CHECK (action IN ('created', 'updated', 'approved', 'rejected', 'cancelled', 'balance_change')),
-  table_name TEXT NOT NULL,
-  record_id UUID,
-  old_value JSONB,
-  new_value JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_log_table_name ON audit_log(table_name);
-CREATE INDEX IF NOT EXISTS idx_audit_log_record_id ON audit_log(record_id);
-CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
-
-ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
-
--- Admins can view all audit logs
-CREATE POLICY "admins_view_audit_logs" ON audit_log
-  FOR SELECT USING (public.is_admin(auth.uid()));
-
--- Service role can insert
-CREATE POLICY "service_insert_audit_logs" ON audit_log
-  FOR INSERT WITH CHECK (true);
-
--- =====================================================
--- RPC: log_audit_action
--- =====================================================
-CREATE OR REPLACE FUNCTION log_audit_action(
-  p_user_id UUID,
-  p_action TEXT,
-  p_table_name TEXT,
-  p_record_id UUID,
-  p_old_value JSONB DEFAULT NULL,
-  p_new_value JSONB DEFAULT NULL
-)
-RETURNS void AS $$
-BEGIN
-  INSERT INTO audit_log (user_id, action, table_name, record_id, old_value, new_value)
-  VALUES (p_user_id, p_action, p_table_name, p_record_id, p_old_value, p_new_value);
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- =====================================================
--- RPC FUNCTIONS
--- =====================================================
-
--- C2: Atomic vacation balance deduction with race condition protection
-CREATE OR REPLACE FUNCTION deduct_vacation_balance(
-  p_user_id UUID,
-  p_days INTEGER,
-  p_expected_balance INTEGER
-)
-RETURNS VOID AS $$
-BEGIN
-  -- Atomic update: only deduct if balance matches expected (no concurrent modification)
-  UPDATE profiles
-  SET vacation_balance = vacation_balance - p_days
-  WHERE id = p_user_id
-    AND vacation_balance = p_expected_balance;
-  
-  -- Check if update succeeded (row count = 0 means balance changed)
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Balance modified concurrently';
-  END IF;
-END;
-$$ LANGUAGE plpgsql;
-
--- C3: Atomic hours balance deduction with race condition protection
-CREATE OR REPLACE FUNCTION deduct_hours_balance(
-  p_user_id UUID,
-  p_minutes INTEGER,
-  p_expected_balance INTEGER
-)
-RETURNS VOID AS $$
-BEGIN
-  -- Atomic update: only deduct if balance matches expected (no concurrent modification)
-  UPDATE profiles
-  SET hours_balance = hours_balance - p_minutes
-  WHERE id = p_user_id
-    AND hours_balance = p_expected_balance;
-  
-  -- Check if update succeeded (row count = 0 means balance changed)
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Hours balance modified concurrently';
-  END IF;
-END;
-$$ LANGUAGE plpgsql;
-
--- C4: Add hours to balance (for extra hours worked)
-CREATE OR REPLACE FUNCTION add_hours_balance(
-  p_user_id UUID,
-  p_minutes INTEGER
-)
-RETURNS VOID AS $$
-BEGIN
-  UPDATE profiles
-  SET hours_balance = hours_balance + p_minutes
-  WHERE id = p_user_id;
-END;
-$$ LANGUAGE plpgsql;
--- =====================================================
--- TABLE: work_schedules
--- =====================================================
-CREATE TABLE IF NOT EXISTS work_schedules (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  daily_hours INTEGER NOT NULL DEFAULT 8,
-  monday BOOLEAN NOT NULL DEFAULT true,
-  tuesday BOOLEAN NOT NULL DEFAULT true,
-  wednesday BOOLEAN NOT NULL DEFAULT true,
-  thursday BOOLEAN NOT NULL DEFAULT true,
-  friday BOOLEAN NOT NULL DEFAULT true,
-  saturday BOOLEAN NOT NULL DEFAULT false,
-  sunday BOOLEAN NOT NULL DEFAULT false,
-  tolerance_minutes INTEGER NOT NULL DEFAULT 5,
-  start_work TEXT NOT NULL DEFAULT '09:00',
-  end_work TEXT NOT NULL DEFAULT '18:00',
-  lunch_duration_minutes INTEGER NOT NULL DEFAULT 60,
-  is_active BOOLEAN NOT NULL DEFAULT true,
-  tenant_id UUID REFERENCES profiles(id),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- =====================================================
--- Enable RLS
--- =====================================================
-ALTER TABLE work_schedules ENABLE ROW LEVEL SECURITY;
-
--- RLS Policies for work_schedules
-CREATE POLICY "Users can view their own schedules" ON work_schedules
-  FOR SELECT USING (auth.uid() = tenant_id OR tenant_id IS NULL);
-
-CREATE POLICY "Tenant admins can manage schedules" ON work_schedules
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE profiles.id = auth.uid() 
-      AND profiles.role IN ('tenant_admin', 'master_admin')
-    )
-  );
-
--- =====================================================
--- TABLE: schedule_assignments (junction table)
--- =====================================================
-CREATE TABLE IF NOT EXISTS schedule_assignments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  schedule_id UUID NOT NULL REFERENCES work_schedules(id) ON DELETE CASCADE,
-  effective_date DATE NOT NULL DEFAULT CURRENT_DATE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id, effective_date)
-);
-
--- Enable RLS
-ALTER TABLE schedule_assignments ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view their assignments" ON schedule_assignments
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Tenant admins can manage assignments" ON schedule_assignments
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE profiles.id = auth.uid() 
-      AND profiles.role IN ('tenant_admin', 'master_admin')
-    )
-  );
-
--- =====================================================
--- TABLE: time_entries (for daily attendance tracking)
+-- TABLE: time_entries
 -- =====================================================
 CREATE TABLE IF NOT EXISTS time_entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -489,70 +221,70 @@ CREATE TABLE IF NOT EXISTS time_entries (
   lunch_end TIMESTAMP WITH TIME ZONE,
   total_hours NUMERIC(5,2),
   overtime_hours NUMERIC(5,2),
-  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed', 'adjustment')),
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','closed','adjustment')),
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Indexes for time_entries
+CREATE TRIGGER time_entries_updated_at BEFORE UPDATE ON time_entries FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE INDEX IF NOT EXISTS idx_time_entries_tenant_id ON time_entries(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_time_entries_user_id ON time_entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_time_entries_date ON time_entries(date);
-CREATE INDEX IF NOT EXISTS idx_time_entries_tenant_user_date ON time_entries(tenant_id, user_id, date);
-
--- Trigger for updated_at
-CREATE TRIGGER time_entries_updated_at
-  BEFORE UPDATE ON time_entries
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
--- RLS for time_entries
 ALTER TABLE time_entries ENABLE ROW LEVEL SECURITY;
-
--- RLS Policies for time_entries
-CREATE POLICY "Tenant users can view own time entries" ON time_entries
-  FOR SELECT USING (auth.uid() = user_id AND tenant_id IN (SELECT tenant_id FROM profiles WHERE id = auth.uid()));
-
-CREATE POLICY "Tenant admins can view all time entries" ON time_entries
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE profiles.id = auth.uid() 
-      AND profiles.role IN ('tenant_admin', 'master_admin')
-      AND profiles.tenant_id = time_entries.tenant_id
-    )
-  );
-
-CREATE POLICY "Users can insert own time entries" ON time_entries
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Tenant admins can insert time entries" ON time_entries
-  FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE profiles.id = auth.uid() 
-      AND profiles.role IN ('tenant_admin', 'master_admin')
-      AND profiles.tenant_id = time_entries.tenant_id
-    )
-  );
-
-CREATE POLICY "Tenant admins can update time entries" ON time_entries
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE profiles.id = auth.uid() 
-      AND profiles.role IN ('tenant_admin', 'master_admin')
-      AND profiles.tenant_id = time_entries.tenant_id
-    )
-  );
+CREATE POLICY "service_role_time_entries" ON time_entries FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- =====================================================
--- TABLE 7: system_logs (application activity logging)
+-- TABLE: monthly_timesheets
+-- =====================================================
+CREATE TABLE IF NOT EXISTS monthly_timesheets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  month DATE NOT NULL,
+  total_worked_hours NUMERIC(6,2) DEFAULT 0,
+  total_overtime_hours NUMERIC(6,2) DEFAULT 0,
+  approved_overtime_hours NUMERIC(6,2) DEFAULT 0,
+  overtime_pending_approval NUMERIC(6,2) DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','closed','approved')),
+  approved_by UUID REFERENCES profiles(id),
+  approved_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, month)
+);
+
+ALTER TABLE monthly_timesheets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_role_monthly_timesheets" ON monthly_timesheets FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- =====================================================
+-- TABLE: audit_log
+-- =====================================================
+CREATE TABLE IF NOT EXISTS audit_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  table_name TEXT NOT NULL,
+  record_id UUID,
+  old_value JSONB,
+  new_value JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_tenant_id ON audit_log(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_role_audit" ON audit_log FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- =====================================================
+-- TABLE: system_logs
 -- =====================================================
 CREATE TABLE IF NOT EXISTS system_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  tenant_id UUID,
+  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
   action TEXT NOT NULL,
   module TEXT NOT NULL,
   details TEXT,
@@ -560,19 +292,208 @@ CREATE TABLE IF NOT EXISTS system_logs (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-ALTER TABLE system_logs ENABLE ROW LEVEL SECURITY;
-
--- Allow authenticated users to insert logs
-CREATE POLICY "allow_authenticated_insert_system_logs" ON system_logs FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-
--- Allow authenticated users to view logs
-CREATE POLICY "allow_authenticated_select_system_logs" ON system_logs FOR SELECT USING (auth.role() = 'authenticated');
-
--- Allow service role full access
-CREATE POLICY "service_role_all_system_logs" ON system_logs FOR ALL USING (auth.role() = 'service_role');
-
-CREATE INDEX IF NOT EXISTS idx_system_logs_user_id ON system_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_system_logs_tenant_id ON system_logs(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_system_logs_action ON system_logs(action);
-CREATE INDEX IF NOT EXISTS idx_system_logs_module ON system_logs(module);
 CREATE INDEX IF NOT EXISTS idx_system_logs_created_at ON system_logs(created_at DESC);
+ALTER TABLE system_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "service_role_system_logs" ON system_logs FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- =====================================================
+-- RBAC HELPER FUNCTIONS
+-- =====================================================
+CREATE OR REPLACE FUNCTION is_master_admin(user_id UUID)
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = user_id AND role = 'master_admin');
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+CREATE OR REPLACE FUNCTION is_tenant_admin(p_user_id UUID)
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = p_user_id AND role IN ('master_admin','tenant_admin'));
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+CREATE OR REPLACE FUNCTION is_tenant_admin(user_id UUID, tenant_uuid UUID)
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = user_id AND role IN ('master_admin','tenant_admin') AND tenant_id = tenant_uuid);
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+CREATE OR REPLACE FUNCTION is_manager_of(p_manager_id UUID, p_employee_id UUID)
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS(SELECT 1 FROM profiles WHERE id = p_employee_id AND manager_id = p_manager_id);
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+CREATE OR REPLACE FUNCTION get_user_tenant(p_user_id UUID)
+RETURNS UUID AS $$
+  SELECT tenant_id FROM profiles WHERE id = p_user_id;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+CREATE OR REPLACE FUNCTION get_user_role(p_user_id UUID)
+RETURNS TEXT AS $$
+  SELECT role FROM profiles WHERE id = p_user_id;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+CREATE OR REPLACE FUNCTION can_access_tenant_data(p_user_id UUID, p_tenant_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  IF is_master_admin(p_user_id) THEN RETURN true; END IF;
+  RETURN get_user_tenant(p_user_id) = p_tenant_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+CREATE OR REPLACE FUNCTION is_tenant_active(p_tenant_id UUID)
+RETURNS BOOLEAN AS $$
+  SELECT COALESCE((SELECT is_active FROM tenants WHERE id = p_tenant_id), false);
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- =====================================================
+-- PROFILES RLS (RBAC)
+-- =====================================================
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "rbac_master_admin_profiles" ON profiles
+  FOR ALL USING (is_master_admin(auth.uid()) = true);
+
+CREATE POLICY "rbac_tenant_admin_profiles" ON profiles
+  FOR ALL USING (is_tenant_admin(auth.uid(), tenant_id) = true OR id = auth.uid());
+
+CREATE POLICY "rbac_gestor_view_profiles" ON profiles
+  FOR SELECT USING (is_manager_of(auth.uid(), id) = true OR id = auth.uid());
+
+CREATE POLICY "rbac_employee_profiles" ON profiles
+  FOR SELECT USING (id = auth.uid());
+
+CREATE POLICY "service_role_profiles" ON profiles
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- =====================================================
+-- LEAVE_REQUESTS RLS
+-- =====================================================
+ALTER TABLE leave_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "rbac_master_admin_requests" ON leave_requests
+  FOR ALL USING (is_master_admin(auth.uid()) = true);
+
+CREATE POLICY "rbac_tenant_admin_requests" ON leave_requests
+  FOR ALL USING (is_tenant_admin(auth.uid(), tenant_id) = true OR user_id = auth.uid());
+
+CREATE POLICY "rbac_gestor_requests" ON leave_requests
+  FOR ALL USING (is_manager_of(auth.uid(), user_id) = true OR user_id = auth.uid());
+
+CREATE POLICY "rbac_employee_requests" ON leave_requests
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "rbac_employee_insert_requests" ON leave_requests
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "service_role_requests" ON leave_requests
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- =====================================================
+-- TIME_ENTRIES RLS
+-- =====================================================
+CREATE POLICY "rbac_master_admin_time" ON time_entries
+  FOR ALL USING (is_master_admin(auth.uid()) = true);
+
+CREATE POLICY "rbac_tenant_admin_time" ON time_entries
+  FOR ALL USING (is_tenant_admin(auth.uid(), tenant_id) = true OR user_id = auth.uid());
+
+CREATE POLICY "rbac_gestor_time" ON time_entries
+  FOR SELECT USING (is_manager_of(auth.uid(), user_id) = true OR user_id = auth.uid());
+
+CREATE POLICY "rbac_employee_time" ON time_entries
+  FOR ALL USING (user_id = auth.uid());
+
+-- =====================================================
+-- NOTIFICATIONS RLS
+-- =====================================================
+CREATE POLICY "rbac_user_notifications" ON notifications
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "rbac_user_update_notifications" ON notifications
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- =====================================================
+-- ATOMIC RPC FUNCTIONS
+-- =====================================================
+CREATE OR REPLACE FUNCTION deduct_vacation_balance(p_user_id UUID, p_days INTEGER, p_expected_balance INTEGER)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE profiles SET vacation_balance = vacation_balance - p_days
+  WHERE id = p_user_id AND vacation_balance = p_expected_balance;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Balance modified concurrently'; END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION deduct_hours_balance(p_user_id UUID, p_minutes INTEGER, p_expected_balance INTEGER)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE profiles SET hours_balance = hours_balance - p_minutes
+  WHERE id = p_user_id AND hours_balance = p_expected_balance;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Hours balance modified concurrently'; END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION add_hours_balance(p_user_id UUID, p_minutes INTEGER)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE profiles SET hours_balance = hours_balance + p_minutes WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =====================================================
+-- AUTO-CREATE PROFILE ON SIGNUP
+-- =====================================================
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, name, role, vacation_balance, hours_balance, tenant_id)
+  VALUES (
+    NEW.id, NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+    'funcionario', 30, 0,
+    COALESCE((SELECT id FROM tenants WHERE slug = 'default' LIMIT 1), '00000000-0000-0000-0000-000000000000'::uuid)
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- =====================================================
+-- TENANT CASCADE DELETION TRIGGER
+-- =====================================================
+CREATE OR REPLACE FUNCTION handle_tenant_deletion()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF OLD.id = '00000000-0000-0000-0000-000000000000'::UUID THEN
+    RAISE EXCEPTION 'Cannot delete the default tenant';
+  END IF;
+  DELETE FROM leave_requests WHERE user_id IN (SELECT id FROM profiles WHERE tenant_id = OLD.id);
+  DELETE FROM time_entries WHERE tenant_id = OLD.id;
+  DELETE FROM notifications WHERE user_id IN (SELECT id FROM profiles WHERE tenant_id = OLD.id);
+  DELETE FROM hour_entries WHERE user_id IN (SELECT id FROM profiles WHERE tenant_id = OLD.id);
+  DELETE FROM audit_log WHERE tenant_id = OLD.id;
+  DELETE FROM system_logs WHERE tenant_id = OLD.id;
+  DELETE FROM work_schedules WHERE tenant_id = OLD.id;
+  DELETE FROM policies WHERE tenant_id = OLD.id;
+  UPDATE profiles SET tenant_id = '00000000-0000-0000-0000-000000000000'::UUID WHERE tenant_id = OLD.id;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS before_tenant_delete ON tenants;
+CREATE TRIGGER before_tenant_delete
+  BEFORE DELETE ON tenants
+  FOR EACH ROW EXECUTE FUNCTION handle_tenant_deletion();
+
+-- =====================================================
+-- SEED DATA
+-- =====================================================
+INSERT INTO policies (tenant_id, name, vacation_days_per_year, carry_over_days, max_consecutive_days, min_days_notice)
+VALUES ('00000000-0000-0000-0000-000000000000','Política Padrão CLT',30,5,30,7)
+ON CONFLICT DO NOTHING;
+
+INSERT INTO work_schedules (id, tenant_id, name, daily_hours, monday, tuesday, wednesday, thursday, friday, saturday, sunday, tolerance_minutes, start_work, end_work, lunch_duration_minutes, is_active)
+VALUES ('11111111-1111-1111-1111-111111111111','00000000-0000-0000-0000-000000000000','8h Padrão CLT',8,true,true,true,true,true,false,false,5,'09:00','18:00',60,true)
+ON CONFLICT (id) DO NOTHING;

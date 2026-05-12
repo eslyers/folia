@@ -115,43 +115,26 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
         return;
       }
 
-      // C2: Atomic update using RPC if vacation
-      // Get user's vacation_balance from local profiles array instead of request.profile (avoids RLS issues)
+      // C2: Atomic balance deduction via RPC (prevents race conditions)
       const userProfile = profiles.find((p) => p.id === userId);
-      console.log("[handleApprove] userProfile for", userId, ":", userProfile?.vacation_balance);
-      
+
       if (request.type === "vacation") {
-        // Try RPC first, fallback to direct update
-        const { error: rpcError } = await (supabase as any).rpc("deduct_vacation_balance", {
+        const { error: rpcError } = await supabase.rpc("deduct_vacation_balance", {
           p_user_id: userId,
           p_days: request.days_count,
           p_expected_balance: userProfile?.vacation_balance ?? 0,
         });
 
         if (rpcError) {
-          console.log("[handleApprove] RPC failed, trying direct update:", rpcError);
-          // Fallback: direct update without race condition check
-          const { error: updateBalanceError } = await supabase
-            .from("profiles")
-            .update({
-              vacation_balance: (userProfile?.vacation_balance ?? 0) - request.days_count
-            })
-            .eq("id", userId);
-            
-          if (updateBalanceError) {
-            console.error("[handleApprove] Both RPC and direct update failed:", updateBalanceError);
-            setError("Falha ao atualizar saldo. Tente novamente.");
-            setProcessing(null);
-            return;
-          }
-          console.log("[handleApprove] Direct balance update succeeded");
-        } else {
-          console.log("[handleApprove] RPC deduction succeeded");
+          // Fail fast — do NOT use non-atomic fallback (risk of negative balance)
+          setError("Falha ao deduzir saldo de férias. Tente novamente ou contacte o suporte.");
+          setProcessing(null);
+          return;
         }
       }
 
       // Update request status
-      const { error: updateError } = await (supabase as any)
+      const { error: updateError } = await supabase
         .from("leave_requests")
         .update({
           status: "approved",
@@ -163,14 +146,23 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
       if (updateError) {
         setError(updateError.message);
       } else {
+        // Notify requester
+        await supabase.from("notifications").insert({
+          user_id: userId,
+          title: "Solicitação aprovada ✅",
+          message: `Seu pedido de ${request.days_count} dia(s) foi aprovado por ${profile.name}.`,
+          type: "success",
+          is_read: false,
+        });
+
         setRequests((prev) =>
           prev.map((r) =>
             r.id === requestId ? { ...r, status: "approved" as const } : r
           )
         );
       }
-    } catch (e: any) {
-      setError(e.message || "Erro ao aprovar pedido");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erro ao aprovar pedido");
     } finally {
       setProcessing(null);
     }
@@ -199,7 +191,7 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
     try {
       // Return balance if it was vacation
       if (cancellingRequest.type === "vacation") {
-        const { error: rpcError } = await (supabase as any).rpc("add_vacation_balance", {
+        const { error: rpcError } = await supabase.rpc("add_vacation_balance", {
           p_user_id: cancellingRequest.userId,
           p_days: cancellingRequest.days,
         });
@@ -251,7 +243,10 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
     setError(null);
 
     try {
-      const { error: updateError } = await (supabase as any)
+      const request = requests.find((r) => r.id === rejectingRequestId);
+      const userProfile = profiles.find((p) => p.id === request?.user_id);
+
+      const { error: updateError } = await supabase
         .from("leave_requests")
         .update({
           status: "rejected",
@@ -264,9 +259,18 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
       if (updateError) {
         setError(updateError.message);
       } else {
-        // Send rejection email notification
-        const request = requests.find((r) => r.id === rejectingRequestId);
-        const userProfile = profiles.find((p) => p.id === request?.user_id);
+        // In-app notification to the requester
+        if (request?.user_id) {
+          await supabase.from("notifications").insert({
+            user_id: request.user_id,
+            title: "Solicitação rejeitada ❌",
+            message: `Seu pedido de ${request.days_count} dia(s) foi rejeitado.${rejectionReason.trim() ? ` Motivo: ${rejectionReason.trim()}` : ""}`,
+            type: "error",
+            is_read: false,
+          });
+        }
+
+        // Email notification (non-critical)
         if (request && userProfile) {
           try {
             await fetch("/api/send-notifications", {
@@ -277,17 +281,15 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
                 user_name: userProfile.name,
                 user_email: userProfile.email,
                 type: "approval_rejected",
-                title: `❌ Pedido de ${LEAVE_TYPE_LABELS[request.type]} Rejeitado`,
-                message: `Seu pedido de ${LEAVE_TYPE_LABELS[request.type]} foi rejeitado.`,
+                title: `❌ Pedido de ${LEAVE_TYPE_LABELS[request.type as LeaveType]} Rejeitado`,
+                message: `Seu pedido de ${LEAVE_TYPE_LABELS[request.type as LeaveType]} foi rejeitado.`,
                 leave_start: request.start_date,
                 leave_end: request.end_date,
                 notes: rejectionReason.trim() || "Motivo não informado",
                 rejection_reason: rejectionReason.trim() || null,
               }]),
             });
-          } catch (emailErr) {
-            console.error("[Admin] Failed to send rejection email:", emailErr);
-          }
+          } catch { /* email failure is non-critical */ }
         }
 
         setRequests((prev) =>
@@ -298,8 +300,8 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
         setRejectingRequestId(null);
         setRejectionReason("");
       }
-    } catch (e: any) {
-      setError(e.message || "Erro ao rejeitar pedido");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erro ao rejeitar pedido");
     } finally {
       setProcessing(null);
     }
@@ -349,14 +351,20 @@ export function AdminDashboard({ profile, leaveRequests, profiles, selectedTenan
 
       try {
         if (request.type === "vacation") {
-          await (supabase as any).rpc("deduct_vacation_balance", {
+          const { error: rpcError } = await supabase.rpc("deduct_vacation_balance", {
             p_user_id: request.user_id,
             p_days: request.days_count,
             p_expected_balance: userProfile?.vacation_balance || 0,
           });
+
+          if (rpcError) {
+            // Fail-fast: do not approve without balance deduction
+            failed++;
+            continue;
+          }
         }
 
-        const { error } = await (supabase as any)
+        const { error } = await supabase
           .from("leave_requests")
           .update({
             status: "approved",

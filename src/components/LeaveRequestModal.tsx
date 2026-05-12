@@ -132,18 +132,17 @@ export function LeaveRequestModal({
           return;
         }
 
-        if (profile && (profile as any).vacation_balance < daysCount) {
-          setError(`Saldo insuficiente. Você tem ${(profile as any).vacation_balance} dias.`);
+        if (profile && profile.vacation_balance < daysCount) {
+          setError(`Saldo insuficiente. Você tem ${profile.vacation_balance} dias.`);
           setLoading(false);
           return;
         }
 
-        // Admin: debit balance immediately (no approval needed)
         if (isAdmin) {
-          const { error: rpcError } = await (supabase as any).rpc("deduct_vacation_balance", {
+          const { error: rpcError } = await supabase.rpc("deduct_vacation_balance", {
             p_user_id: userId,
             p_days: daysCount,
-            p_expected_balance: (profile as any).vacation_balance,
+            p_expected_balance: profile?.vacation_balance ?? 0,
           });
 
           if (rpcError) {
@@ -154,7 +153,6 @@ export function LeaveRequestModal({
         }
       }
 
-      // Check hours balance for hours type leave
       if (formData.type === "hours") {
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
@@ -168,16 +166,15 @@ export function LeaveRequestModal({
           return;
         }
 
-        const availableMinutes = (profile as any)?.hours_balance || 0;
+        const availableMinutes = profile?.hours_balance ?? 0;
         if (availableMinutes < daysCount * 8 * 60) {
           setError(`Banco de horas insuficiente. Você tem ${Math.floor(availableMinutes / 60)}h${availableMinutes % 60 > 0 ? ` ${availableMinutes % 60}m` : ""} disponível.`);
           setLoading(false);
           return;
         }
 
-        // Admin: debit hours balance immediately
         if (isAdmin) {
-          const { error: rpcError } = await (supabase as any).rpc("deduct_hours_balance", {
+          const { error: rpcError } = await supabase.rpc("deduct_hours_balance", {
             p_user_id: userId,
             p_minutes: daysCount * 8 * 60,
             p_expected_balance: availableMinutes,
@@ -204,18 +201,34 @@ export function LeaveRequestModal({
         reviewed_at: isAdmin ? new Date().toISOString() : null,
       };
 
-      // Insert leave request
+      // Insert leave request (trigger auto-assigns approver)
       const { data, error: insertError } = await supabase
         .from("leave_requests")
-        .insert(insertData as any)
+        .insert(insertData)
         .select()
         .single();
 
       if (insertError) {
-        console.error("Insert error:", insertError);
         setError("Erro ao criar pedido: " + insertError.message);
       } else {
-        console.log("Leave request created:", data);
+        // Notify the assigned approver (set by DB trigger)
+        if (!isAdmin && data?.assigned_approver_id) {
+          const { data: requester } = await supabase
+            .from("profiles")
+            .select("name")
+            .eq("id", userId)
+            .single();
+
+          await supabase.from("notifications").insert({
+            user_id: data.assigned_approver_id,
+            title: "Nova solicitação de afastamento",
+            message: `${requester?.name ?? "Um funcionário"} solicitou ${daysCount} dia(s) de ${LEAVE_TYPE_LABELS[formData.type]?.toLowerCase() ?? formData.type}.`,
+            type: "info",
+            is_read: false,
+            link: "/admin",
+          });
+        }
+
         setSuccess(true);
         setTimeout(() => {
           onClose();
@@ -224,9 +237,8 @@ export function LeaveRequestModal({
           onSuccess?.();
         }, 1500);
       }
-    } catch (err: any) {
-      console.error("Catch error:", err);
-      setError(err.message || "Erro ao enviar pedido.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao enviar pedido.");
     } finally {
       setLoading(false);
     }

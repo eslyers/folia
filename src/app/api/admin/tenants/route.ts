@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@/lib/supabase/admin";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { logAction, createNotification } from "@/lib/logging";
+import { logger } from "@/lib/logger";
 
 // Disable edge runtime auth
 export const runtime = 'nodejs';
@@ -22,7 +23,6 @@ async function validateAuth(authHeader: string | null) {
 }
 
 export async function GET() {
-  console.log("[DEBUG] GET /api/admin/tenants - FUNCTION CALLED AT ALL");
   return NextResponse.json({ data: [], message: "GET working" });
 }
 
@@ -33,11 +33,9 @@ export async function POST(request: NextRequest) {
     const { error: authError, user } = await validateAuth(authHeader);
     
     if (authError || !user) {
-      console.error("[DEBUG] Auth error:", authError);
+      logger.warn('tenants-api', 'Auth error', authError);
       return NextResponse.json({ error: "Unauthorized: " + authError }, { status: 401 });
     }
-
-    console.log("[DEBUG] Authenticated user:", user.id);
 
     // Verify master admin using service client
     const adminClient = createServiceClient();
@@ -48,7 +46,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profileError) {
-      console.error("[DEBUG] Profile error:", profileError);
+      logger.warn('tenants-api', 'Profile fetch error', profileError.message);
     }
 
     if (profile?.role !== "master_admin") {
@@ -76,7 +74,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("[DEBUG] Insert error:", error);
+      logger.error('tenants-api', 'Insert error', error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -96,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data });
   } catch (error) {
-    console.error("[DEBUG] POST error:", error);
+    logger.error('tenants-api', 'POST unhandled error', error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

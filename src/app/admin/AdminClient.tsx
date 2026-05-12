@@ -6,13 +6,14 @@ import { createClient } from "@/lib/supabase/client";
 import { AdminDashboard } from "./AdminDashboard";
 import { isTenantAdmin, isMasterAdmin, getHomeRoute } from "@/lib/auth";
 import { useTenant } from "@/contexts/TenantContext";
+import type { Profile, LeaveRequest } from "@/lib/types";
 
 export default function AdminClient() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
-  const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const { currentTenant } = useTenant();
   const supabase = createClient();
 
@@ -44,14 +45,12 @@ export default function AdminClient() {
           return;
         }
         
-        if (!profileData || !isTenantAdmin((profileData as any).role)) {
-          setTimeout(() => router.push(getHomeRoute((profileData as any)?.role)), 1500);
+        if (!profileData || !isTenantAdmin(profileData.role)) {
+          setTimeout(() => router.push(getHomeRoute(profileData?.role)), 1500);
           return;
         }
 
         setProfile(profileData);
-        console.log("[AdminClient] Profile:", profileData.role, "tenant_id:", profileData.tenant_id);
-        console.log("[AdminClient] currentTenant:", JSON.stringify(currentTenant));
 
         // Build query for leave requests - filter by tenant if selected
         let requestsQuery = supabase
@@ -68,7 +67,6 @@ export default function AdminClient() {
         }
         
         const { data: requests, error: requestsError } = await requestsQuery;
-        console.log("[AdminClient] Requests fetched:", requests?.length, "error:", requestsError);
 
         if (requestsError) {
           return;
@@ -95,7 +93,7 @@ export default function AdminClient() {
 
         setProfiles(allProfiles || []);
         setLoading(false);
-      } catch (err: any) {
+      } catch {
       }
     }
 
@@ -120,6 +118,8 @@ export default function AdminClient() {
       </div>
     );
   }
+
+  if (!profile) return null;
 
   return (
     <AdminDashboard profile={profile} leaveRequests={leaveRequests} profiles={profiles} />
