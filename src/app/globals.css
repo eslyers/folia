@@ -427,7 +427,8 @@ html {
 /* Dark: elements that require explicit overrides */
 [data-theme="dark"] body { background-color: var(--background); color: var(--foreground); }
 [data-theme="dark"] header { background-color: var(--card-bg); border-color: var(--border); }
-[data-theme="dark"] aside { background-color: var(--card-bg); border-color: var(--border); }
+[data-theme="dark"] aside, [data-theme="dark"] .sidebar-container { background-color: var(--card-bg); border-color: var(--border); }
+[data-theme="dark"] .sidebar-border { border-color: var(--border); }
 [data-theme="dark"] input,
 [data-theme="dark"] select,
 [data-theme="dark"] textarea {
@@ -483,6 +484,9 @@ html {
   --color-gold-vivid: #E3B637;
 }
 
+[data-theme="golden"] .sidebar-container { background-color: var(--card-bg); border-color: var(--border); }
+[data-theme="golden"] .sidebar-border { border-color: var(--border); }
+
 /* --- FOREST THEME --- */
 :root[data-theme="forest"] {
   --background: #F4F7F5;
@@ -498,6 +502,9 @@ html {
   --color-gold-vivid: #369661;
 }
 
+[data-theme="forest"] .sidebar-container { background-color: var(--card-bg); border-color: var(--border); }
+[data-theme="forest"] .sidebar-border { border-color: var(--border); }
+
 /* --- OCEAN THEME --- */
 :root[data-theme="ocean"] {
   --background: #F2F5F8;
@@ -512,4 +519,7 @@ html {
   --color-gold: #1D50A1; 
   --color-gold-vivid: #2A70E0;
 }
+
+[data-theme="ocean"] .sidebar-container { background-color: var(--card-bg); border-color: var(--border); }
+[data-theme="ocean"] .sidebar-border { border-color: var(--border); }
 

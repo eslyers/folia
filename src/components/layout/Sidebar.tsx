@@ -127,8 +127,8 @@ export function SidebarNav({ profile, collapsed = false }: SidebarNavProps) {
               className={clsx(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                  ? "bg-green-olive text-white shadow-sm"
+                  : "text-stone-600 hover:bg-green-olive/10 hover:text-green-olive"
               )}
               title={collapsed ? item.label : undefined}
             >
@@ -182,7 +182,7 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
       {/* Desktop sidebar - goes to top */}
       {!isMobile && (
         <aside className={clsx(
-          "h-screen bg-card border-r border-border flex flex-col flex-shrink-0 transition-all duration-300",
+          "h-screen bg-[#fafaf9] border-r border-[#d4d4d4] flex flex-col flex-shrink-0 transition-all duration-300 sidebar-container",
           collapsed ? "w-[72px]" : "w-[280px]"
         )}>
           {/* Logo area - always visible */}
@@ -191,10 +191,10 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
           </div>
           <SidebarNav profile={profile} collapsed={collapsed} />
           {/* Collapse button - at bottom */}
-          <div className="flex items-center justify-center p-3 border-t border-border">
+          <div className="flex items-center justify-center p-3 border-t border-[#d4d4d4] sidebar-border">
             <button
               onClick={toggleCollapse}
-              className="p-2 rounded-lg hover:bg-primary/20 text-primary transition-colors"
+              className="p-2 rounded-lg hover:bg-green-olive/20 text-green-olive transition-colors"
               title={collapsed ? "Expandir menu" : "Recolher menu"}
             >
               <svg className={`h-5 w-5 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -213,12 +213,12 @@ export function Sidebar({ profile, mobileOpen, onMobileClose, onMenuToggle }: Si
       {/* Mobile sidebar */}
       {isMobile && (
         <aside className={clsx(
-          "fixed inset-y-0 left-0 z-50 w-[280px] bg-card border-r border-border flex flex-col transition-transform duration-300",
+          "fixed inset-y-0 left-0 z-50 w-[280px] bg-stone-50 border-r border-stone-200 flex flex-col transition-transform duration-300 sidebar-container",
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         )}>
-          <div className="flex flex-col items-center justify-center p-6 border-b border-border">
+          <div className="flex flex-col items-center justify-center p-6 border-b border-stone-200 sidebar-border">
             <img src="/folia-logo.png" alt="FOLIA" className="w-32 h-32 object-contain" />
-            <button onClick={() => setIsMobileOpen(false)} className="mt-2 p-2 rounded-lg hover:bg-muted text-muted-foreground">
+            <button onClick={() => setIsMobileOpen(false)} className="mt-2 p-2 rounded-lg hover:bg-stone-200 text-stone-600">
               ✕
             </button>
           </div>
