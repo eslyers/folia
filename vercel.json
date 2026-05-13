@@ -1,5 +1,4 @@
 {
-  "//": "Triggering fresh build V2.0.1",
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
