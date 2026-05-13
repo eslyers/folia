@@ -470,46 +470,46 @@ html {
 
 /* --- GOLDEN THEME --- */
 :root[data-theme="golden"] {
-  --background: #FAFAFA;
-  --foreground: #050505;
+  --background: #FDFBF7;
+  --foreground: #1A1512;
   --card-bg: #FFFFFF;
   --surface: #FFFFFF;
-  --border: color-mix(in srgb, #050505 12%, transparent);
-  --color-cream: #FAFAFA;
-  --color-brown-dark: #050505;
-  --color-brown-medium: #666666;
-  --color-green-olive: #050505; /* Black as primary for ultra-premium feel */
-  --color-gold: #C5A059; /* Sophisticated muted gold */
-  --color-gold-vivid: #D4AF37; /* Metallic gold */
+  --border: color-mix(in srgb, #C79E2E 25%, transparent);
+  --color-cream: #FDFBF7;
+  --color-brown-dark: #1A1512;
+  --color-brown-medium: #807160;
+  --color-green-olive: #A17D23; /* Rich, elegant dark gold */
+  --color-gold: #C79E2E; 
+  --color-gold-vivid: #E3B637;
 }
 
 /* --- FOREST THEME --- */
 :root[data-theme="forest"] {
-  --background: #F4F5F4;
-  --foreground: #0A110C;
+  --background: #F4F7F5;
+  --foreground: #0C1A11;
   --card-bg: #FFFFFF;
   --surface: #FFFFFF;
-  --border: color-mix(in srgb, #0A110C 12%, transparent);
-  --color-cream: #F4F5F4;
-  --color-brown-dark: #0A110C;
-  --color-brown-medium: #546057;
-  --color-green-olive: #0B2B1B; /* Ultra deep pine */
-  --color-gold: #1A5D3A; 
-  --color-gold-vivid: #00E676; /* Electric/neon green accent for high contrast */
+  --border: color-mix(in srgb, #1B4D31 20%, transparent);
+  --color-cream: #F4F7F5;
+  --color-brown-dark: #0C1A11;
+  --color-brown-medium: #4C6656;
+  --color-green-olive: #1B4D31; /* Deep luxurious pine */
+  --color-gold: #277048; 
+  --color-gold-vivid: #369661;
 }
 
 /* --- OCEAN THEME --- */
 :root[data-theme="ocean"] {
-  --background: #F5F6F8;
-  --foreground: #040B14;
+  --background: #F2F5F8;
+  --foreground: #0A1326;
   --card-bg: #FFFFFF;
   --surface: #FFFFFF;
-  --border: color-mix(in srgb, #040B14 12%, transparent);
-  --color-cream: #F5F6F8;
-  --color-brown-dark: #040B14;
-  --color-brown-medium: #495563;
-  --color-green-olive: #061626; /* Deep midnight navy */
-  --color-gold: #0052CC; 
-  --color-gold-vivid: #00D4FF; /* Electric cyan accent */
+  --border: color-mix(in srgb, #14366B 20%, transparent);
+  --color-cream: #F2F5F8;
+  --color-brown-dark: #0A1326;
+  --color-brown-medium: #495A73;
+  --color-green-olive: #14366B; /* Very rich navy */
+  --color-gold: #1D50A1; 
+  --color-gold-vivid: #2A70E0;
 }
 
