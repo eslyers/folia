@@ -71,7 +71,7 @@ export function Modal({
       <div
         ref={modalRef}
         className={clsx(
-          "relative w-full bg-[var(--color-surface)] rounded-2xl shadow-2xl animate-scale-in",
+          "relative w-full bg-card rounded-2xl shadow-2xl animate-scale-in",
           sizes[size]
         )}
         role="dialog"
@@ -80,11 +80,11 @@ export function Modal({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-[var(--border)]">
+          <div className="flex items-center justify-between p-6 border-b border-border">
             {title && (
               <h2
                 id="modal-title"
-                className="text-xl font-semibold text-[var(--color-brown-dark)]"
+                className="text-xl font-semibold text-foreground"
               >
                 {title}
               </h2>
@@ -92,7 +92,7 @@ export function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="ml-auto -mr-2 p-2 text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)] hover:bg-[var(--color-cream)] rounded-lg transition-folia"
+                className="ml-auto -mr-2 p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-folia"
                 aria-label="Fechar"
                 type="button"
               >

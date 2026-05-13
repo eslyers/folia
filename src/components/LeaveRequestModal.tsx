@@ -291,8 +291,8 @@ export function LeaveRequestModal({
         </div>
 
         {daysCount > 0 && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-[var(--color-cream)] text-[var(--color-brown-dark)]">
-            <CalendarIcon className="h-5 w-5 text-[var(--color-gold)]" />
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-muted text-foreground">
+            <CalendarIcon className="h-5 w-5 text-primary" />
             <span className="text-sm">
               Período: <strong>{daysCount} dia{daysCount > 1 ? "s" : ""}</strong>
             </span>
@@ -331,14 +331,14 @@ export function LeaveRequestModal({
         )}
 
         <div>
-          <label className="block text-sm font-medium text-[var(--color-brown-dark)] mb-1.5">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             Observações (opcional)
           </label>
           <textarea
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             rows={3}
-            className="w-full px-4 py-2.5 rounded-lg border border-[var(--border)] bg-white text-[var(--color-brown-dark)] placeholder:text-[var(--color-brown-medium)]/60 transition-folia focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)] focus:border-transparent resize-none"
+            className="w-full px-4 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground/60 transition-folia focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
             placeholder="Informações adicionais..."
           />
         </div>
