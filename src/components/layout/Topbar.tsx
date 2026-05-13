@@ -199,7 +199,7 @@ export function Topbar({
 
   return (
     <header className={clsx(
-      "h-16 bg-stone-50/80 backdrop-blur-md border-b border-stone-200 flex items-center px-6 gap-4 sticky top-0 z-50 transition-shadow",
+      "h-16 bg-[var(--background)]/80 backdrop-blur-md border-b border-[var(--border)] flex items-center px-6 gap-4 sticky top-0 z-50 transition-shadow",
       scrolled && "shadow-sm"
     )}>
       {/* Hamburger + Logo - Only on mobile */}
@@ -207,7 +207,7 @@ export function Topbar({
         {isMobile && (
           <button
             onClick={onMenuToggle}
-            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-[var(--color-cream)] transition-colors"
             aria-label="Toggle menu"
           >
             <Menu className="h-5 w-5 text-gray-600" />
@@ -226,10 +226,9 @@ export function Topbar({
         <div className="relative notifications-dropdown">
           <button
             onClick={() => setNotificationsOpen(!notificationsOpen)}
-            className="relative w-10 h-10 flex items-center justify-center rounded-xl hover:bg-stone-100 transition-colors"
-            title="Notificações"
+            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-[var(--color-cream)] transition-colors relative"
           >
-            <Bell className="h-5 w-5 text-stone-600" />
+            <Bell className="h-5 w-5 text-[var(--color-brown-medium)]" />
             {unreadCount > 0 && (
               <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
                 {unreadCount > 9 ? "9+" : unreadCount}
@@ -239,20 +238,20 @@ export function Topbar({
 
           {/* Notifications Popup */}
           {notificationsOpen && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
-              <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                <p className="text-sm font-semibold text-gray-900">Notificações</p>
+            <div className="absolute right-0 top-full mt-2 w-80 bg-[var(--card-bg)] rounded-2xl shadow-xl border border-[var(--border)] overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
+                <h3 className="font-semibold text-[var(--color-brown-dark)]">Notificações</h3>
                 <Link
                   href="/admin/notifications"
                   onClick={() => setNotificationsOpen(false)}
-                  className="text-xs text-[#5C724A] hover:underline"
+                  className="text-xs text-[var(--color-gold-vivid)] hover:underline"
                 >
                   Ver todas
                 </Link>
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {notifications.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-gray-500 text-sm">
+                  <div className="px-4 py-8 text-center text-[var(--color-brown-medium)] text-sm">
                     Nenhuma notificação
                   </div>
                 ) : (
@@ -260,13 +259,13 @@ export function Topbar({
                     <div
                       key={notif.id}
                       className={clsx(
-                        "px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors",
-                        !notif.is_read && "bg-blue-50/50"
+                        "px-4 py-3 border-b border-[var(--border)] hover:bg-[var(--color-cream)] transition-colors",
+                        !notif.is_read && "bg-[var(--color-gold)]/5"
                       )}
                     >
-                      <p className="text-sm font-medium text-gray-900 truncate">{notif.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{notif.message}</p>
-                      <p className="text-xs text-gray-400 mt-1">{formatTime(notif.created_at)}</p>
+                      <p className="text-sm font-medium text-[var(--color-brown-dark)] truncate">{notif.title}</p>
+                      <p className="text-xs text-[var(--color-brown-medium)] mt-0.5 line-clamp-2">{notif.message}</p>
+                      <p className="text-xs text-[var(--color-brown-medium)]/70 mt-1">{formatTime(notif.created_at)}</p>
                     </div>
                   ))
                 )}
@@ -279,16 +278,16 @@ export function Topbar({
         <div className="relative theme-dropdown">
           <button
             onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
-            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-stone-100 transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-[var(--color-cream)] transition-colors"
             title="Trocar tema"
           >
-            <Palette className="h-5 w-5 text-stone-600" />
+            <Palette className="h-5 w-5 text-[var(--color-brown-medium)]" />
           </button>
 
           {themeDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50">
-              <div className="px-4 py-2.5 border-b border-gray-100">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tema</p>
+            <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--card-bg)] rounded-xl shadow-xl border border-[var(--border)] overflow-hidden z-50">
+              <div className="px-4 py-2.5 border-b border-[var(--border)]">
+                <p className="text-xs font-semibold text-[var(--color-brown-medium)] uppercase tracking-wide">Tema</p>
               </div>
               {themes.map((t) => (
                 <button
@@ -297,19 +296,19 @@ export function Topbar({
                   className={clsx(
                     "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors",
                     theme === t.id
-                      ? "bg-[#5C724A]/10 text-[#5C724A] font-medium"
-                      : "text-gray-700 hover:bg-gray-50"
+                      ? "bg-[var(--color-gold)]/10 text-[var(--color-gold-vivid)] font-medium"
+                      : "text-[var(--color-brown-medium)] hover:bg-[var(--color-cream)]"
                   )}
                 >
                   <span className={clsx(
                     "w-7 h-7 rounded-lg flex items-center justify-center",
-                    theme === t.id ? "bg-[#5C724A]/15" : "bg-gray-100"
+                    theme === t.id ? "bg-[var(--color-gold)]/20" : "bg-[var(--color-cream)]"
                   )}>
                     {t.icon}
                   </span>
                   {t.label}
                   {theme === t.id && (
-                    <span className="ml-auto text-xs text-[#5C724A]">✓</span>
+                    <span className="ml-auto text-xs text-[var(--color-gold-vivid)]">✓</span>
                   )}
                 </button>
               ))}
@@ -318,43 +317,43 @@ export function Topbar({
         </div>
 
         {/* Divider */}
-        <div className="w-px h-8 bg-gray-200 mx-2" />
+        <div className="w-px h-8 bg-[var(--border)] mx-2" />
 
         {/* Company Selector */}
         <div className="relative group tenant-dropdown">
           <button
             onClick={() => setTenantDropdownOpen(!tenantDropdownOpen)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[var(--color-cream)] transition-colors"
           >
-            <Building2 className="h-5 w-5 text-[#5C724A]" />
+            <Building2 className="h-5 w-5 text-[var(--color-gold-vivid)]" />
             <div className="text-left hidden sm:block">
-              <p className="text-sm font-semibold text-stone-900 leading-tight max-w-[150px] truncate">
+              <p className="text-sm font-semibold text-[var(--color-brown-dark)] leading-tight max-w-[150px] truncate">
                 {currentTenant?.name || (profile.tenant_id && (tenants.find(t => t.id === profile.tenant_id)?.name || profile.tenant_id)) || "Selecione empresa"}
               </p>
-              <p className="text-xs text-stone-500 leading-tight">{roleLabel}</p>
+              <p className="text-xs text-[var(--color-brown-medium)] leading-tight">{roleLabel}</p>
             </div>
-            <ChevronDown className="h-4 w-4 text-gray-400 hidden sm:block" />
+            <ChevronDown className="h-4 w-4 text-[var(--color-brown-medium)] hidden sm:block" />
           </button>
 
           {/* Tenant Dropdown */}
           {tenantDropdownOpen && tenants.length > 0 && (
-            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
-              <div className="px-4 py-2 border-b border-gray-100">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Empresas</p>
+            <div className="absolute right-0 top-full mt-2 w-64 bg-[var(--card-bg)] rounded-xl shadow-lg border border-[var(--border)] py-2 z-50">
+              <div className="px-4 py-2 border-b border-[var(--border)]">
+                <p className="text-xs font-medium text-[var(--color-brown-medium)] uppercase tracking-wide">Empresas</p>
               </div>
               {tenants.map((tenant) => (
                 <button
                   key={tenant.id}
                   onClick={() => handleTenantSelect(tenant)}
                   className={clsx(
-                    "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors",
-                    tenant.id === currentTenant?.id && "bg-[#5C724A]/5 text-[#5C724A]"
+                    "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-[var(--color-cream)] transition-colors",
+                    tenant.id === currentTenant?.id && "bg-[var(--color-gold)]/5 text-[var(--color-gold-vivid)]"
                   )}
                 >
                   <Building2 className="h-4 w-4 flex-shrink-0" />
-                  <span className="flex-1 truncate">{tenant.name}</span>
+                  <span className="flex-1 truncate text-[var(--color-brown-dark)]">{tenant.name}</span>
                   {tenant.id === currentTenant?.id && (
-                    <span className="text-xs text-[#5C724A] font-medium">Atual</span>
+                    <span className="text-xs text-[var(--color-gold-vivid)] font-medium">Atual</span>
                   )}
                 </button>
               ))}
@@ -366,33 +365,31 @@ export function Topbar({
         <div className="relative user-dropdown">
           <button
             onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-            className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors"
+            className="w-10 h-10 rounded-xl bg-[var(--color-gold)]/20 text-[var(--color-gold-vivid)] flex items-center justify-center font-bold hover:bg-[var(--color-gold)]/30 transition-colors"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#5C724A] to-[#4A5F3C] text-white flex items-center justify-center text-sm font-semibold shadow-sm">
-              {userInitial}
-            </div>
+            {userInitial}
           </button>
 
           {/* Dropdown */}
           {userDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <p className="text-sm font-semibold text-gray-900">{profile.name}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{profile.email}</p>
+            <div className="absolute right-0 top-full mt-2 w-64 bg-[var(--card-bg)] rounded-xl shadow-lg border border-[var(--border)] py-2 z-50">
+              <div className="px-4 py-3 border-b border-[var(--border)]">
+                <p className="text-sm font-semibold text-[var(--color-brown-dark)] truncate">{profile.name}</p>
+                <p className="text-xs text-[var(--color-brown-medium)] truncate mt-0.5">{profile.email}</p>
               </div>
 
               <div className="py-1">
                 <Link
                   href="/settings"
                   onClick={() => setUserDropdownOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[var(--color-brown-medium)] hover:bg-[var(--color-cream)] transition-colors"
                 >
                   <Settings className="h-4 w-4" />
                   Configurações
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                 >
                   <LogOut className="h-4 w-4" />
                   Sair
