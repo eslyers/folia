@@ -71,7 +71,7 @@ export function Modal({
       <div
         ref={modalRef}
         className={clsx(
-          "relative w-full bg-card rounded-2xl shadow-2xl animate-scale-in",
+          "relative w-full bg-[var(--card-bg)] rounded-2xl shadow-2xl animate-scale-in",
           sizes[size]
         )}
         role="dialog"

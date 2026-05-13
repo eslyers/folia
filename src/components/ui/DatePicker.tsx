@@ -87,7 +87,7 @@ export function DatePicker({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={clsx(
-          "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg border bg-white transition-all",
+          "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg border bg-card transition-all",
           "hover:border-[var(--color-gold)] focus:outline-none focus:ring-2 focus:ring-[var(--color-gold)]",
           isOpen ? "border-[var(--color-gold)] ring-2 ring-[var(--color-gold)]" : "border-[var(--border)]"
         )}
@@ -103,7 +103,7 @@ export function DatePicker({
 
       {/* Calendar Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-xl border-2 border-[var(--color-gold)] shadow-2xl p-4 min-w-[300px]">
+        <div className="absolute top-full left-0 mt-2 z-50 bg-card rounded-xl border-2 border-[var(--color-gold)] shadow-2xl p-4 min-w-[300px]">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <button

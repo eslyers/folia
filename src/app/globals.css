@@ -87,6 +87,7 @@
   /* Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card-bg);
   
   /* Custom Palette */
   --color-green-olive: var(--color-green-olive);

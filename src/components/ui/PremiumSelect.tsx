@@ -56,13 +56,13 @@ export function PremiumSelect({
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className={clsx(
-            "w-full flex items-center gap-2 px-4 py-2.5 rounded-lg border bg-white transition-all text-left",
+            "w-full flex items-center gap-2 px-4 py-2.5 rounded-lg border bg-card transition-all text-left",
             isOpen
-              ? "border-[#5C724A] ring-2 ring-[#5C724A]/20"
-              : "border-[var(--border)] hover:border-[#5C724A]/50"
+              ? "border-[var(--color-green-olive)] ring-2 ring-[var(--color-green-olive)]/20"
+              : "border-[var(--border)] hover:border-[var(--color-green-olive)]/50"
           )}
         >
-          {icon && <span className="text-[#5C724A]">{icon}</span>}
+          {icon && <span className="text-[var(--color-green-olive)]">{icon}</span>}
           <span className={clsx(
             "flex-1 text-sm",
             selectedOption ? "text-[var(--color-brown-dark)]" : "text-[var(--color-brown-medium)]"
@@ -70,13 +70,13 @@ export function PremiumSelect({
             {selectedOption?.label || placeholder}
           </span>
           <ChevronDown className={clsx(
-            "h-4 w-4 text-gray-400 transition-transform",
+            "h-4 w-4 text-[var(--color-brown-medium)] transition-transform",
             isOpen && "rotate-180"
           )} />
         </button>
 
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 max-h-60 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-card rounded-xl shadow-lg border border-[var(--border)] py-2 z-50 max-h-60 overflow-y-auto">
             {options.map((option) => (
               <button
                 key={option.value}
@@ -86,13 +86,13 @@ export function PremiumSelect({
                   setIsOpen(false);
                 }}
                 className={clsx(
-                  "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-gray-50 transition-colors",
-                  option.value === value && "bg-[#5C724A]/5 text-[#5C724A]"
+                  "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left hover:bg-background transition-colors",
+                  option.value === value && "bg-[var(--color-green-olive)]/5 text-[var(--color-green-olive)]"
                 )}
               >
-                {option.icon && <span className="text-[#5C724A]">{option.icon}</span>}
+                {option.icon && <span className="text-[var(--color-green-olive)]">{option.icon}</span>}
                 <span className="flex-1">{option.label}</span>
-                {option.value === value && <Check className="h-4 w-4 text-[#5C724A]" />}
+                {option.value === value && <Check className="h-4 w-4 text-[var(--color-green-olive)]" />}
               </button>
             ))}
           </div>
