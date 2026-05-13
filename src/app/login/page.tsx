@@ -130,32 +130,34 @@ export default function LoginPage() {
 
         <Card className="p-8">
           {/* Mode Toggle */}
-          <div className="flex mb-6 bg-[var(--cream)] rounded-lg p-1">
-            <button
-              type="button"
-              onClick={() => setMode("login")}
-              className={clsx(
-                "flex-1 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                mode === "login"
-                  ? "bg-[var(--color-surface)] text-[var(--color-brown-dark)] shadow-sm"
-                  : "text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)]"
-              )}
-            >
-              Entrar
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("signup")}
-              className={clsx(
-                "flex-1 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                mode === "signup"
-                  ? "bg-[var(--color-surface)] text-[var(--color-brown-dark)] shadow-sm"
-                  : "text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)]"
-              )}
-            >
-              Criar conta
-            </button>
-          </div>
+          {mode !== "forgot" && (
+            <div className="flex mb-6 bg-[var(--cream)] rounded-lg p-1 border border-[var(--border)]">
+              <button
+                type="button"
+                onClick={() => { setMode("login"); setError(""); setSuccessMessage(""); }}
+                className={clsx(
+                  "flex-1 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                  mode === "login"
+                    ? "bg-[var(--color-surface)] text-[var(--color-brown-dark)] shadow-sm font-semibold"
+                    : "text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)]"
+                )}
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                onClick={() => { setMode("signup"); setError(""); setSuccessMessage(""); }}
+                className={clsx(
+                  "flex-1 py-2 rounded-md text-sm font-medium transition-all duration-200",
+                  mode === "signup"
+                    ? "bg-[var(--color-surface)] text-[var(--color-brown-dark)] shadow-sm font-semibold"
+                    : "text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)]"
+                )}
+              >
+                Criar conta
+              </button>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
@@ -169,9 +171,9 @@ export default function LoginPage() {
             </div>
           )}
 
-          {mode === "login" ? (
+          {mode === "login" && (
             <form onSubmit={handleLogin} className="space-y-5">
-              <h2 className="text-xl font-semibold text-[var(--brown-dark)] text-center mb-6">
+              <h2 className="text-xl font-semibold text-[var(--color-brown-dark)] text-center mb-6">
                 Entrar na sua conta
               </h2>
 
@@ -197,7 +199,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setMode("forgot"); setError(""); setSuccessMessage(""); }}
-                  className="text-sm text-[var(--gold)] hover:text-[var(--gold-vivid)] transition-colors"
+                  className="text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-vivid)] transition-colors"
                 >
                   Esqueci minha senha
                 </button>
@@ -213,9 +215,11 @@ export default function LoginPage() {
                 Entrar
               </Button>
             </form>
-          ) : (
+          )}
+
+          {mode === "signup" && (
             <form onSubmit={handleSignup} className="space-y-5">
-              <h2 className="text-xl font-semibold text-[var(--brown-dark)] text-center mb-6">
+              <h2 className="text-xl font-semibold text-[var(--color-brown-dark)] text-center mb-6">
                 Criar sua conta
               </h2>
 
@@ -246,7 +250,7 @@ export default function LoginPage() {
                 autoComplete="new-password"
               />
 
-              <p className="text-xs text-[var(--brown-medium)] -mt-2">
+              <p className="text-xs text-[var(--color-brown-medium)] -mt-2">
                 Mínimo de 6 caracteres. O primeiro usuário cadastrado se torna administrador.
               </p>
 
@@ -264,11 +268,11 @@ export default function LoginPage() {
 
           {mode === "forgot" && (
             <form onSubmit={handleForgotPassword} className="space-y-5">
-              <h2 className="text-xl font-semibold text-[var(--brown-dark)] text-center mb-6">
+              <h2 className="text-xl font-semibold text-[var(--color-brown-dark)] text-center mb-6">
                 Recuperar senha
               </h2>
 
-              <p className="text-sm text-[var(--brown-medium)] text-center -mt-2">
+              <p className="text-sm text-[var(--color-brown-medium)] text-center -mt-2">
                 Informe seu email para receber um link de recuperação.
               </p>
 
@@ -295,7 +299,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setMode("login"); setError(""); setSuccessMessage(""); }}
-                  className="text-sm text-[var(--gold)] hover:text-[var(--gold-vivid)] transition-colors"
+                  className="text-sm font-medium text-[var(--color-gold)] hover:text-[var(--color-gold-vivid)] transition-colors"
                 >
                   Voltar ao login
                 </button>
@@ -304,9 +308,9 @@ export default function LoginPage() {
           )}
         </Card>
 
-        <p className="text-center text-sm text-[var(--brown-medium)] mt-6">
+        <p className="text-center text-sm text-[var(--color-brown-medium)] mt-6">
           Precisa de ajuda?{" "}
-          <span className="text-[var(--gold)] cursor-default">
+          <span className="text-[var(--color-gold)] cursor-default">
             Entre em contato
           </span>
         </p>
