@@ -156,7 +156,14 @@ export default function SaasAdminPage() {
 
   const loadTenants = async () => {
     try {
-      const response = await fetch("/api/tenants");
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token;
+
+      const response = await fetch("/api/tenants", {
+        headers: {
+          ...(authToken && { "Authorization": `Bearer ${authToken}` }),
+        }
+      });
       const result = await response.json();
 
 
@@ -259,9 +266,15 @@ export default function SaasAdminPage() {
 
   const handleToggleTenant = async (tenant: Tenant) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token;
+
       const response = await fetch("/api/tenants", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(authToken && { "Authorization": `Bearer ${authToken}` }),
+        },
         body: JSON.stringify({
           id: tenant.id,
           name: tenant.name,
@@ -338,8 +351,14 @@ export default function SaasAdminPage() {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token;
+
       const response = await fetch(`/api/tenants?id=${tenant.id}`, {
         method: "DELETE",
+        headers: {
+          ...(authToken && { "Authorization": `Bearer ${authToken}` }),
+        }
       });
 
       const result = await response.json();
