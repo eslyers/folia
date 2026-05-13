@@ -199,7 +199,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => { setMode("forgot"); setError(""); setSuccessMessage(""); }}
-                  className="text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-vivid)] transition-colors"
+                  className="text-sm text-[var(--color-gold)] hover:text-[var(--color-gold-vivid)] cursor-pointer transition-colors"
                 >
                   Esqueci minha senha
                 </button>
@@ -310,9 +310,9 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-[var(--color-brown-medium)] mt-6">
           Precisa de ajuda?{" "}
-          <span className="text-[var(--color-gold)] cursor-default">
+          <Link href="/contact" className="text-[var(--color-gold)] hover:text-[var(--color-gold-vivid)] cursor-pointer transition-colors">
             Entre em contato
-          </span>
+          </Link>
         </p>
       </div>
     </div>
