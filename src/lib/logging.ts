@@ -1,5 +1,4 @@
 // Helper functions for logging and notifications
-import { createClient } from "@/lib/supabase/client";
 import { createClient as createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -50,8 +49,8 @@ export async function createNotification(
   tenantId?: string
 ) {
   try {
-    const supabase = createClient();
-    
+    // Use admin client to bypass RLS - notifications should always be delivered
+    const supabase = createAdminClient();
     const { error } = await supabase
       .from("notifications")
       .insert({

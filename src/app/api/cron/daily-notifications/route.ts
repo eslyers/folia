@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerClientWithResponse } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@/lib/supabase/admin";
 import nodemailer from "nodemailer";
 import { addMonths, addYears, differenceInMonths, differenceInDays, format } from "date-fns";
 
@@ -208,7 +208,7 @@ export async function GET(request: Request) {
   };
 
   try {
-    const supabase = createServerClientWithResponse(null);
+    const supabase = createAdminClient();
 
     // Get all users
     const { data: users, error: usersError } = await supabase

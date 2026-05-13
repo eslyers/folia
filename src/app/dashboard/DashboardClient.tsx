@@ -1,37 +1,30 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import type { Profile, LeaveRequest } from "@/lib/types";
 import { EmployeeDashboard } from "./EmployeeDashboard";
 import { Button } from "@/components/ui";
 
 export default function DashboardClient() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
-  const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [hourEntries, setHourEntries] = useState<any[]>([]);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   const fetchData = useCallback(async () => {
     try {
-      
-      // getSession checks localStorage first (synchronous-ish)
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      
-      if (sessionError) {
-        setLoading(false);
-        return;
-      }
-      
-      if (!session?.user) {
-        setTimeout(() => router.push("/login"), 1500);
-        return;
-      }
+      // Use getUser() for secure server-validated auth check
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-      const user = session.user;
+      if (authError || !user) {
+        router.push("/login");
+        return;
+      }
       
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
@@ -80,7 +73,7 @@ export default function DashboardClient() {
     } catch (err: any) {
       setLoading(false);
     }
-  }, [supabase, router]);
+  }, [router, supabase]);
 
   useEffect(() => {
     fetchData();
@@ -104,6 +97,8 @@ export default function DashboardClient() {
       </div>
     );
   }
+
+  if (!profile) return null;
 
   return (
     <EmployeeDashboard

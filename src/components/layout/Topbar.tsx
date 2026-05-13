@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -55,7 +55,8 @@ export function Topbar({
 }: TopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const [scrolled, setScrolled] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark" | "golden" | "forest" | "ocean">("light");
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
@@ -177,12 +178,8 @@ export function Topbar({
 
   const handleTenantSelect = (tenant: Tenant) => {
     setTenantDropdownOpen(false);
-    console.log("[DEBUG] handleTenantSelect called with tenant:", JSON.stringify(tenant));
     if (onTenantChange) {
-      console.log("[DEBUG] calling onTenantChange");
       onTenantChange(tenant);
-    } else {
-      console.log("[DEBUG] onTenantChange is not defined!");
     }
   };
 

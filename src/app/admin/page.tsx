@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Building2, X, ChevronDown } from "lucide-react";
@@ -8,34 +8,31 @@ import { clsx } from "clsx";
 import { AdminDashboard } from "./AdminDashboard";
 import { useTenant } from "@/contexts/TenantContext";
 import { isTenantAdmin, isMasterAdmin, getHomeRoute } from "@/lib/auth";
+import type { Profile, LeaveRequest } from "@/lib/types";
 
 export default function AdminPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
   const { currentTenant, setCurrentTenant, tenants, isLoading: tenantLoading } = useTenant();
 
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [tenantDropdownOpen, setTenantDropdownOpen] = useState(false);
 
   const fetchData = async (tenantId: string | null) => {
-    console.log("[AdminPage] fetchData called with tenantId:", tenantId);
-    
-    // Build leave requests query with tenant filter
     let requestsQuery = supabase
       .from("leave_requests")
       .select("*")
       .order("created_at", { ascending: false });
     
-    // Filter by tenant if specified
     if (tenantId) {
       requestsQuery = requestsQuery.eq("tenant_id", tenantId);
     }
     
     const { data: requests } = await requestsQuery;
-    console.log("[AdminPage] Requests fetched:", requests?.length);
 
     // Fetch profiles filtered by tenant
     let profilesQuery = supabase
@@ -77,7 +74,7 @@ export default function AdminPage() {
     };
 
     checkUser();
-  }, []);
+  }, [router, supabase]);
 
   // Listen for tenant changes from Topbar
   useEffect(() => {

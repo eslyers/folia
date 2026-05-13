@@ -7,12 +7,13 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { Leaf } from "lucide-react";
 import { clsx } from "clsx";
 
-type Mode = "login" | "signup";
+type Mode = "login" | "signup" | "forgot";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("login");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -94,6 +95,28 @@ export default function LoginPage() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccessMessage("");
+
+    const email = (e.currentTarget.elements.namedItem("email") as HTMLInputElement).value;
+    const supabase = createSupabaseClient();
+
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    });
+
+    if (resetError) {
+      setError(resetError.message);
+    } else {
+      setSuccessMessage("Email de recuperação enviado! Verifique sua caixa de entrada.");
+    }
+
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--cream)] p-4">
       <div className="w-full max-w-md animate-slide-up">
@@ -140,6 +163,12 @@ export default function LoginPage() {
             </div>
           )}
 
+          {successMessage && (
+            <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm">
+              {successMessage}
+            </div>
+          )}
+
           {mode === "login" ? (
             <form onSubmit={handleLogin} className="space-y-5">
               <h2 className="text-xl font-semibold text-[var(--brown-dark)] text-center mb-6">
@@ -165,11 +194,13 @@ export default function LoginPage() {
               />
 
               <div className="text-right">
-                <span
-                  className="text-sm text-[var(--gold)] transition-folia cursor-default"
+                <button
+                  type="button"
+                  onClick={() => { setMode("forgot"); setError(""); setSuccessMessage(""); }}
+                  className="text-sm text-[var(--gold)] hover:text-[var(--gold-vivid)] transition-colors"
                 >
                   Esqueci minha senha
-                </span>
+                </button>
               </div>
 
               <Button
@@ -228,6 +259,47 @@ export default function LoginPage() {
               >
                 Criar conta
               </Button>
+            </form>
+          )}
+
+          {mode === "forgot" && (
+            <form onSubmit={handleForgotPassword} className="space-y-5">
+              <h2 className="text-xl font-semibold text-[var(--brown-dark)] text-center mb-6">
+                Recuperar senha
+              </h2>
+
+              <p className="text-sm text-[var(--brown-medium)] text-center -mt-2">
+                Informe seu email para receber um link de recuperação.
+              </p>
+
+              <Input
+                label="Email"
+                type="email"
+                name="email"
+                placeholder="seu@email.com"
+                required
+                autoComplete="email"
+              />
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                className="w-full"
+                loading={loading}
+              >
+                Enviar link de recuperação
+              </Button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => { setMode("login"); setError(""); setSuccessMessage(""); }}
+                  className="text-sm text-[var(--gold)] hover:text-[var(--gold-vivid)] transition-colors"
+                >
+                  Voltar ao login
+                </button>
+              </div>
             </form>
           )}
         </Card>

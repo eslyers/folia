@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TenantProvider, useTenant } from "@/contexts/TenantContext";
@@ -23,7 +23,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   useEffect(() => {
     const checkUser = async () => {
@@ -40,10 +41,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         .eq("id", user.id)
         .single() as { data: Profile | null };
 
-      console.log("[AdminLayout] user:", user.id, "role:", profileData?.role);
-
       if (!profileData || !profileData.role || !canManageTeam(profileData.role)) {
-        console.log("[AdminLayout] Redirecting - canManageTeam:", profileData?.role ? canManageTeam(profileData.role) : false, "role:", profileData?.role);
         router.push(getHomeRoute(profileData?.role));
         return;
       }
@@ -53,7 +51,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     };
 
     checkUser();
-  }, [pathname]);
+  }, [pathname, router, supabase]);
 
   const handleTenantChange = (tenant: Tenant) => {
     setCurrentTenant(tenant);

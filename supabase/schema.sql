@@ -99,6 +99,17 @@ CREATE TRIGGER work_schedules_updated_at BEFORE UPDATE ON work_schedules FOR EAC
 CREATE INDEX IF NOT EXISTS idx_work_schedules_tenant_id ON work_schedules(tenant_id);
 ALTER TABLE work_schedules ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "service_role_work_schedules" ON work_schedules FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- F-01 FIX: RLS for authenticated users
+CREATE POLICY "rbac_master_admin_schedules" ON work_schedules
+  FOR ALL USING (is_master_admin(auth.uid()) = true);
+CREATE POLICY "rbac_tenant_view_schedules" ON work_schedules
+  FOR SELECT TO authenticated USING (
+    tenant_id = get_user_tenant(auth.uid())
+  );
+CREATE POLICY "rbac_tenant_admin_manage_schedules" ON work_schedules
+  FOR ALL USING (
+    is_tenant_admin(auth.uid(), tenant_id) = true
+  );
 
 ALTER TABLE profiles ADD CONSTRAINT fk_profiles_schedule FOREIGN KEY (schedule_id) REFERENCES work_schedules(id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED;
 
@@ -149,6 +160,17 @@ CREATE TABLE IF NOT EXISTS policies (
 CREATE TRIGGER policies_updated_at BEFORE UPDATE ON policies FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 ALTER TABLE policies ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "service_role_policies" ON policies FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- F-01 FIX: RLS for authenticated users
+CREATE POLICY "rbac_master_admin_policies" ON policies
+  FOR ALL USING (is_master_admin(auth.uid()) = true);
+CREATE POLICY "rbac_tenant_view_policies" ON policies
+  FOR SELECT TO authenticated USING (
+    tenant_id = get_user_tenant(auth.uid())
+  );
+CREATE POLICY "rbac_tenant_admin_manage_policies" ON policies
+  FOR ALL USING (
+    is_tenant_admin(auth.uid(), tenant_id) = true
+  );
 
 -- =====================================================
 -- TABLE: notifications
@@ -206,6 +228,21 @@ CREATE TABLE IF NOT EXISTS hour_entries (
 CREATE INDEX IF NOT EXISTS idx_hour_entries_user_id ON hour_entries(user_id);
 ALTER TABLE hour_entries ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "service_role_hour_entries" ON hour_entries FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- F-01 FIX: RLS for authenticated users
+CREATE POLICY "rbac_master_admin_hours" ON hour_entries
+  FOR ALL USING (is_master_admin(auth.uid()) = true);
+CREATE POLICY "rbac_employee_own_hours" ON hour_entries
+  FOR ALL USING (user_id = auth.uid());
+CREATE POLICY "rbac_gestor_view_hours" ON hour_entries
+  FOR SELECT USING (is_manager_of(auth.uid(), user_id) = true);
+CREATE POLICY "rbac_tenant_admin_hours" ON hour_entries
+  FOR ALL USING (
+    EXISTS(
+      SELECT 1 FROM profiles p
+      WHERE p.id = hour_entries.user_id
+      AND is_tenant_admin(auth.uid(), p.tenant_id) = true
+    )
+  );
 
 -- =====================================================
 -- TABLE: time_entries
@@ -256,6 +293,17 @@ CREATE TABLE IF NOT EXISTS monthly_timesheets (
 
 ALTER TABLE monthly_timesheets ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "service_role_monthly_timesheets" ON monthly_timesheets FOR ALL TO service_role USING (true) WITH CHECK (true);
+-- F-01 FIX: RLS for authenticated users
+CREATE POLICY "rbac_master_admin_timesheets" ON monthly_timesheets
+  FOR ALL USING (is_master_admin(auth.uid()) = true);
+CREATE POLICY "rbac_tenant_admin_timesheets" ON monthly_timesheets
+  FOR ALL USING (
+    is_tenant_admin(auth.uid(), tenant_id) = true
+  );
+CREATE POLICY "rbac_employee_own_timesheets" ON monthly_timesheets
+  FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "rbac_gestor_view_timesheets" ON monthly_timesheets
+  FOR SELECT USING (is_manager_of(auth.uid(), user_id) = true);
 
 -- =====================================================
 -- TABLE: audit_log
