@@ -1,7 +1,7 @@
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 
 // Singleton client - created once and reused
-let supabaseClient: ReturnType<typeof createSupabaseClient> | null = null;
+let supabaseClient: ReturnType<typeof createBrowserClient> | null = null;
 
 export function createClient() {
   // Return existing client if already created (singleton pattern)
@@ -14,16 +14,11 @@ export function createClient() {
   
   if (!supabaseUrl || !supabaseAnonKey) {
     console.warn("[Supabase Client] Environment variables not available");
-    return createMockClient();
+    return createMockClient() as any;
   }
 
-  // Create and cache the client
-  supabaseClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  });
+  // Create and cache the client using SSR to ensure cookie synchronization
+  supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
   return supabaseClient;
 }
