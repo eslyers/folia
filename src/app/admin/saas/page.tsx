@@ -572,8 +572,8 @@ export default function SaasAdminPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="p-5">
             <div className="flex items-center justify-between">
-              <div className="p-2 rounded-lg bg-purple-100">
-                <Building2 className="h-5 w-5 text-purple-600" />
+              <div className="p-2 rounded-lg bg-purple-100 text-purple-600">
+                <Building2 className="h-5 w-5" />
               </div>
               <span className={`inline-flex items-center text-xs font-medium ${activeRate >= 80 ? 'text-green-600' : activeRate >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
                 {activeRate}% ativo
@@ -598,8 +598,8 @@ export default function SaasAdminPage() {
 
           <Card className="p-5">
             <div className="flex items-center justify-between">
-              <div className="p-2 rounded-lg bg-blue-100">
-                <Users className="h-5 w-5 text-blue-600" />
+              <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+                <Users className="h-5 w-5" />
               </div>
               <span className="inline-flex items-center text-green-600 text-xs font-medium">
                 <TrendingUp className="h-3 w-3 mr-1" />
@@ -617,8 +617,8 @@ export default function SaasAdminPage() {
 
           <Card className="p-5">
             <div className="flex items-center justify-between">
-              <div className="p-2 rounded-lg bg-amber-100">
-                <Calendar className="h-5 w-5 text-amber-600" />
+              <div className="p-2 rounded-lg bg-amber-100 text-amber-600">
+                <Calendar className="h-5 w-5" />
               </div>
               {systemStats.pending_requests > 0 && (
                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-white text-xs font-bold">
@@ -637,8 +637,8 @@ export default function SaasAdminPage() {
 
           <Card className="p-5">
             <div className="flex items-center justify-between">
-              <div className="p-2 rounded-lg bg-green-100">
-                <Activity className="h-5 w-5 text-green-600" />
+              <div className="p-2 rounded-lg bg-green-100 text-green-600">
+                <Activity className="h-5 w-5" />
               </div>
               <span className="inline-flex items-center text-green-600 text-xs font-medium">
                 Online
@@ -660,7 +660,7 @@ export default function SaasAdminPage() {
             onClick={() => setActiveTab("overview")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === "overview"
-                ? "bg-[var(--color-gold)] text-white"
+                ? "bg-[var(--color-gold)] text-[#2C2416]"
                 : "text-[var(--color-brown-medium)] hover:bg-[var(--color-cream)]"
             }`}
           >
@@ -671,7 +671,7 @@ export default function SaasAdminPage() {
             onClick={() => setActiveTab("tenants")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === "tenants"
-                ? "bg-[var(--color-gold)] text-white"
+                ? "bg-[var(--color-gold)] text-[#2C2416]"
                 : "text-[var(--color-brown-medium)] hover:bg-[var(--color-cream)]"
             }`}
           >
@@ -682,7 +682,7 @@ export default function SaasAdminPage() {
             onClick={() => setActiveTab("webhooks")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               activeTab === "webhooks"
-                ? "bg-[var(--color-gold)] text-white"
+                ? "bg-[var(--color-gold)] text-[#2C2416]"
                 : "text-[var(--color-brown-medium)] hover:bg-[var(--color-cream)]"
             }`}
           >
@@ -748,8 +748,8 @@ export default function SaasAdminPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 rounded-lg bg-green-50">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-green-100">
-                      <Check className="h-4 w-4 text-green-600" />
+                    <div className="p-2 rounded-lg bg-green-100 text-green-600">
+                      <Check className="h-4 w-4" />
                     </div>
                     <span className="text-sm font-medium text-[var(--color-brown-dark)]">Taxa de Aprovação</span>
                   </div>
@@ -761,8 +761,8 @@ export default function SaasAdminPage() {
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-blue-100">
-                      <UserPlus className="h-4 w-4 text-blue-600" />
+                    <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+                      <UserPlus className="h-4 w-4" />
                     </div>
                     <span className="text-sm font-medium text-[var(--color-brown-dark)]">Média Employees/Empresa</span>
                   </div>
@@ -774,8 +774,8 @@ export default function SaasAdminPage() {
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-purple-50">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-purple-100">
-                      <Globe className="h-4 w-4 text-purple-600" />
+                    <div className="p-2 rounded-lg bg-purple-100 text-purple-600">
+                      <Globe className="h-4 w-4" />
                     </div>
                     <span className="text-sm font-medium text-[var(--color-brown-dark)]">Empresas com Domínio</span>
                   </div>
@@ -785,8 +785,8 @@ export default function SaasAdminPage() {
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-amber-50">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-amber-100">
-                      <Clock className="h-4 w-4 text-amber-600" />
+                    <div className="p-2 rounded-lg bg-amber-100 text-amber-600">
+                      <Clock className="h-4 w-4" />
                     </div>
                     <span className="text-sm font-medium text-[var(--color-brown-dark)]">Sistema Ativo Desde</span>
                   </div>
@@ -970,8 +970,8 @@ export default function SaasAdminPage() {
                   {webhooks.map((webhook) => (
                     <div key={webhook.id} className="flex items-center justify-between p-4 rounded-lg bg-[var(--color-cream)]">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${webhook.channel === "slack" ? "bg-purple-100" : "bg-blue-100"}`}>
-                          <Webhook className={`h-4 w-4 ${webhook.channel === "slack" ? "text-purple-600" : "text-blue-600"}`} />
+                        <div className={`p-2 rounded-lg ${webhook.channel === "slack" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"}`}>
+                          <Webhook className="h-4 w-4" />
                         </div>
                         <div>
                           <p className="font-medium text-[var(--color-brown-dark)]">{webhook.name}</p>
