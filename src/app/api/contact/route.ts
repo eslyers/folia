@@ -13,8 +13,8 @@ export async function POST(request: Request) {
     }
 
     const fromEmail = process.env.EMAIL_FROM || "FOLIA <noreply@folia-vercel.app>";
-    // O destino deve ser o suporte ou o próprio e-mail configurado do sistema
-    const toEmail = process.env.CONTACT_EMAIL || fromEmail;
+    // O destino deve ser o e-mail eslyers@gmail.com ou o configurado
+    const toEmail = process.env.CONTACT_EMAIL || "eslyers@gmail.com";
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp-relay.brevo.com",

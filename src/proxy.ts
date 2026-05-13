@@ -12,10 +12,12 @@ const PUBLIC_ROUTES = new Set([
   "/",
   "/landing",
   "/login",
+  "/contact",
   "/auth/callback",
   "/api/check-notifications",
   "/api/send-notifications",
   "/api/test-notifications",
+  "/api/contact",
 ]);
 
 function isPublicRoute(pathname: string): boolean {
