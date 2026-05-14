@@ -497,7 +497,7 @@ export default function LandingClient() {
                   </div>
                   <div className="flex-1 mx-4">
                     <div className="bg-white rounded-md px-4 py-1.5 text-xs text-[var(--color-brown-medium)] text-center max-w-md mx-auto border border-[var(--border)]">
-                      folia.magnainc.tech/dashboard
+                      folia-rust.vercel.app/dashboard
                     </div>
                   </div>
                 </div>
