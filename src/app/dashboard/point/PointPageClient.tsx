@@ -81,7 +81,7 @@ function getStatusInfo(entry: TimeEntry | null): {
     return { label: "Em trabalho", color: "text-[var(--color-gold)]", nextAction: "clock_out" };
   }
   if (entry.lunch_start) {
-    return { label: "Em almoço", color: "text-[var(--color-orange)]", nextAction: "lunch_end" };
+    return { label: "Em almoço", color: "text-[var(--color-warning)]", nextAction: "lunch_end" };
   }
   if (entry.clock_in) {
     return { label: "Em trabalho", color: "text-[var(--color-gold)]", nextAction: "lunch_start" };
@@ -103,7 +103,7 @@ function getActionButton(action: ClockAction | null, onAction: (a: ClockAction) 
     clock_in: (
       <Button
         onClick={() => onAction("clock_in")}
-        className="w-full py-4 text-lg bg-[var(--color-green-olive)] hover:bg-[var(--color-green-emerald)] text-white border-0"
+        className="w-full py-4 text-lg bg-[var(--color-green-olive)] hover:opacity-90 text-white border-0"
       >
         <Sunrise className="w-5 h-5 mr-2" />
         Entrada
@@ -112,7 +112,7 @@ function getActionButton(action: ClockAction | null, onAction: (a: ClockAction) 
     lunch_start: (
       <Button
         onClick={() => onAction("lunch_start")}
-        className="w-full py-4 text-lg bg-[var(--color-orange)] hover:opacity-90 text-white border-0"
+        className="w-full py-4 text-lg bg-[var(--color-warning)] hover:opacity-90 text-white border-0"
       >
         <Coffee className="w-5 h-5 mr-2" />
         Iniciar Almoço
@@ -121,7 +121,7 @@ function getActionButton(action: ClockAction | null, onAction: (a: ClockAction) 
     lunch_end: (
       <Button
         onClick={() => onAction("lunch_end")}
-        className="w-full py-4 text-lg bg-[var(--color-green-olive)] hover:bg-[var(--color-green-emerald)] text-white border-0"
+        className="w-full py-4 text-lg bg-[var(--color-gold)] hover:opacity-90 text-white border-0"
       >
         <Play className="w-5 h-5 mr-2" />
         Voltar do Almoço
@@ -130,7 +130,7 @@ function getActionButton(action: ClockAction | null, onAction: (a: ClockAction) 
     clock_out: (
       <Button
         onClick={() => onAction("clock_out")}
-        className="w-full py-4 text-lg bg-[var(--color-red)] hover:opacity-90 text-white border-0"
+        className="w-full py-4 text-lg bg-[var(--color-error)] hover:opacity-90 text-white border-0"
       >
         <Square className="w-5 h-5 mr-2" />
         Saída
