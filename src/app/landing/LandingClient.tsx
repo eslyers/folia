@@ -24,6 +24,12 @@ import {
   Zap,
   Menu,
   X,
+  Palette,
+  Sun,
+  Moon,
+  Sparkles,
+  Leaf,
+  Waves,
 } from "lucide-react";
 
 // Schema.org structured data
@@ -215,16 +221,40 @@ const FAQS = [
   },
 ];
 
+const THEMES = [
+  { id: "light", label: "Light", icon: Sun },
+  { id: "dark", label: "Dark", icon: Moon },
+  { id: "golden", label: "Golden", icon: Sparkles },
+  { id: "forest", label: "Forest", icon: Leaf },
+  { id: "ocean", label: "Ocean", icon: Waves },
+];
+
 export default function LandingClient() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [showThemePicker, setShowThemePicker] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState("default");
+
+  useEffect(() => {
+    // Load theme from localStorage
+    const savedTheme = localStorage.getItem("theme") || "light";
+    setCurrentTheme(savedTheme);
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  }, []);
+
+  const changeTheme = (themeId: string) => {
+    setCurrentTheme(themeId);
+    localStorage.setItem("theme", themeId);
+    document.documentElement.setAttribute("data-theme", themeId);
+    setShowThemePicker(false);
+  };
 
   // Critical CSS inline
   useEffect(() => {
     const criticalCSS = `
       .hero { padding-top: 8rem; padding-bottom: 5rem; }
-      .logo { width: 40px; height: 40px; }
+      .logo { width: 80px; height: 80px; }
       .dashboard-preview { background: linear-gradient(to bottom right, var(--color-cream), white); padding: 1.5rem; }
       .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
       .stat-card { background: white; border-radius: 0.75rem; padding: 1rem; border: 1px solid var(--border); box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
@@ -265,7 +295,7 @@ export default function LandingClient() {
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <Image src="/logo.png" alt="FOLIA" width={40} height={40} className="h-10 object-contain" priority />
+              <Image src="/logo.png" alt="FOLIA" width={80} height={80} className="h-20 object-contain" priority />
             </div>
 
             {/* Desktop Nav */}
@@ -286,6 +316,53 @@ export default function LandingClient() {
 
             {/* CTA */}
             <div className="hidden lg:flex items-center gap-3">
+              {/* Theme Picker */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowThemePicker(!showThemePicker)}
+                  className="p-2 rounded-lg hover:bg-[var(--color-cream)] transition-colors"
+                  title="Trocar tema"
+                >
+                  <Palette className="h-5 w-5 text-[var(--color-brown-medium)]" />
+                </button>
+
+                {showThemePicker && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowThemePicker(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-[var(--color-surface)] rounded-xl shadow-xl border border-[var(--border)] p-3 z-50">
+                      <p className="text-xs font-semibold text-[var(--color-brown-medium)] mb-2 px-2">
+                        Escolha um tema
+                      </p>
+                      <div className="space-y-1">
+                        {THEMES.map(theme => {
+                          const Icon = theme.icon;
+                          return (
+                            <button
+                              key={theme.id}
+                              onClick={() => changeTheme(theme.id)}
+                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                                currentTheme === theme.id
+                                  ? "bg-[var(--color-gold)]/10 text-[var(--color-gold)]"
+                                  : "hover:bg-[var(--color-cream)] text-[var(--color-brown-dark)]"
+                              }`}
+                            >
+                              <Icon className="h-4 w-4" />
+                              <span className="text-sm font-medium">{theme.label}</span>
+                              {currentTheme === theme.id && (
+                                <span className="ml-auto text-xs">✓</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
               <Link
                 href="/login"
                 className="text-sm font-medium text-[var(--color-brown-medium)] hover:text-[var(--color-brown-dark)] px-4 py-2"
@@ -312,7 +389,28 @@ export default function LandingClient() {
 
           {/* Mobile menu */}
           {mobileMenuOpen && (
-            <div className="lg:hidden border-t border-[var(--border)] py-4 space-y-2 bg-white rounded-b-2xl shadow-lg">
+            <div className="lg:hidden border-t border-[var(--border)] py-4 space-y-2 bg-[var(--color-surface)] rounded-b-2xl shadow-lg">
+              {/* Theme Picker Mobile */}
+              <div className="px-4 py-2">
+                <p className="text-xs font-semibold text-[var(--color-brown-medium)] mb-2">Tema</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {THEMES.map(theme => (
+                    <button
+                      key={theme.id}
+                      onClick={() => changeTheme(theme.id)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                        currentTheme === theme.id
+                          ? "bg-[var(--color-gold)]/10 text-[var(--color-gold)]"
+                          : "hover:bg-[var(--color-cream)] text-[var(--color-brown-dark)]"
+                      }`}
+                    >
+                      <theme.icon className="h-4 w-4" />
+                      <span className="text-xs font-medium">{theme.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="border-t border-[var(--border)] my-2"></div>
               {["Recursos", "Preços", "Depoimentos", "FAQ"].map((item) => (
                 <a
                   key={item}
@@ -730,7 +828,7 @@ export default function LandingClient() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <Image src="/logo.png" alt="FOLIA" width={40} height={40} className="h-10 object-contain" priority />
+              <Image src="/logo.png" alt="FOLIA" width={80} height={80} className="h-20 object-contain" priority />
             </div>
             <p className="text-sm text-center">
               © {new Date().getFullYear()} FOLIA — Gestão de Férias, Ponto e RH para Empresas.
